@@ -5,15 +5,13 @@ on:
     branches:
       - main
   pull_request:
-    paths:
-      - 'src/**'
-      - '.github/workflows/test.yml'
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    if: github.head_ref != 'changeset-release/main'
     steps:
       - uses: actions/checkout@v4
 

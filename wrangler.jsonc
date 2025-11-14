@@ -2,7 +2,7 @@
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "project-lol-server",
 	"main": "src/index.ts",
-	"compatibility_date": "2025-08-07",
+	"compatibility_date": "2025-11-11",
 	"observability": {
 		"enabled": true
 	},
@@ -11,13 +11,6 @@
 			"binding": "DB",
 			"database_name": "project-lol",
 			"migrations_dir": "drizzle"
-		}
-	],
-	"kv_namespaces": [
-		{
-			"binding": "PROJECT_LOL",
-			"id": "ab2b267dc87440dd891e054f12bc7350",
-			"preview_id": "b3c3ff08be86469cb77e026bebe1e8b8"
 		}
 	]
 }

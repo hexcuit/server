@@ -3,6 +3,10 @@
 	"version": "0.1.9",
 	"type": "module",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/hexcuit/server"
+	},
 	"files": [
 		"dist"
 	],

@@ -15,8 +15,8 @@
 	"scripts": {
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy --minify",
-		"check": "biome check",
 		"build": "tsc",
+		"check": "biome check",
 		"check:fix": "biome check --fix --unsafe",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"typecheck": "tsc --noEmit",

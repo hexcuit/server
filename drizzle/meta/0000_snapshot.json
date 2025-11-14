@@ -1,0 +1,196 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "a80a0a78-1813-4255-806c-cc0128df2b33",
+	"prevId": "00000000-0000-0000-0000-000000000000",
+	"tables": {
+		"lol_ranks": {
+			"name": "lol_ranks",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"puuid": {
+					"name": "puuid",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				},
+				"queue_type": {
+					"name": "queue_type",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"tier": {
+					"name": "tier",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"rank": {
+					"name": "rank",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"leaguePoints": {
+					"name": "leaguePoints",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"wins": {
+					"name": "wins",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"losses": {
+					"name": "losses",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"last_updated": {
+					"name": "last_updated",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(current_timestamp)"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"lol_ranks_puuid_riot_accounts_puuid_fk": {
+					"name": "lol_ranks_puuid_riot_accounts_puuid_fk",
+					"tableFrom": "lol_ranks",
+					"tableTo": "riot_accounts",
+					"columnsFrom": ["puuid"],
+					"columnsTo": ["puuid"],
+					"onDelete": "cascade",
+					"onUpdate": "cascade"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"riot_accounts": {
+			"name": "riot_accounts",
+			"columns": {
+				"puuid": {
+					"name": "puuid",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"discord_id": {
+					"name": "discord_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"tagLine": {
+					"name": "tagLine",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"region": {
+					"name": "region",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"riot_accounts_discord_id_unique": {
+					"name": "riot_accounts_discord_id_unique",
+					"columns": ["discord_id"],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": {
+				"riot_accounts_discord_id_users_discord_id_fk": {
+					"name": "riot_accounts_discord_id_users_discord_id_fk",
+					"tableFrom": "riot_accounts",
+					"tableTo": "users",
+					"columnsFrom": ["discord_id"],
+					"columnsTo": ["discord_id"],
+					"onDelete": "cascade",
+					"onUpdate": "cascade"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		},
+		"users": {
+			"name": "users",
+			"columns": {
+				"discord_id": {
+					"name": "discord_id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(current_timestamp)"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "(current_timestamp)"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"checkConstraints": {}
+		}
+	},
+	"views": {},
+	"enums": {},
+	"_meta": {
+		"schemas": {},
+		"tables": {},
+		"columns": {}
+	},
+	"internal": {
+		"indexes": {}
+	}
+}

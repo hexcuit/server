@@ -1,0 +1,27 @@
+{
+	"version": "7",
+	"dialect": "sqlite",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "6",
+			"when": 1756449212620,
+			"tag": "0000_redundant_surge",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1758972945912,
+			"tag": "0001_low_wolfsbane",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "6",
+			"when": 1759122867152,
+			"tag": "0002_gifted_captain_universe",
+			"breakpoints": true
+		}
+	]
+}

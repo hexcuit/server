@@ -20,7 +20,6 @@
 		"check:fix": "biome check --fix --unsafe",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"typecheck": "tsc --noEmit",
-		"changeset": "changeset",
 		"version": "changeset version",
 		"release": "changeset publish"
 	},
@@ -29,7 +28,8 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.5",
-		"@changesets/cli": "^2.29.7",
+		"@changesets/changelog-github": "0.5.1",
+		"@changesets/cli": "2.29.7",
 		"@hono/swagger-ui": "0.5.2",
 		"@hono/zod-validator": "0.7.4",
 		"drizzle-kit": "0.31.7",

@@ -13,6 +13,7 @@ const GetRanksQuerySchema = z.object({
 	discordIds: z.array(z.string()).or(z.string().transform((val) => [val])),
 })
 
+// ランク登録・取得用のルーター
 export const rankRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	.use(corsMiddleware)
 	.use(apiKeyMiddleware)

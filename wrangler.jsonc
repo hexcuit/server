@@ -1,6 +1,6 @@
 {
 	"$schema": "./node_modules/wrangler/config-schema.json",
-	"name": "project-lol-server",
+	"name": "hexcuit-server",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-11-11",
 	"observability": {
@@ -9,7 +9,8 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "project-lol",
+			"database_name": "hexcuit",
+			"database_id": "a20ff5ef-8539-444c-8098-e92ffa65d32b",
 			"migrations_dir": "drizzle"
 		}
 	]

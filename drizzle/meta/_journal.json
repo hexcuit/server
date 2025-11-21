@@ -22,6 +22,13 @@
 			"when": 1759122867152,
 			"tag": "0002_gifted_captain_universe",
 			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "6",
+			"when": 1763699961368,
+			"tag": "0003_redundant_shockwave",
+			"breakpoints": true
 		}
 	]
 }

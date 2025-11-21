@@ -1,0 +1,1 @@
+DROP TABLE `lol_ranks`;

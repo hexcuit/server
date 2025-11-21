@@ -30,7 +30,7 @@ jobs:
           node-version: '24.11.1'
 
       - name: Install dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Build
         run: bun run build
@@ -45,3 +45,21 @@ jobs:
           title: 'ci release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Drizzle kit
+        if: steps.changesets.outputs.published == 'true'
+        run: bun run generate
+      
+      - name: D1 Migrations
+        if: steps.changesets.outputs.published == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: d1 migrations apply hexcuit --remote
+
+      - name: Deploy to Cloudflare Workers
+        if: steps.changesets.outputs.published == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: deploy

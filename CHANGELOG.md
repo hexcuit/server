@@ -1,5 +1,11 @@
 # @hexcuit/server
 
+## 0.1.12
+
+### Patch Changes
+
+- [#21](https://github.com/hexcuit/server/pull/21) [`fe95679`](https://github.com/hexcuit/server/commit/fe9567991f00b1717f7c3204c4a983589b2b6f2e) Thanks [@11gather11](https://github.com/11gather11)! - Fix wrangler-action secrets format in release workflow
+
 ## 0.1.11
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # @hexcuit/server
 
+## 0.1.10
+
+### Patch Changes
+
+- [#15](https://github.com/hexcuit/server/pull/15) [`2b28755`](https://github.com/hexcuit/server/commit/2b28755aefd86b989e841c1cdeb2c268603ae776) Thanks [@11gather11](https://github.com/11gather11)! - Add automated deployment to Cloudflare Workers
+
+  - Add D1 migrations step after release
+  - Add Cloudflare Workers deploy step
+  - Remove unused lolRanks table from schema
+  - Use frozen-lockfile for reproducible builds
+
 ## 0.1.8
 
 ### Patch Changes

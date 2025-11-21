@@ -1,5 +1,15 @@
 # @hexcuit/server
 
+## 0.1.11
+
+### Patch Changes
+
+- [#19](https://github.com/hexcuit/server/pull/19) [`aa586a8`](https://github.com/hexcuit/server/commit/aa586a8d48249355e6707cad51d2599d25e18d99) Thanks [@11gather11](https://github.com/11gather11)! - Improve CORS configuration for production environment
+
+  - Add early return for empty origin to prevent null origin bypass
+  - Add maxAge (24h) for preflight request caching
+  - Fix CORS_ORIGIN environment variable name in release workflow
+
 ## 0.1.10
 
 ### Patch Changes

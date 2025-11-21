@@ -63,3 +63,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: deploy
+          secrets: |
+            API_KEY=${{ secrets.API_KEY }}
+            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}

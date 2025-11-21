@@ -24,24 +24,24 @@
 		"check:fix": "biome check --fix --unsafe",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"typecheck": "tsc --noEmit",
-		"version": "changeset version",
+		"version": "changeset version && bun i --lockfile-only",
 		"release": "changeset publish"
 	},
 	"dependencies": {
-		"hono": "4.10.5"
+		"hono": "4.10.6"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.3.5",
+		"@biomejs/biome": "2.3.6",
 		"@changesets/changelog-github": "0.5.1",
 		"@changesets/cli": "2.29.7",
 		"@hono/swagger-ui": "0.5.2",
-		"@hono/zod-validator": "0.7.4",
+		"@hono/zod-validator": "0.7.5",
 		"drizzle-kit": "0.31.7",
 		"drizzle-orm": "0.44.7",
 		"drizzle-zod": "0.8.3",
 		"lefthook": "2.0.4",
 		"typescript": "5.9.3",
-		"wrangler": "4.48.0",
+		"wrangler": "4.50.0",
 		"zod": "4.1.12"
 	}
 }

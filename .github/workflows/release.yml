@@ -7,24 +7,22 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
-permissions:
-  contents: write
-  pull-requests: write
-  id-token: write
-
 jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.3.2
 
       - name: Setup Node
         uses: actions/setup-node@v5
@@ -43,7 +41,7 @@ jobs:
         with:
           version: bun run version
           publish: bun run release
-          commit: '[ci] release'
-          title: '[ci] release'
+          commit: 'ci release'
+          title: 'ci release'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,52 @@
+# Labeler configuration for hexcuit/server
+# See https://github.com/actions/labeler
+
+database:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/db/**
+      - drizzle.config.ts
+      - drizzle/**
+
+middleware:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/middlewares/**
+
+routes:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/routes/**
+
+client:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/client.ts
+
+ci-cd:
+  - changed-files:
+    - any-glob-to-any-file:
+      - .github/**
+
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - package.json
+      - bun.lock
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - README.md
+      - CHANGELOG.md
+      - LICENSE
+
+configuration:
+  - changed-files:
+    - any-glob-to-any-file:
+      - "*.config.*"
+      - "*.jsonc"
+      - tsconfig.json
+      - biome.jsonc
+      - wrangler.jsonc
+      - lefthook.json

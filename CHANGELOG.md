@@ -1,5 +1,17 @@
 # @hexcuit/server
 
+## 0.2.0
+
+### Minor Changes
+
+- [#29](https://github.com/hexcuit/server/pull/29) [`1858cae`](https://github.com/hexcuit/server/commit/1858cae40655e9856d8e44d596b0fb771e481db7) Thanks [@11gather11](https://github.com/11gather11)! - Add recruitment API endpoints for custom game recruitment feature
+
+  - POST /recruit - Create recruitment
+  - GET /recruit/:id - Get recruitment details
+  - POST /recruit/join - Join recruitment
+  - POST /recruit/leave - Leave recruitment
+  - POST /recruit/:id/close - Close recruitment
+
 ## 0.1.12
 
 ### Patch Changes

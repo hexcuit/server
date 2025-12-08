@@ -1,5 +1,15 @@
 # @hexcuit/server
 
+## 0.3.0
+
+### Minor Changes
+
+- [#31](https://github.com/hexcuit/server/pull/31) [`d400e86`](https://github.com/hexcuit/server/commit/d400e86652e23894fb2850572a43c338d3735ebb) Thanks [@11gather11](https://github.com/11gather11)! - 募集終了時に DB から物理削除するように変更
+
+  - `POST /:id/close` → `DELETE /:id` に変更
+  - ステータス更新ではなくレコードを完全削除
+  - CASCADE 設定により参加者データも自動削除
+
 ## 0.2.0
 
 ### Minor Changes

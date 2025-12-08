@@ -197,12 +197,13 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 		})
 	})
 
-	// 募集終了
-	.post('/:id/close', async (c) => {
+	// 募集終了（物理削除）
+	.delete('/:id', async (c) => {
 		const recruitmentId = c.req.param('id')
 		const db = drizzle(c.env.DB)
 
-		await db.update(recruitments).set({ status: 'closed' }).where(eq(recruitments.id, recruitmentId))
+		// CASCADE設定により recruitment_participants も自動削除される
+		await db.delete(recruitments).where(eq(recruitments.id, recruitmentId))
 
 		return c.json({ success: true })
 	})

@@ -43,11 +43,77 @@ export const riotAccountsRelations = relations(riotAccounts, ({ one }) => ({
 	}),
 }))
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
 	riotAccount: one(riotAccounts),
 	lolRanks: one(riotAccounts),
+	recruitments: many(recruitments),
+	recruitmentParticipants: many(recruitmentParticipants),
+}))
+
+// 募集テーブル
+export const recruitments = sqliteTable('recruitments', {
+	id: text('id').primaryKey(),
+	guildId: text('guild_id').notNull(),
+	channelId: text('channel_id').notNull(),
+	messageId: text('message_id').notNull(),
+	creatorId: text('creator_id')
+		.notNull()
+		.references(() => users.discordId, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade',
+		}),
+	anonymous: text('anonymous').notNull().default('false'),
+	capacity: text('capacity').notNull().default('10'),
+	startTime: text('start_time'),
+	status: text('status').notNull().default('open'),
+	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
+	updatedAt: text('updated_at')
+		.notNull()
+		.default(sql`(current_timestamp)`)
+		.$onUpdateFn(() => sql`(current_timestamp)`),
+})
+
+// 募集参加者テーブル
+export const recruitmentParticipants = sqliteTable('recruitment_participants', {
+	id: text('id').primaryKey(),
+	recruitmentId: text('recruitment_id')
+		.notNull()
+		.references(() => recruitments.id, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade',
+		}),
+	discordId: text('discord_id')
+		.notNull()
+		.references(() => users.discordId, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade',
+		}),
+	joinedAt: text('joined_at').notNull().default(sql`(current_timestamp)`),
+})
+
+export const recruitmentsRelations = relations(recruitments, ({ one, many }) => ({
+	creator: one(users, {
+		fields: [recruitments.creatorId],
+		references: [users.discordId],
+	}),
+	participants: many(recruitmentParticipants),
+}))
+
+export const recruitmentParticipantsRelations = relations(recruitmentParticipants, ({ one }) => ({
+	recruitment: one(recruitments, {
+		fields: [recruitmentParticipants.recruitmentId],
+		references: [recruitments.id],
+	}),
+	user: one(users, {
+		fields: [recruitmentParticipants.discordId],
+		references: [users.discordId],
+	}),
 }))
 
 export const userZodSchema = createInsertSchema(users)
 
 export const lolRankZodSchema = createInsertSchema(lolRank)
+
+export const recruitmentZodSchema = createInsertSchema(recruitments)
+
+export const recruitmentParticipantZodSchema = createInsertSchema(recruitmentParticipants)

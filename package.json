@@ -38,7 +38,7 @@
 		"@hono/swagger-ui": "0.5.2",
 		"@hono/zod-validator": "0.7.5",
 		"drizzle-kit": "0.31.8",
-		"drizzle-orm": "0.44.7",
+		"drizzle-orm": "0.45.0",
 		"drizzle-zod": "0.8.3",
 		"lefthook": "2.0.4",
 		"typescript": "5.9.3",

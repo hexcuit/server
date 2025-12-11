@@ -64,6 +64,9 @@ export const recruitments = sqliteTable('recruitments', {
 			onDelete: 'cascade',
 			onUpdate: 'cascade',
 		}),
+	type: text('type', { enum: ['normal', 'ranked'] })
+		.notNull()
+		.default('normal'),
 	anonymous: text('anonymous').notNull().default('false'),
 	capacity: text('capacity').notNull().default('10'),
 	startTime: text('start_time'),
@@ -74,6 +77,10 @@ export const recruitments = sqliteTable('recruitments', {
 		.default(sql`(current_timestamp)`)
 		.$onUpdateFn(() => sql`(current_timestamp)`),
 })
+
+// LoLロール定義
+export const LOL_ROLES = ['top', 'jungle', 'mid', 'adc', 'support'] as const
+export type LolRole = (typeof LOL_ROLES)[number]
 
 // 募集参加者テーブル
 export const recruitmentParticipants = sqliteTable('recruitment_participants', {
@@ -90,6 +97,8 @@ export const recruitmentParticipants = sqliteTable('recruitment_participants', {
 			onDelete: 'cascade',
 			onUpdate: 'cascade',
 		}),
+	mainRole: text('main_role', { enum: LOL_ROLES }),
+	subRole: text('sub_role', { enum: LOL_ROLES }),
 	joinedAt: text('joined_at').notNull().default(sql`(current_timestamp)`),
 })
 
@@ -164,7 +173,7 @@ export const guildMatchParticipants = sqliteTable('guild_match_participants', {
 			onUpdate: 'cascade',
 		}),
 	team: text('team', { enum: ['blue', 'red'] }).notNull(),
-	role: text('role', { enum: ['top', 'jungle', 'mid', 'adc', 'support'] }).notNull(),
+	role: text('role', { enum: LOL_ROLES }).notNull(),
 	ratingBefore: integer('rating_before').notNull(),
 	ratingAfter: integer('rating_after').notNull(),
 })

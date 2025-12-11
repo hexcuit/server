@@ -3,7 +3,7 @@ import { and, count, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { recruitmentParticipants, recruitments, users } from '@/db/schema'
+import { LOL_ROLES, recruitmentParticipants, recruitments, users } from '@/db/schema'
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
 
@@ -13,13 +13,18 @@ const CreateRecruitmentSchema = z.object({
 	channelId: z.string(),
 	messageId: z.string(),
 	creatorId: z.string(),
+	type: z.enum(['normal', 'ranked']).default('normal'),
 	anonymous: z.boolean(),
 	startTime: z.string().optional(),
 })
 
+const RoleSchema = z.enum(LOL_ROLES)
+
 const JoinRecruitmentSchema = z.object({
 	recruitmentId: z.uuid(),
 	discordId: z.string(),
+	mainRole: RoleSchema.optional(),
+	subRole: RoleSchema.optional(),
 })
 
 const LeaveRecruitmentSchema = z.object({
@@ -45,6 +50,7 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			channelId: data.channelId,
 			messageId: data.messageId,
 			creatorId: data.creatorId,
+			type: data.type,
 			anonymous: data.anonymous ? 'true' : 'false',
 			startTime: data.startTime || null,
 			status: 'open',
@@ -78,7 +84,7 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 
 	// 参加
 	.post('/join', zValidator('json', JoinRecruitmentSchema), async (c) => {
-		const { recruitmentId, discordId } = c.req.valid('json')
+		const { recruitmentId, discordId, mainRole, subRole } = c.req.valid('json')
 		const db = drizzle(c.env.DB)
 
 		// 募集存在確認
@@ -128,6 +134,8 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			id: participantId,
 			recruitmentId,
 			discordId,
+			mainRole: mainRole || null,
+			subRole: subRole || null,
 		})
 
 		// 定員到達確認
@@ -148,7 +156,11 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			success: true,
 			isFull,
 			count: newCount,
-			participants: participants.map((p) => p.discordId),
+			participants: participants.map((p) => ({
+				discordId: p.discordId,
+				mainRole: p.mainRole,
+				subRole: p.subRole,
+			})),
 		})
 	})
 
@@ -193,7 +205,56 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 		return c.json({
 			success: true,
 			count: participants.length,
-			participants: participants.map((p) => p.discordId),
+			participants: participants.map((p) => ({
+				discordId: p.discordId,
+				mainRole: p.mainRole,
+				subRole: p.subRole,
+			})),
+		})
+	})
+
+	// ロール更新
+	.post('/update-role', zValidator('json', JoinRecruitmentSchema), async (c) => {
+		const { recruitmentId, discordId, mainRole, subRole } = c.req.valid('json')
+		const db = drizzle(c.env.DB)
+
+		// 参加確認
+		const existing = await db
+			.select()
+			.from(recruitmentParticipants)
+			.where(
+				and(eq(recruitmentParticipants.recruitmentId, recruitmentId), eq(recruitmentParticipants.discordId, discordId)),
+			)
+			.get()
+
+		if (!existing) {
+			return c.json({ error: 'Not joined' }, 400)
+		}
+
+		// ロール更新
+		await db
+			.update(recruitmentParticipants)
+			.set({
+				mainRole: mainRole || null,
+				subRole: subRole || null,
+			})
+			.where(
+				and(eq(recruitmentParticipants.recruitmentId, recruitmentId), eq(recruitmentParticipants.discordId, discordId)),
+			)
+
+		// 最新の参加者リストを取得
+		const participants = await db
+			.select()
+			.from(recruitmentParticipants)
+			.where(eq(recruitmentParticipants.recruitmentId, recruitmentId))
+
+		return c.json({
+			success: true,
+			participants: participants.map((p) => ({
+				discordId: p.discordId,
+				mainRole: p.mainRole,
+				subRole: p.subRole,
+			})),
 		})
 	})
 

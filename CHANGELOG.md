@@ -1,5 +1,17 @@
 # @hexcuit/server
 
+## 0.6.0
+
+### Minor Changes
+
+- [#46](https://github.com/hexcuit/server/pull/46) [`f191869`](https://github.com/hexcuit/server/commit/f191869234f2b088db66aa300740a58ddfb92569) Thanks [@11gather11](https://github.com/11gather11)! - Phase 2: ランク戦募集機能の追加
+
+  - recruitments テーブルに type カラムを追加 ('normal' | 'ranked')
+  - recruitment_participants テーブルに mainRole/subRole カラムを追加
+  - recruit API に type, mainRole, subRole サポートを追加
+  - /recruit/update-role エンドポイントを追加
+  - LOL_ROLES 定数をエクスポート
+
 ## 0.5.0
 
 ### Minor Changes

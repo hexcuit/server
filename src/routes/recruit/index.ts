@@ -3,7 +3,7 @@ import { and, count, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { LOL_ROLES, recruitmentParticipants, recruitments, users } from '@/db/schema'
+import { LOL_ROLES, type LolRole, recruitmentParticipants, recruitments, users } from '@/db/schema'
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
 
@@ -231,16 +231,22 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			return c.json({ error: 'Not joined' }, 400)
 		}
 
-		// ロール更新
-		await db
-			.update(recruitmentParticipants)
-			.set({
-				mainRole: mainRole || null,
-				subRole: subRole || null,
-			})
-			.where(
-				and(eq(recruitmentParticipants.recruitmentId, recruitmentId), eq(recruitmentParticipants.discordId, discordId)),
-			)
+		// ロール更新（指定されたフィールドのみ更新）
+		const updateData: { mainRole?: LolRole | null; subRole?: LolRole | null } = {}
+		if (mainRole !== undefined) updateData.mainRole = mainRole
+		if (subRole !== undefined) updateData.subRole = subRole
+
+		if (Object.keys(updateData).length > 0) {
+			await db
+				.update(recruitmentParticipants)
+				.set(updateData)
+				.where(
+					and(
+						eq(recruitmentParticipants.recruitmentId, recruitmentId),
+						eq(recruitmentParticipants.discordId, discordId),
+					),
+				)
+		}
 
 		// 最新の参加者リストを取得
 		const participants = await db

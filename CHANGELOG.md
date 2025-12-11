@@ -1,5 +1,14 @@
 # @hexcuit/server
 
+## 0.8.1
+
+### Patch Changes
+
+- [#52](https://github.com/hexcuit/server/pull/52) [`50a1622`](https://github.com/hexcuit/server/commit/50a1622c5f29bdf5e76a074bc20d44cbc71da3a0) Thanks [@11gather11](https://github.com/11gather11)! - fix: ロール更新 API の部分更新対応
+
+  - `PATCH /recruit/role` で指定されたフィールドのみ更新するように修正
+  - 未指定のフィールドが意図せず null で上書きされる問題を解消
+
 ## 0.8.0
 
 ### Minor Changes

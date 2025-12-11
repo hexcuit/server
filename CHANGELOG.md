@@ -1,5 +1,19 @@
 # @hexcuit/server
 
+## 0.5.0
+
+### Minor Changes
+
+- [#44](https://github.com/hexcuit/server/pull/44) [`480d808`](https://github.com/hexcuit/server/commit/480d808427e865aebee6570243a8145eca016a47) Thanks [@11gather11](https://github.com/11gather11)! - サーバー内ランクシステム Phase 1: スキーマ + API 基盤
+
+  - `guild_ratings` テーブル追加（サーバー内レーティング）
+  - `guild_matches` テーブル追加（試合履歴）
+  - `guild_match_participants` テーブル追加（試合参加者）
+  - `/guild/rating` エンドポイント追加（レート取得・初期化）
+  - `/guild/ranking` エンドポイント追加（ランキング取得）
+  - Elo レーティング計算ユーティリティ追加
+  - プレイスメント: 5 試合
+
 ## 0.4.0
 
 ### Minor Changes

@@ -1,5 +1,15 @@
 # @hexcuit/server
 
+## 0.8.0
+
+### Minor Changes
+
+- [#50](https://github.com/hexcuit/server/pull/50) [`8da78d4`](https://github.com/hexcuit/server/commit/8da78d494a93b76640627513aed22c161b0881d4) Thanks [@11gather11](https://github.com/11gather11)! - Phase 4: 試合履歴 API エンドポイント追加
+
+  - `GET /guild/match-history` - ユーザーの直近の試合履歴を取得
+    - パラメータ: `guildId`, `discordId`, `limit`（デフォルト: 5）
+    - レスポンス: 試合ごとの勝敗、レート変動情報
+
 ## 0.7.0
 
 ### Minor Changes

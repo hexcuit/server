@@ -77,8 +77,8 @@ const VoteSchema = z.object({
 	vote: z.enum(['blue', 'red']),
 })
 
-// 投票結果確定に必要な票数
-const VOTES_REQUIRED = 6
+// 過半数を計算するヘルパー
+const calculateMajority = (totalParticipants: number) => Math.ceil(totalParticipants / 2)
 
 // Guild関連のルーター
 export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
@@ -263,6 +263,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 
 		const teamAssignments = JSON.parse(match.teamAssignments) as TeamAssignments
 
+		const totalParticipants = Object.keys(teamAssignments).length
 		return c.json({
 			match: {
 				id: match.id,
@@ -276,7 +277,8 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 				createdAt: match.createdAt,
 			},
 			votes: votes.map((v) => ({ discordId: v.discordId, vote: v.vote })),
-			votesRequired: VOTES_REQUIRED,
+			totalParticipants,
+			votesRequired: calculateMajority(totalParticipants),
 		})
 	})
 
@@ -310,6 +312,9 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			.where(and(eq(guildMatchVotes.pendingMatchId, matchId), eq(guildMatchVotes.discordId, discordId)))
 			.get()
 
+		const totalParticipants = Object.keys(teamAssignments).length
+		const votesRequired = calculateMajority(totalParticipants)
+
 		if (existingVote) {
 			// 同じ投票なら何もしない
 			if (existingVote.vote === vote) {
@@ -318,6 +323,8 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 					changed: false,
 					blueVotes: match.blueVotes,
 					redVotes: match.redVotes,
+					totalParticipants,
+					votesRequired,
 				})
 			}
 
@@ -341,6 +348,8 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 				changed: true,
 				blueVotes: newBlueVotes,
 				redVotes: newRedVotes,
+				totalParticipants,
+				votesRequired,
 			})
 		}
 
@@ -365,6 +374,8 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			changed: true,
 			blueVotes: newBlueVotes,
 			redVotes: newRedVotes,
+			totalParticipants,
+			votesRequired,
 		})
 	})
 
@@ -384,8 +395,12 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			return c.json({ error: 'Match is not in voting state' }, 400)
 		}
 
-		// 投票数確認
-		const winningTeam = match.blueVotes >= VOTES_REQUIRED ? 'blue' : match.redVotes >= VOTES_REQUIRED ? 'red' : null
+		const teamAssignments = JSON.parse(match.teamAssignments) as TeamAssignments
+		const totalParticipants = Object.keys(teamAssignments).length
+		const votesRequired = calculateMajority(totalParticipants)
+
+		// 投票数確認（過半数で確定）
+		const winningTeam = match.blueVotes >= votesRequired ? 'blue' : match.redVotes >= votesRequired ? 'red' : null
 
 		if (!winningTeam) {
 			return c.json(
@@ -393,13 +408,11 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 					error: 'Not enough votes',
 					blueVotes: match.blueVotes,
 					redVotes: match.redVotes,
-					required: VOTES_REQUIRED,
+					required: votesRequired,
 				},
 				400,
 			)
 		}
-
-		const teamAssignments = JSON.parse(match.teamAssignments) as TeamAssignments
 		const participants = Object.entries(teamAssignments)
 
 		// チームごとのレートを計算

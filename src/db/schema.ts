@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema } from 'drizzle-zod'
 
 export const users = sqliteTable('users', {
@@ -48,6 +48,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 	lolRanks: one(riotAccounts),
 	recruitments: many(recruitments),
 	recruitmentParticipants: many(recruitmentParticipants),
+	guildRatings: many(guildRatings),
+	guildMatchParticipants: many(guildMatchParticipants),
 }))
 
 // 募集テーブル
@@ -110,6 +112,89 @@ export const recruitmentParticipantsRelations = relations(recruitmentParticipant
 	}),
 }))
 
+// サーバー内レーティングテーブル
+export const guildRatings = sqliteTable(
+	'guild_ratings',
+	{
+		guildId: text('guild_id').notNull(),
+		discordId: text('discord_id')
+			.notNull()
+			.references(() => users.discordId, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
+		rating: integer('rating').notNull().default(1500),
+		wins: integer('wins').notNull().default(0),
+		losses: integer('losses').notNull().default(0),
+		placementGames: integer('placement_games').notNull().default(0),
+		createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(current_timestamp)`)
+			.$onUpdateFn(() => sql`(current_timestamp)`),
+	},
+	(table) => [primaryKey({ columns: [table.guildId, table.discordId] })],
+)
+
+// 試合履歴テーブル
+export const guildMatches = sqliteTable('guild_matches', {
+	id: text('id').primaryKey(),
+	guildId: text('guild_id').notNull(),
+	recruitmentId: text('recruitment_id').references(() => recruitments.id, {
+		onDelete: 'set null',
+		onUpdate: 'cascade',
+	}),
+	winningTeam: text('winning_team', { enum: ['blue', 'red'] }).notNull(),
+	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
+})
+
+// 試合参加者テーブル
+export const guildMatchParticipants = sqliteTable('guild_match_participants', {
+	id: text('id').primaryKey(),
+	matchId: text('match_id')
+		.notNull()
+		.references(() => guildMatches.id, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade',
+		}),
+	discordId: text('discord_id')
+		.notNull()
+		.references(() => users.discordId, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade',
+		}),
+	team: text('team', { enum: ['blue', 'red'] }).notNull(),
+	role: text('role', { enum: ['top', 'jungle', 'mid', 'adc', 'support'] }).notNull(),
+	ratingBefore: integer('rating_before').notNull(),
+	ratingAfter: integer('rating_after').notNull(),
+})
+
+export const guildRatingsRelations = relations(guildRatings, ({ one }) => ({
+	user: one(users, {
+		fields: [guildRatings.discordId],
+		references: [users.discordId],
+	}),
+}))
+
+export const guildMatchesRelations = relations(guildMatches, ({ one, many }) => ({
+	recruitment: one(recruitments, {
+		fields: [guildMatches.recruitmentId],
+		references: [recruitments.id],
+	}),
+	participants: many(guildMatchParticipants),
+}))
+
+export const guildMatchParticipantsRelations = relations(guildMatchParticipants, ({ one }) => ({
+	match: one(guildMatches, {
+		fields: [guildMatchParticipants.matchId],
+		references: [guildMatches.id],
+	}),
+	user: one(users, {
+		fields: [guildMatchParticipants.discordId],
+		references: [users.discordId],
+	}),
+}))
+
 export const userZodSchema = createInsertSchema(users)
 
 export const lolRankZodSchema = createInsertSchema(lolRank)
@@ -117,3 +202,9 @@ export const lolRankZodSchema = createInsertSchema(lolRank)
 export const recruitmentZodSchema = createInsertSchema(recruitments)
 
 export const recruitmentParticipantZodSchema = createInsertSchema(recruitmentParticipants)
+
+export const guildRatingZodSchema = createInsertSchema(guildRatings)
+
+export const guildMatchZodSchema = createInsertSchema(guildMatches)
+
+export const guildMatchParticipantZodSchema = createInsertSchema(guildMatchParticipants)

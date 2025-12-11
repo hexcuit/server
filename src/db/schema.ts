@@ -204,6 +204,57 @@ export const guildMatchParticipantsRelations = relations(guildMatchParticipants,
 	}),
 }))
 
+// 投票中の試合テーブル
+export const guildPendingMatches = sqliteTable('guild_pending_matches', {
+	id: text('id').primaryKey(),
+	guildId: text('guild_id').notNull(),
+	channelId: text('channel_id').notNull(),
+	messageId: text('message_id').notNull(),
+	status: text('status', { enum: ['voting', 'confirmed', 'cancelled'] })
+		.notNull()
+		.default('voting'),
+	teamAssignments: text('team_assignments').notNull(), // JSON: { discordId: { team, role, rating } }
+	blueVotes: integer('blue_votes').notNull().default(0),
+	redVotes: integer('red_votes').notNull().default(0),
+	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
+})
+
+// 試合投票テーブル
+export const guildMatchVotes = sqliteTable(
+	'guild_match_votes',
+	{
+		pendingMatchId: text('pending_match_id')
+			.notNull()
+			.references(() => guildPendingMatches.id, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
+		discordId: text('discord_id')
+			.notNull()
+			.references(() => users.discordId, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
+		vote: text('vote', { enum: ['blue', 'red'] }).notNull(),
+	},
+	(table) => [primaryKey({ columns: [table.pendingMatchId, table.discordId] })],
+)
+
+export const guildPendingMatchesRelations = relations(guildPendingMatches, ({ many }) => ({
+	votes: many(guildMatchVotes),
+}))
+
+export const guildMatchVotesRelations = relations(guildMatchVotes, ({ one }) => ({
+	pendingMatch: one(guildPendingMatches, {
+		fields: [guildMatchVotes.pendingMatchId],
+		references: [guildPendingMatches.id],
+	}),
+	user: one(users, {
+		fields: [guildMatchVotes.discordId],
+		references: [users.discordId],
+	}),
+}))
+
 export const userZodSchema = createInsertSchema(users)
 
 export const lolRankZodSchema = createInsertSchema(lolRank)

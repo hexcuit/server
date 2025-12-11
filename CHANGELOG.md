@@ -1,5 +1,19 @@
 # @hexcuit/server
 
+## 0.7.0
+
+### Minor Changes
+
+- [#48](https://github.com/hexcuit/server/pull/48) [`bd5e90b`](https://github.com/hexcuit/server/commit/bd5e90bd872ebddc959eb81d7c7be564b6c30d3c) Thanks [@11gather11](https://github.com/11gather11)! - Phase 3: 勝敗報告・Elo 計算機能のサーバー API 追加
+
+  - `guildPendingMatches` テーブルを追加（投票中の試合管理）
+  - `guildMatchVotes` テーブルを追加（個別投票記録）
+  - 試合作成 API: `POST /guild/match`
+  - 試合取得 API: `GET /guild/match/:id`
+  - 投票 API: `POST /guild/match/:id/vote`
+  - 試合確定 API: `POST /guild/match/:id/confirm`
+  - 試合キャンセル API: `DELETE /guild/match/:id`
+
 ## 0.6.0
 
 ### Minor Changes

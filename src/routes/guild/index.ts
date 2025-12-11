@@ -43,6 +43,15 @@ const GetRankingQuerySchema = z.object({
 		.transform((val) => (val ? Number.parseInt(val, 10) : 10)),
 })
 
+const GetMatchHistoryQuerySchema = z.object({
+	guildId: z.string(),
+	discordId: z.string(),
+	limit: z
+		.string()
+		.optional()
+		.transform((val) => (val ? Number.parseInt(val, 10) : 5)),
+})
+
 // チーム振り分け用の型
 const TeamAssignmentSchema = z.object({
 	team: z.enum(['blue', 'red']),
@@ -529,4 +538,40 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 		await db.update(guildPendingMatches).set({ status: 'cancelled' }).where(eq(guildPendingMatches.id, matchId))
 
 		return c.json({ success: true })
+	})
+
+	// 試合履歴取得
+	.get('/match-history', zValidator('query', GetMatchHistoryQuerySchema), async (c) => {
+		const { guildId, discordId, limit } = c.req.valid('query')
+		const db = drizzle(c.env.DB)
+
+		// ユーザーの参加した試合を取得
+		const participations = await db
+			.select({
+				matchId: guildMatchParticipants.matchId,
+				team: guildMatchParticipants.team,
+				role: guildMatchParticipants.role,
+				ratingBefore: guildMatchParticipants.ratingBefore,
+				ratingAfter: guildMatchParticipants.ratingAfter,
+				winningTeam: guildMatches.winningTeam,
+				createdAt: guildMatches.createdAt,
+			})
+			.from(guildMatchParticipants)
+			.innerJoin(guildMatches, eq(guildMatchParticipants.matchId, guildMatches.id))
+			.where(and(eq(guildMatches.guildId, guildId), eq(guildMatchParticipants.discordId, discordId)))
+			.orderBy(desc(guildMatches.createdAt))
+			.limit(limit)
+
+		const history = participations.map((p) => ({
+			matchId: p.matchId,
+			team: p.team,
+			role: p.role,
+			ratingBefore: p.ratingBefore,
+			ratingAfter: p.ratingAfter,
+			change: p.ratingAfter - p.ratingBefore,
+			won: p.team === p.winningTeam,
+			createdAt: p.createdAt,
+		}))
+
+		return c.json({ guildId, discordId, history })
 	})

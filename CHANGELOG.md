@@ -1,5 +1,14 @@
 # @hexcuit/server
 
+## 0.4.0
+
+### Minor Changes
+
+- [#42](https://github.com/hexcuit/server/pull/42) [`834a010`](https://github.com/hexcuit/server/commit/834a0107a09686becfc5442adab075ece2d36bfb) Thanks [@11gather11](https://github.com/11gather11)! - BREAKING CHANGE: `/rank` エンドポイントを `/lol/rank` に移動
+
+  将来のサーバー内ランクシステム（`/guild/*`）追加に向けた構造変更。
+  LoL 関連の API は `/lol/*` 配下に統一。
+
 ## 0.3.0
 
 ### Minor Changes

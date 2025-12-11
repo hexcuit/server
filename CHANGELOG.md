@@ -1,5 +1,14 @@
 # @hexcuit/server
 
+## 0.8.2
+
+### Patch Changes
+
+- [#54](https://github.com/hexcuit/server/pull/54) [`0f877aa`](https://github.com/hexcuit/server/commit/0f877aad6ba6f70825d8da726b483f86d02e56b5) Thanks [@11gather11](https://github.com/11gather11)! - fix: 投票確定ロジックを過半数に変更
+
+  - 固定 6 票から参加者の過半数（Math.ceil(n/2)）に変更
+  - API レスポンスに totalParticipants, votesRequired を追加
+
 ## 0.8.1
 
 ### Patch Changes

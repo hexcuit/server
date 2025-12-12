@@ -62,6 +62,17 @@ const TeamAssignmentSchema = z.object({
 type TeamAssignment = z.infer<typeof TeamAssignmentSchema>
 type TeamAssignments = Record<string, TeamAssignment>
 
+// TeamAssignmentsのZodスキーマ（JSON文字列のパース用）
+const TeamAssignmentsSchema = z.record(z.string(), TeamAssignmentSchema)
+
+/**
+ * JSON文字列からTeamAssignmentsをパースする
+ * 型アサーションの代わりにZodでバリデーションを行う
+ */
+const parseTeamAssignments = (json: string): TeamAssignments => {
+	return TeamAssignmentsSchema.parse(JSON.parse(json))
+}
+
 // 試合作成スキーマ
 const CreateMatchSchema = z.object({
 	id: z.uuid(),
@@ -77,7 +88,11 @@ const VoteSchema = z.object({
 	vote: z.enum(['blue', 'red']),
 })
 
-// 過半数を計算するヘルパー
+/**
+ * 過半数を計算するヘルパー
+ * 投票システムで勝敗を決定するために使用
+ * 例: 10人の場合は6票、5人の場合は3票が必要
+ */
 const calculateMajority = (totalParticipants: number) => Math.ceil(totalParticipants / 2)
 
 // Guild関連のルーター
@@ -261,7 +276,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 
 		const votes = await db.select().from(guildMatchVotes).where(eq(guildMatchVotes.pendingMatchId, matchId))
 
-		const teamAssignments = JSON.parse(match.teamAssignments) as TeamAssignments
+		const teamAssignments = parseTeamAssignments(match.teamAssignments)
 
 		const totalParticipants = Object.keys(teamAssignments).length
 		return c.json({
@@ -300,7 +315,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 		}
 
 		// 参加者確認
-		const teamAssignments = JSON.parse(match.teamAssignments) as TeamAssignments
+		const teamAssignments = parseTeamAssignments(match.teamAssignments)
 		if (!teamAssignments[discordId]) {
 			return c.json({ error: 'Not a participant' }, 403)
 		}
@@ -395,7 +410,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			return c.json({ error: 'Match is not in voting state' }, 400)
 		}
 
-		const teamAssignments = JSON.parse(match.teamAssignments) as TeamAssignments
+		const teamAssignments = parseTeamAssignments(match.teamAssignments)
 		const totalParticipants = Object.keys(teamAssignments).length
 		const votesRequired = calculateMajority(totalParticipants)
 
@@ -415,7 +430,11 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 		}
 		const participants = Object.entries(teamAssignments)
 
-		// チームごとのレートを計算
+		/**
+		 * ELOレート計算のための前処理
+		 * 各チームの平均レートを算出し、相手チームとの実力差に基づいて
+		 * 勝敗によるレート変動を計算する
+		 */
 		const blueRatings = participants.filter(([, a]) => a.team === 'blue').map(([, a]) => a.rating)
 		const redRatings = participants.filter(([, a]) => a.team === 'red').map(([, a]) => a.rating)
 		const blueAverage = calculateTeamAverageRating(blueRatings)

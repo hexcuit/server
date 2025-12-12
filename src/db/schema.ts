@@ -45,7 +45,7 @@ export const riotAccountsRelations = relations(riotAccounts, ({ one }) => ({
 
 export const usersRelations = relations(users, ({ one, many }) => ({
 	riotAccount: one(riotAccounts),
-	lolRanks: one(riotAccounts),
+	lolRanks: one(lolRank),
 	recruitments: many(recruitments),
 	recruitmentParticipants: many(recruitmentParticipants),
 	guildRatings: many(guildRatings),
@@ -67,8 +67,8 @@ export const recruitments = sqliteTable('recruitments', {
 	type: text('type', { enum: ['normal', 'ranked'] })
 		.notNull()
 		.default('normal'),
-	anonymous: text('anonymous').notNull().default('false'),
-	capacity: text('capacity').notNull().default('10'),
+	anonymous: integer('anonymous', { mode: 'boolean' }).notNull().default(false),
+	capacity: integer('capacity').notNull().default(10),
 	startTime: text('start_time'),
 	status: text('status').notNull().default('open'),
 	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),

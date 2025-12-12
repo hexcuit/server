@@ -23,8 +23,14 @@ SELECT
 	"message_id",
 	"creator_id",
 	"type",
-	CASE WHEN "anonymous" = 'true' THEN 1 ELSE 0 END,
-	CAST("capacity" AS INTEGER),
+	CASE
+		WHEN "anonymous" IN ('true', 'TRUE', '1', 1) THEN 1
+		ELSE 0
+	END,
+	CASE
+		WHEN CAST("capacity" AS INTEGER) > 0 THEN CAST("capacity" AS INTEGER)
+		ELSE 10
+	END,
 	"start_time",
 	"status",
 	"created_at",

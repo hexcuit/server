@@ -51,7 +51,7 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			messageId: data.messageId,
 			creatorId: data.creatorId,
 			type: data.type,
-			anonymous: data.anonymous ? 'true' : 'false',
+			anonymous: data.anonymous,
 			startTime: data.startTime || null,
 			status: 'open',
 		})
@@ -106,7 +106,7 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			.get()
 
 		const currentCount = participantCount?.count || 0
-		const capacity = Number.parseInt(recruitment.capacity, 10)
+		const capacity = recruitment.capacity
 
 		if (currentCount >= capacity) {
 			return c.json({ error: 'Recruitment is full' }, 400)

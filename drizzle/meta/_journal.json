@@ -57,6 +57,13 @@
 			"when": 1765420896011,
 			"tag": "0007_bright_sleepwalker",
 			"breakpoints": true
+		},
+		{
+			"idx": 8,
+			"version": "6",
+			"when": 1765517339953,
+			"tag": "0008_hot_blazing_skull",
+			"breakpoints": true
 		}
 	]
 }

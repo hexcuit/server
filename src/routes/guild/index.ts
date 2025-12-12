@@ -13,7 +13,7 @@ import {
 } from '@/db/schema'
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
-import { getDb } from '@/utils/db'
+import { type DbVariables, dbMiddleware } from '@/middlewares/dbMiddleware'
 import {
 	calculateNewRating,
 	calculateTeamAverageRating,
@@ -96,14 +96,15 @@ const VoteSchema = z.object({
 const calculateMajority = (totalParticipants: number) => Math.ceil(totalParticipants / 2)
 
 // Guild関連のルーター
-export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
+export const guildRouter = new Hono<{ Bindings: Cloudflare.Env; Variables: DbVariables }>()
 	.use(corsMiddleware)
 	.use(apiKeyMiddleware)
+	.use(dbMiddleware)
 
 	// レート取得
 	.get('/rating', zValidator('query', GetRatingsQuerySchema), async (c) => {
 		const { guildId, discordIds } = c.req.valid('query')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		const ratings = await db
 			.select()
@@ -148,7 +149,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// レート初期化（初回参加時）
 	.post('/rating', zValidator('json', CreateRatingSchema), async (c) => {
 		const { guildId, discordId } = c.req.valid('json')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// ユーザー存在確認・作成
 		await db.insert(users).values({ discordId }).onConflictDoNothing()
@@ -210,7 +211,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// ランキング取得
 	.get('/ranking', zValidator('query', GetRankingQuerySchema), async (c) => {
 		const { guildId, limit } = c.req.valid('query')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// プレイスメント完了者のみ、レート順でソート
 		const rankings = await db
@@ -240,7 +241,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// 試合作成（投票開始）
 	.post('/match', zValidator('json', CreateMatchSchema), async (c) => {
 		const { id, guildId, channelId, messageId, teamAssignments } = c.req.valid('json')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// 参加者のユーザーレコードを確認・作成
 		const discordIds = Object.keys(teamAssignments)
@@ -266,7 +267,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// 試合取得
 	.get('/match/:id', async (c) => {
 		const matchId = c.req.param('id')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
 
@@ -301,7 +302,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	.post('/match/:id/vote', zValidator('json', VoteSchema), async (c) => {
 		const matchId = c.req.param('id')
 		const { discordId, vote } = c.req.valid('json')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// 試合存在確認
 		const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
@@ -397,7 +398,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// 試合確定
 	.post('/match/:id/confirm', async (c) => {
 		const matchId = c.req.param('id')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// 試合存在確認
 		const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
@@ -482,7 +483,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			})
 		}
 
-		// D1 batch APIを使ったトランザクション的処理
+		// D1 batch API（注: トランザクションではなく、部分失敗の可能性あり）
 		const statements: D1PreparedStatement[] = []
 
 		// 1. guildMatches に試合記録を作成
@@ -536,7 +537,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 			c.env.DB.prepare("UPDATE guild_pending_matches SET status = 'confirmed' WHERE id = ?").bind(matchId),
 		)
 
-		// バッチ実行（トランザクション的に処理）
+		// バッチ実行（部分失敗時はエラーログを出力）
 		const results = await c.env.DB.batch(statements)
 
 		// エラーチェック
@@ -564,7 +565,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// 試合キャンセル
 	.delete('/match/:id', async (c) => {
 		const matchId = c.req.param('id')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// 試合存在確認
 		const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
@@ -586,7 +587,7 @@ export const guildRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// 試合履歴取得
 	.get('/match-history', zValidator('query', GetMatchHistoryQuerySchema), async (c) => {
 		const { guildId, discordId, limit } = c.req.valid('query')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// ユーザーの参加した試合を取得
 		const participations = await db

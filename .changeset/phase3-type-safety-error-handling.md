@@ -2,7 +2,8 @@
 "@hexcuit/server": patch
 ---
 
-型安全性とエラーハンドリングの改善
+型安全性の向上とエラーハンドリング統一
 
-- `JSON.parse(...) as TeamAssignments` をZodバリデーションに置き換え
-- CORSミドルウェアでCORS_ORIGIN未設定時に500エラーを返すように統一
+- `JSON.parse(...) as TeamAssignments` の型アサーションをZodバリデーションに変更
+- CORSミドルウェアのエラーハンドリングをAPI Keyミドルウェアと統一（500エラー）
+- ELO計算・投票システムに説明コメントを追加

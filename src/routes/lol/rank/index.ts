@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { lolRank, lolRankZodSchema, users } from '@/db/schema'
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
-import { getDb } from '@/utils/db'
+import { type DbVariables, dbMiddleware } from '@/middlewares/dbMiddleware'
 
 const RankSchema = lolRankZodSchema
 
@@ -14,13 +14,14 @@ const GetRanksQuerySchema = z.object({
 })
 
 // ランク登録・取得用のルーター
-export const rankRouter = new Hono<{ Bindings: Cloudflare.Env }>()
+export const rankRouter = new Hono<{ Bindings: Cloudflare.Env; Variables: DbVariables }>()
 	.use(corsMiddleware)
 	.use(apiKeyMiddleware)
+	.use(dbMiddleware)
 	.post('/', zValidator('json', RankSchema), async (c) => {
 		const { discordId, tier, division } = c.req.valid('json')
 
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		await db
 			.insert(users)
@@ -39,7 +40,7 @@ export const rankRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	.get('/', zValidator('query', GetRanksQuerySchema), async (c) => {
 		const { discordIds } = c.req.valid('query')
 
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		const ranks = await db.select().from(lolRank).where(inArray(lolRank.discordId, discordIds))
 

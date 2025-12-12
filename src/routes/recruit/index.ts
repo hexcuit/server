@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { LOL_ROLES, type LolRole, recruitmentParticipants, recruitments, users } from '@/db/schema'
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
-import { getDb } from '@/utils/db'
+import { type DbVariables, dbMiddleware } from '@/middlewares/dbMiddleware'
 
 const CreateRecruitmentSchema = z.object({
 	id: z.uuid(),
@@ -32,14 +32,15 @@ const LeaveRecruitmentSchema = z.object({
 	discordId: z.string(),
 })
 
-export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
+export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env; Variables: DbVariables }>()
 	.use(corsMiddleware)
 	.use(apiKeyMiddleware)
+	.use(dbMiddleware)
 
 	// 募集作成
 	.post('/', zValidator('json', CreateRecruitmentSchema), async (c) => {
 		const data = c.req.valid('json')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// ユーザー存在確認・作成
 		await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
@@ -62,7 +63,7 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// 募集取得
 	.get('/:id', async (c) => {
 		const recruitmentId = c.req.param('id')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		const recruitment = await db.select().from(recruitments).where(eq(recruitments.id, recruitmentId)).get()
 
@@ -85,7 +86,7 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// 参加
 	.post('/join', zValidator('json', JoinRecruitmentSchema), async (c) => {
 		const { recruitmentId, discordId, mainRole, subRole } = c.req.valid('json')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// 募集存在確認
 		const recruitment = await db.select().from(recruitments).where(eq(recruitments.id, recruitmentId)).get()
@@ -167,7 +168,7 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// キャンセル
 	.post('/leave', zValidator('json', LeaveRecruitmentSchema), async (c) => {
 		const { recruitmentId, discordId } = c.req.valid('json')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// 参加確認
 		const existing = await db
@@ -216,7 +217,7 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// ロール更新
 	.post('/update-role', zValidator('json', JoinRecruitmentSchema), async (c) => {
 		const { recruitmentId, discordId, mainRole, subRole } = c.req.valid('json')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// 参加確認
 		const existing = await db
@@ -267,7 +268,7 @@ export const recruitRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	// 募集終了（物理削除）
 	.delete('/:id', async (c) => {
 		const recruitmentId = c.req.param('id')
-		const db = getDb(c.env)
+		const db = c.var.db
 
 		// CASCADE設定により recruitment_participants も自動削除される
 		await db.delete(recruitments).where(eq(recruitments.id, recruitmentId))

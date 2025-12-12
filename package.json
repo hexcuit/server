@@ -25,6 +25,9 @@
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
 		"typecheck": "tsc --noEmit",
 		"generate": "drizzle-kit generate",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage",
 		"version": "changeset version && bun i --lockfile-only",
 		"release": "changeset publish"
 	},
@@ -37,11 +40,13 @@
 		"@changesets/changelog-github": "0.5.2",
 		"@changesets/cli": "2.29.8",
 		"@hono/swagger-ui": "0.5.2",
+		"@vitest/coverage-v8": "4.0.15",
 		"drizzle-kit": "0.31.8",
 		"drizzle-orm": "0.45.1",
 		"drizzle-zod": "0.8.3",
 		"lefthook": "2.0.9",
 		"typescript": "5.9.3",
+		"vitest": "4.0.15",
 		"wrangler": "4.54.0",
 		"zod": "4.1.13"
 	}

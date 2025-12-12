@@ -1,11 +1,11 @@
 import { zValidator } from '@hono/zod-validator'
 import { inArray } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { lolRank, lolRankZodSchema, users } from '@/db/schema'
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
+import { getDb } from '@/utils/db'
 
 const RankSchema = lolRankZodSchema
 
@@ -20,7 +20,7 @@ export const rankRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	.post('/', zValidator('json', RankSchema), async (c) => {
 		const { discordId, tier, division } = c.req.valid('json')
 
-		const db = drizzle(c.env.DB)
+		const db = getDb(c.env)
 
 		await db
 			.insert(users)
@@ -39,7 +39,7 @@ export const rankRouter = new Hono<{ Bindings: Cloudflare.Env }>()
 	.get('/', zValidator('query', GetRanksQuerySchema), async (c) => {
 		const { discordIds } = c.req.valid('query')
 
-		const db = drizzle(c.env.DB)
+		const db = getDb(c.env)
 
 		const ranks = await db.select().from(lolRank).where(inArray(lolRank.discordId, discordIds))
 

@@ -1,5 +1,5 @@
 ---
-"@hexcuit/server": major
+"@hexcuit/server": minor
 ---
 
 型安全性の向上とスキーマ修正

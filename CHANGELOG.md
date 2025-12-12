@@ -1,5 +1,77 @@
 # @hexcuit/server
 
+## 0.9.0
+
+### Minor Changes
+
+- [#56](https://github.com/hexcuit/server/pull/56) [`76003c4`](https://github.com/hexcuit/server/commit/76003c4934be237db9c1efb4caf29e0a15ece286) Thanks [@11gather11](https://github.com/11gather11)! - 型安全性の向上とスキーマ修正
+
+  - tsconfig.json に`noUncheckedIndexedAccess`を追加
+  - recruitments テーブルの`anonymous`を boolean 型に変更
+  - recruitments テーブルの`capacity`を integer 型に変更
+  - usersRelations のリレーション定義を修正
+
+  ## Breaking Changes
+
+  ### `recruitments.anonymous` の型変更
+
+  - **Before**: `string` (`'true'` / `'false'`)
+  - **After**: `boolean` (`true` / `false`)
+
+  ### `recruitments.capacity` の型変更
+
+  - **Before**: `string` (`'10'`)
+  - **After**: `number` (`10`)
+
+  ## Migration Guide
+
+  ### クライアント側の対応
+
+  API レスポンスの型が変更されるため、クライアント側で以下の対応が必要です：
+
+  ```typescript
+  // Before
+  const isAnonymous = recruitment.anonymous === "true";
+  const capacity = Number.parseInt(recruitment.capacity, 10);
+
+  // After
+  const isAnonymous = recruitment.anonymous; // boolean型
+  const capacity = recruitment.capacity; // number型
+  ```
+
+  ### 型定義の更新
+
+  `@hexcuit/server`パッケージを更新後、TypeScript の型エラーが発生する場合は上記の変換処理を削除してください。
+
+- [#62](https://github.com/hexcuit/server/pull/62) [`e64f6b8`](https://github.com/hexcuit/server/commit/e64f6b8384f7876da224f0938e6c2a59379efaaa) Thanks [@11gather11](https://github.com/11gather11)! - テスト環境のセットアップ
+
+  - Vitest と @vitest/coverage-v8 を追加
+  - テスト実行用スクリプト追加（test, test:watch, test:coverage）
+  - テスト用に `app` インスタンスをエクスポート
+  - vitest.config.ts と tsconfig.test.json を追加
+  - テストファイル群を追加（**tests**/ ディレクトリ）
+
+### Patch Changes
+
+- [#60](https://github.com/hexcuit/server/pull/60) [`3fafec8`](https://github.com/hexcuit/server/commit/3fafec8d2ff7f3676e6cf0f9f7086c6a5c46e219) Thanks [@11gather11](https://github.com/11gather11)! - DB 接続管理のリファクタリング
+
+  - D1 batch API のコメントを修正（トランザクション的処理 → 部分失敗の可能性を明記）
+  - DB 接続をミドルウェアに集約し、各ルーターで`c.var.db`から取得する形に統一
+  - 新規ファイル: `src/middlewares/dbMiddleware.ts`
+  - 影響範囲: `routes/guild/index.ts`, `routes/lol/rank/index.ts`, `routes/recruit/index.ts`
+
+- [#58](https://github.com/hexcuit/server/pull/58) [`09fbf64`](https://github.com/hexcuit/server/commit/09fbf64bf7780fec6e9f66c7f428b91445721f27) Thanks [@11gather11](https://github.com/11gather11)! - DB アクセスの最適化とトランザクション対応
+
+  - `getDb()` ヘルパー関数を追加し、全ルーターで統一的な DB 接続を提供
+  - 試合確定処理の N+1 クエリ問題を解消（参加者レーティングの一括取得）
+  - D1 batch API を使用してトランザクション的な原子操作を実現
+
+- [#59](https://github.com/hexcuit/server/pull/59) [`3b9b790`](https://github.com/hexcuit/server/commit/3b9b7901611e2bc2f665bf206df9d361e39844f5) Thanks [@11gather11](https://github.com/11gather11)! - 型安全性の向上とエラーハンドリング統一
+
+  - `JSON.parse(...) as TeamAssignments` の型アサーションを Zod バリデーションに変更
+  - CORS ミドルウェアのエラーハンドリングを API Key ミドルウェアと統一（500 エラー）
+  - ELO 計算・投票システムに説明コメントを追加
+
 ## 0.8.2
 
 ### Patch Changes

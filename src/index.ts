@@ -62,6 +62,7 @@ app.openAPIRegistry.registerComponent('securitySchemes', 'apiKey', {
 // Swagger UIを /ui で提供
 app.get('/ui', swaggerUI({ url: '/doc' }))
 
+export { app }
 export type AppType = typeof app
 
 export default {

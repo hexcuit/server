@@ -101,7 +101,7 @@ const calculateMajority = (totalParticipants: number) => Math.ceil(totalParticip
 const RankDetailSchema = z
 	.object({
 		tier: z.string(),
-		division: z.string(),
+		division: z.string().nullable(),
 		lp: z.number(),
 	})
 	.openapi('RankDetail')

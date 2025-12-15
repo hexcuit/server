@@ -17,8 +17,11 @@ const healthRoute = createRoute({
 		200: {
 			description: 'サーバー稼働中',
 			content: {
-				'text/plain': {
-					schema: z.string().openapi('HealthCheckResponse'),
+				'application/json': {
+					schema: z.object({
+						status: z.string(),
+						version: z.string(),
+					}),
 				},
 			},
 		},
@@ -26,7 +29,7 @@ const healthRoute = createRoute({
 })
 export const app = new OpenAPIHono()
 	.openapi(healthRoute, (c) => {
-		return c.text(`Hexcuit Server is running! | v ${version.version}`)
+		return c.json({ status: 'ok', version: version.version })
 	})
 	.route('/lol', lolRouter)
 	.route('/guild', guildRouter)

@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm'
+import { drizzle } from 'drizzle-orm/d1'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { getPlatformProxy } from 'wrangler'
 import { lolRank, users } from '@/db/schema'
 import { app } from '@/index'
-import { getDb } from '@/utils/db'
 
 describe('LoL Rank API', () => {
 	const testDiscordId = 'test-user-123'
@@ -25,7 +25,7 @@ describe('LoL Rank API', () => {
 	})
 
 	beforeEach(async () => {
-		const db = getDb(env)
+		const db = drizzle(env.DB)
 
 		// テストデータをクリーンアップ
 		await db.delete(lolRank).where(eq(lolRank.discordId, testDiscordId))
@@ -58,7 +58,7 @@ describe('LoL Rank API', () => {
 			expect(data.message).toContain('正常に登録')
 
 			// DBに保存されているか確認
-			const db = getDb(env)
+			const db = drizzle(env.DB)
 			const saved = await db.select().from(lolRank).where(eq(lolRank.discordId, testDiscordId)).get()
 
 			expect(saved).toBeDefined()
@@ -67,7 +67,7 @@ describe('LoL Rank API', () => {
 		})
 
 		it('既存ランクを上書きできる', async () => {
-			const db = getDb(env)
+			const db = drizzle(env.DB)
 
 			// 初回登録
 			await db.insert(users).values({ discordId: testDiscordId })
@@ -166,7 +166,7 @@ describe('LoL Rank API', () => {
 
 	describe('GET /lol/rank', () => {
 		beforeEach(async () => {
-			const db = getDb(env)
+			const db = drizzle(env.DB)
 
 			// テストデータを準備
 			await db.insert(users).values({ discordId: testDiscordId })
@@ -231,7 +231,7 @@ describe('LoL Rank API', () => {
 		})
 
 		it('複数ユーザーのランクを一括取得できる', async () => {
-			const db = getDb(env)
+			const db = drizzle(env.DB)
 
 			const user2 = 'test-user-456'
 			await db.insert(users).values({ discordId: user2 })

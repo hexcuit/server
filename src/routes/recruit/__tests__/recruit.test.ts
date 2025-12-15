@@ -79,7 +79,7 @@ describe('Recruitment API', () => {
 			expect(saved?.status).toBe('open')
 		})
 
-		it('APIキーなしで403を返す', async () => {
+		it('APIキーなしで401を返す', async () => {
 			const res = await app.request(
 				'/recruit',
 				{
@@ -100,7 +100,7 @@ describe('Recruitment API', () => {
 				env,
 			)
 
-			expect(res.status).toBe(403)
+			expect(res.status).toBe(401)
 		})
 	})
 

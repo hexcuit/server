@@ -102,7 +102,7 @@ describe('LoL Rank API', () => {
 			expect(updated?.division).toBe('IV')
 		})
 
-		it('APIキーなしで403を返す', async () => {
+		it('APIキーなしで401を返す', async () => {
 			const res = await app.request(
 				'/lol/rank',
 				{
@@ -119,10 +119,10 @@ describe('LoL Rank API', () => {
 				env,
 			)
 
-			expect(res.status).toBe(403)
+			expect(res.status).toBe(401)
 		})
 
-		it('不正なAPIキーで403を返す', async () => {
+		it('不正なAPIキーで401を返す', async () => {
 			const res = await app.request(
 				'/lol/rank',
 				{
@@ -140,7 +140,7 @@ describe('LoL Rank API', () => {
 				env,
 			)
 
-			expect(res.status).toBe(403)
+			expect(res.status).toBe(401)
 		})
 
 		it('バリデーションエラーで400を返す', async () => {
@@ -264,7 +264,7 @@ describe('LoL Rank API', () => {
 			await db.delete(users).where(eq(users.discordId, user2))
 		})
 
-		it('APIキーなしで403を返す', async () => {
+		it('APIキーなしで401を返す', async () => {
 			const res = await app.request(
 				`/lol/rank?discordIds=${testDiscordId}`,
 				{
@@ -273,7 +273,7 @@ describe('LoL Rank API', () => {
 				env,
 			)
 
-			expect(res.status).toBe(403)
+			expect(res.status).toBe(401)
 		})
 	})
 })

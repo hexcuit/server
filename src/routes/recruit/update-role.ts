@@ -2,7 +2,8 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { HTTPException } from 'hono/http-exception'
-import { type LolRole, recruitmentParticipants } from '@/db/schema'
+import type { LolRole } from '@/constants'
+import { recruitmentParticipants } from '@/db/schema'
 import { JoinRecruitmentSchema, UpdateRoleResponseSchema } from './schemas'
 
 const updateRoleRoute = createRoute({

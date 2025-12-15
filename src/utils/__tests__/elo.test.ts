@@ -93,83 +93,83 @@ describe('Elo Rating Utilities', () => {
 		})
 
 		describe('ティア境界', () => {
-			it('0 → Iron IV 0LP', () => {
-				expect(getRankDisplay(0)).toEqual({ tier: 'Iron', division: 'IV', lp: 0 })
+			it('0 → IRON IV 0LP', () => {
+				expect(getRankDisplay(0)).toEqual({ tier: 'IRON', division: 'IV', lp: 0 })
 			})
 
-			it('399 → Iron I 99LP', () => {
-				expect(getRankDisplay(399)).toEqual({ tier: 'Iron', division: 'I', lp: 99 })
+			it('399 → IRON I 99LP', () => {
+				expect(getRankDisplay(399)).toEqual({ tier: 'IRON', division: 'I', lp: 99 })
 			})
 
-			it('400 → Bronze IV 0LP', () => {
-				expect(getRankDisplay(400)).toEqual({ tier: 'Bronze', division: 'IV', lp: 0 })
+			it('400 → BRONZE IV 0LP', () => {
+				expect(getRankDisplay(400)).toEqual({ tier: 'BRONZE', division: 'IV', lp: 0 })
 			})
 
-			it('1199 → Silver I 99LP', () => {
-				expect(getRankDisplay(1199)).toEqual({ tier: 'Silver', division: 'I', lp: 99 })
+			it('1199 → SILVER I 99LP', () => {
+				expect(getRankDisplay(1199)).toEqual({ tier: 'SILVER', division: 'I', lp: 99 })
 			})
 
-			it('1200 → Gold IV 0LP (初期レート)', () => {
-				expect(getRankDisplay(1200)).toEqual({ tier: 'Gold', division: 'IV', lp: 0 })
+			it('1200 → GOLD IV 0LP (初期レート)', () => {
+				expect(getRankDisplay(1200)).toEqual({ tier: 'GOLD', division: 'IV', lp: 0 })
 			})
 
-			it('2799 → Diamond I 99LP', () => {
-				expect(getRankDisplay(2799)).toEqual({ tier: 'Diamond', division: 'I', lp: 99 })
+			it('2799 → DIAMOND I 99LP', () => {
+				expect(getRankDisplay(2799)).toEqual({ tier: 'DIAMOND', division: 'I', lp: 99 })
 			})
 
-			it('2800 → Master 0LP', () => {
-				expect(getRankDisplay(2800)).toEqual({ tier: 'Master', division: null, lp: 0 })
-			})
-		})
-
-		describe('Division境界 (Goldで代表)', () => {
-			it('1299 → Gold IV 99LP', () => {
-				expect(getRankDisplay(1299)).toEqual({ tier: 'Gold', division: 'IV', lp: 99 })
-			})
-
-			it('1300 → Gold III 0LP', () => {
-				expect(getRankDisplay(1300)).toEqual({ tier: 'Gold', division: 'III', lp: 0 })
-			})
-
-			it('1400 → Gold II 0LP', () => {
-				expect(getRankDisplay(1400)).toEqual({ tier: 'Gold', division: 'II', lp: 0 })
-			})
-
-			it('1500 → Gold I 0LP', () => {
-				expect(getRankDisplay(1500)).toEqual({ tier: 'Gold', division: 'I', lp: 0 })
-			})
-
-			it('1599 → Gold I 99LP', () => {
-				expect(getRankDisplay(1599)).toEqual({ tier: 'Gold', division: 'I', lp: 99 })
+			it('2800 → MASTER 0LP', () => {
+				expect(getRankDisplay(2800)).toEqual({ tier: 'MASTER', division: null, lp: 0 })
 			})
 		})
 
-		describe('Master以上 (ディビジョンなし)', () => {
-			it('Master: LP = rating - 2800', () => {
-				expect(getRankDisplay(3000)).toEqual({ tier: 'Master', division: null, lp: 200 })
+		describe('Division境界 (GOLDで代表)', () => {
+			it('1299 → GOLD IV 99LP', () => {
+				expect(getRankDisplay(1299)).toEqual({ tier: 'GOLD', division: 'IV', lp: 99 })
 			})
 
-			it('3200 → Grandmaster 0LP', () => {
-				expect(getRankDisplay(3200)).toEqual({ tier: 'Grandmaster', division: null, lp: 0 })
+			it('1300 → GOLD III 0LP', () => {
+				expect(getRankDisplay(1300)).toEqual({ tier: 'GOLD', division: 'III', lp: 0 })
 			})
 
-			it('3600 → Challenger 0LP', () => {
-				expect(getRankDisplay(3600)).toEqual({ tier: 'Challenger', division: null, lp: 0 })
+			it('1400 → GOLD II 0LP', () => {
+				expect(getRankDisplay(1400)).toEqual({ tier: 'GOLD', division: 'II', lp: 0 })
 			})
 
-			it('Challenger: LP上限なし', () => {
-				expect(getRankDisplay(4000)).toEqual({ tier: 'Challenger', division: null, lp: 400 })
+			it('1500 → GOLD I 0LP', () => {
+				expect(getRankDisplay(1500)).toEqual({ tier: 'GOLD', division: 'I', lp: 0 })
+			})
+
+			it('1599 → GOLD I 99LP', () => {
+				expect(getRankDisplay(1599)).toEqual({ tier: 'GOLD', division: 'I', lp: 99 })
+			})
+		})
+
+		describe('MASTER以上 (ディビジョンなし)', () => {
+			it('MASTER: LP = rating - 2800', () => {
+				expect(getRankDisplay(3000)).toEqual({ tier: 'MASTER', division: null, lp: 200 })
+			})
+
+			it('3200 → GRANDMASTER 0LP', () => {
+				expect(getRankDisplay(3200)).toEqual({ tier: 'GRANDMASTER', division: null, lp: 0 })
+			})
+
+			it('3600 → CHALLENGER 0LP', () => {
+				expect(getRankDisplay(3600)).toEqual({ tier: 'CHALLENGER', division: null, lp: 0 })
+			})
+
+			it('CHALLENGER: LP上限なし', () => {
+				expect(getRankDisplay(4000)).toEqual({ tier: 'CHALLENGER', division: null, lp: 400 })
 			})
 		})
 	})
 
 	describe('formatRankDisplay', () => {
 		it('ディビジョンあり', () => {
-			expect(formatRankDisplay({ tier: 'Gold', division: 'IV', lp: 0 })).toBe('Gold IV 0LP')
+			expect(formatRankDisplay({ tier: 'GOLD', division: 'IV', lp: 0 })).toBe('GOLD IV 0LP')
 		})
 
 		it('ディビジョンなし', () => {
-			expect(formatRankDisplay({ tier: 'Master', division: null, lp: 120 })).toBe('Master 120LP')
+			expect(formatRankDisplay({ tier: 'MASTER', division: null, lp: 120 })).toBe('MASTER 120LP')
 		})
 	})
 

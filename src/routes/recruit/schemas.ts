@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi'
-import { LOL_ROLES } from '@/db/schema'
+import { LOL_ROLES } from '@/constants'
 
 // ========== リクエストスキーマ ==========
 

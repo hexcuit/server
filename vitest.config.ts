@@ -20,5 +20,9 @@ export default defineConfig({
 		sequence: {
 			concurrent: false,
 		},
+		coverage: {
+			include: ['src/**/*.ts'],
+			exclude: ['src/**/__tests__/**', 'src/**/*.test.ts', 'src/client.ts'],
+		},
 	},
 })

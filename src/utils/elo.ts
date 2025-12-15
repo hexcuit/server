@@ -1,41 +1,53 @@
-// Eloレーティング計算ユーティリティ
-
-// 定数
-export const INITIAL_RATING = 1500
+export const INITIAL_RATING = 1200
 export const K_FACTOR_NORMAL = 32
 export const K_FACTOR_PLACEMENT = 64
 export const PLACEMENT_GAMES = 5
 
-// ティア定義
-export const TIERS = [
-	{ name: 'Iron', min: 0, max: 1099, divisions: 4 },
-	{ name: 'Bronze', min: 1100, max: 1249, divisions: 4 },
-	{ name: 'Silver', min: 1250, max: 1399, divisions: 4 },
-	{ name: 'Gold', min: 1400, max: 1549, divisions: 4 },
-	{ name: 'Platinum', min: 1550, max: 1699, divisions: 4 },
-	{ name: 'Emerald', min: 1700, max: 1849, divisions: 4 },
-	{ name: 'Diamond', min: 1850, max: 1999, divisions: 4 },
-	{ name: 'Master', min: 2000, max: 2149, divisions: 0 },
-	{ name: 'Grandmaster', min: 2150, max: 2299, divisions: 0 },
-	{ name: 'Challenger', min: 2300, max: Number.POSITIVE_INFINITY, divisions: 0 },
+const DIVISION_POINT_RANGE = 100
+const DIVISIONS_PER_TIER = 4
+const ELO_BASE = 10
+const ELO_DIVISOR = 400
+const MIN_RATING = 0
+
+const DIVISIONS = ['IV', 'III', 'II', 'I'] as const
+
+interface Tier {
+	readonly name: string
+	readonly min: number
+	readonly max: number
+	readonly divisions: number
+}
+
+export const TIERS: readonly Tier[] = [
+	{ name: 'Iron', min: 0, max: 399, divisions: DIVISIONS_PER_TIER },
+	{ name: 'Bronze', min: 400, max: 799, divisions: DIVISIONS_PER_TIER },
+	{ name: 'Silver', min: 800, max: 1199, divisions: DIVISIONS_PER_TIER },
+	{ name: 'Gold', min: 1200, max: 1599, divisions: DIVISIONS_PER_TIER },
+	{ name: 'Platinum', min: 1600, max: 1999, divisions: DIVISIONS_PER_TIER },
+	{ name: 'Emerald', min: 2000, max: 2399, divisions: DIVISIONS_PER_TIER },
+	{ name: 'Diamond', min: 2400, max: 2799, divisions: DIVISIONS_PER_TIER },
+	{ name: 'Master', min: 2800, max: 3199, divisions: 0 },
+	{ name: 'Grandmaster', min: 3200, max: 3599, divisions: 0 },
+	{ name: 'Challenger', min: 3600, max: Number.POSITIVE_INFINITY, divisions: 0 },
 ] as const
 
 export type TierName = (typeof TIERS)[number]['name']
-export type Division = 'IV' | 'III' | 'II' | 'I' | ''
+export type Division = (typeof DIVISIONS)[number]
 
 export interface RankDisplay {
 	tier: TierName
-	division: Division
+	division: Division | null
 	lp: number
 }
 
 /**
- * 期待勝率を計算
+ * 期待勝率を計算（Eloレーティングシステム）
  * @param myRating 自分のレート
  * @param opponentRating 相手（チーム平均）のレート
+ * @returns 期待勝率（0.0 - 1.0）
  */
 export function calculateExpectedScore(myRating: number, opponentRating: number): number {
-	return 1 / (1 + 10 ** ((opponentRating - myRating) / 400))
+	return 1 / (1 + ELO_BASE ** ((opponentRating - myRating) / ELO_DIVISOR))
 }
 
 /**
@@ -44,6 +56,7 @@ export function calculateExpectedScore(myRating: number, opponentRating: number)
  * @param opponentAverageRating 相手チームの平均レート
  * @param won 勝利したかどうか
  * @param isPlacement プレイスメント中かどうか
+ * @returns 新しいレート（最低値: 0）
  */
 export function calculateNewRating(
 	currentRating: number,
@@ -54,71 +67,84 @@ export function calculateNewRating(
 	const kFactor = isPlacement ? K_FACTOR_PLACEMENT : K_FACTOR_NORMAL
 	const expectedScore = calculateExpectedScore(currentRating, opponentAverageRating)
 	const actualScore = won ? 1 : 0
-
 	const newRating = currentRating + kFactor * (actualScore - expectedScore)
 
-	// 最低0に制限
-	return Math.max(0, Math.round(newRating))
+	return Math.max(MIN_RATING, Math.round(newRating))
 }
 
 /**
  * チームの平均レートを計算
  * @param ratings チームメンバーのレート配列
+ * @returns 平均レート（空配列の場合は初期レート）
  */
 export function calculateTeamAverageRating(ratings: number[]): number {
-	if (ratings.length === 0) return INITIAL_RATING
-	return Math.round(ratings.reduce((sum, r) => sum + r, 0) / ratings.length)
+	if (ratings.length === 0) {
+		return INITIAL_RATING
+	}
+	const sum = ratings.reduce((acc, rating) => acc + rating, 0)
+	return Math.round(sum / ratings.length)
+}
+
+/**
+ * Division index を Division 文字列に変換
+ * @param index Division index (0-3)
+ * @returns Division 文字列 (IV, III, II, I)
+ */
+function getDivision(index: number): Division {
+	switch (index) {
+		case 0:
+			return 'IV'
+		case 1:
+			return 'III'
+		case 2:
+			return 'II'
+		default:
+			return 'I'
+	}
 }
 
 /**
  * レートからランク表示を取得
  * @param rating レート値
+ * @returns ランク表示オブジェクト（ティア、ディビジョン、LP）
+ * @throws {Error} 無効なレート値の場合
  */
 export function getRankDisplay(rating: number): RankDisplay {
-	// ティアを特定
 	const tier = TIERS.find((t) => rating >= t.min && rating <= t.max)
 	if (!tier) {
-		// フォールバック（理論上到達しない）
-		return { tier: 'Iron', division: 'IV', lp: 0 }
+		throw new Error(`Invalid rating: ${rating}`)
 	}
 
-	// Division無しのティア（Master以上）
-	if (tier.divisions === 0) {
-		const lp = rating - tier.min
-		return { tier: tier.name, division: '', lp }
-	}
-
-	// ティア内の位置を計算
-	const tierRange = tier.max - tier.min + 1
-	const divisionRange = tierRange / tier.divisions
 	const positionInTier = rating - tier.min
 
-	// Division を特定（IV=0, III=1, II=2, I=3）
-	const divisionIndex = Math.min(Math.floor(positionInTier / divisionRange), tier.divisions - 1)
-	const divisions: Division[] = ['IV', 'III', 'II', 'I']
-	const division = divisions[divisionIndex] ?? 'IV'
+	if (tier.divisions === 0) {
+		return { tier: tier.name as TierName, division: null, lp: positionInTier }
+	}
 
-	// LP を計算（Division内の位置を0-99に正規化）
-	const positionInDivision = positionInTier - divisionIndex * divisionRange
-	const lp = Math.min(99, Math.floor((positionInDivision / divisionRange) * 100))
+	const divisionIndex = Math.floor(positionInTier / DIVISION_POINT_RANGE)
+	const division = getDivision(divisionIndex)
+	const lp = positionInTier % DIVISION_POINT_RANGE
 
-	return { tier: tier.name, division, lp }
+	return { tier: tier.name as TierName, division, lp }
 }
 
 /**
  * ランク表示を文字列に変換
  * @param rankDisplay ランク表示オブジェクト
+ * @returns フォーマットされたランク文字列（例: "Gold IV 50LP", "Master 200LP"）
  */
 export function formatRankDisplay(rankDisplay: RankDisplay): string {
-	if (rankDisplay.division === '') {
-		return `${rankDisplay.tier} ${rankDisplay.lp}LP`
+	const { tier, division, lp } = rankDisplay
+	if (division === null) {
+		return `${tier} ${lp}LP`
 	}
-	return `${rankDisplay.tier} ${rankDisplay.division} ${rankDisplay.lp}LP`
+	return `${tier} ${division} ${lp}LP`
 }
 
 /**
  * プレイスメント中かどうかを判定
  * @param placementGames 完了したプレイスメント試合数
+ * @returns プレイスメント中の場合true
  */
 export function isInPlacement(placementGames: number): boolean {
 	return placementGames < PLACEMENT_GAMES

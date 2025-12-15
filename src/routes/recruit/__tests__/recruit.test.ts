@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm'
+import { drizzle } from 'drizzle-orm/d1'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { getPlatformProxy } from 'wrangler'
 import { recruitmentParticipants, recruitments, users } from '@/db/schema'
 import { app } from '@/index'
-import { getDb } from '@/utils/db'
 
 describe('Recruitment API', () => {
 	const apiKey = 'test-api-key'
@@ -30,7 +30,7 @@ describe('Recruitment API', () => {
 	})
 
 	beforeEach(async () => {
-		const db = getDb(env)
+		const db = drizzle(env.DB)
 
 		// クリーンアップ
 		await db.delete(recruitmentParticipants).where(eq(recruitmentParticipants.recruitmentId, recruitmentId))
@@ -71,7 +71,7 @@ describe('Recruitment API', () => {
 			})
 
 			// DBに保存されているか確認
-			const db = getDb(env)
+			const db = drizzle(env.DB)
 			const saved = await db.select().from(recruitments).where(eq(recruitments.id, recruitmentId)).get()
 
 			expect(saved).toBeDefined()
@@ -106,7 +106,7 @@ describe('Recruitment API', () => {
 
 	describe('GET /recruit/:id', () => {
 		beforeEach(async () => {
-			const db = getDb(env)
+			const db = drizzle(env.DB)
 
 			// 募集を作成
 			await db.insert(users).values({ discordId: testCreatorId })
@@ -166,7 +166,7 @@ describe('Recruitment API', () => {
 
 	describe('POST /recruit/join', () => {
 		beforeEach(async () => {
-			const db = getDb(env)
+			const db = drizzle(env.DB)
 
 			await db.insert(users).values({ discordId: testCreatorId })
 			await db.insert(users).values({ discordId: testUserId })
@@ -281,7 +281,7 @@ describe('Recruitment API', () => {
 
 	describe('POST /recruit/leave', () => {
 		beforeEach(async () => {
-			const db = getDb(env)
+			const db = drizzle(env.DB)
 
 			await db.insert(users).values({ discordId: testCreatorId })
 			await db.insert(users).values({ discordId: testUserId })
@@ -356,7 +356,7 @@ describe('Recruitment API', () => {
 
 	describe('DELETE /recruit/:id', () => {
 		beforeEach(async () => {
-			const db = getDb(env)
+			const db = drizzle(env.DB)
 
 			await db.insert(users).values({ discordId: testCreatorId })
 			await db.insert(recruitments).values({
@@ -389,7 +389,7 @@ describe('Recruitment API', () => {
 			expect(data.success).toBe(true)
 
 			// DBから削除されているか確認
-			const db = getDb(env)
+			const db = drizzle(env.DB)
 			const deleted = await db.select().from(recruitments).where(eq(recruitments.id, recruitmentId)).get()
 			expect(deleted).toBeUndefined()
 		})

@@ -5,8 +5,6 @@ import { lolRouter } from '@/routes/lol'
 import { recruitRouter } from '@/routes/recruit'
 import version from '../package.json'
 
-const app = new OpenAPIHono()
-
 // ヘルスチェック
 const healthRoute = createRoute({
 	method: 'get',
@@ -19,21 +17,23 @@ const healthRoute = createRoute({
 		200: {
 			description: 'サーバー稼働中',
 			content: {
-				'text/plain': {
-					schema: z.string().openapi({ example: 'Hexcuit Server is running! | v 1.0.0' }),
+				'application/json': {
+					schema: z.object({
+						status: z.string(),
+						version: z.string(),
+					}),
 				},
 			},
 		},
 	},
 })
-
-app.openapi(healthRoute, (c) => {
-	return c.text(`Hexcuit Server is running! | v ${version.version}`)
-})
-
-app.route('/lol', lolRouter)
-app.route('/guild', guildRouter)
-app.route('/recruit', recruitRouter)
+export const app = new OpenAPIHono()
+	.openapi(healthRoute, (c) => {
+		return c.json({ status: 'ok', version: version.version })
+	})
+	.route('/lol', lolRouter)
+	.route('/guild', guildRouter)
+	.route('/recruit', recruitRouter)
 
 // OpenAPI仕様ドキュメントを /doc で提供
 app.doc('/doc', {
@@ -43,11 +43,6 @@ app.doc('/doc', {
 		title: 'Hexcuit API',
 		description: 'League of Legends rank tracking and team balancing API',
 	},
-	tags: [
-		{ name: 'LoL Rank', description: 'LoL official rank management' },
-		{ name: 'Guild Rating', description: 'Guild-specific rating system' },
-		{ name: 'Recruitment', description: 'Game recruitment management' },
-	],
 	security: [{ apiKey: [] }],
 })
 
@@ -62,7 +57,6 @@ app.openAPIRegistry.registerComponent('securitySchemes', 'apiKey', {
 // Swagger UIを /ui で提供
 app.get('/ui', swaggerUI({ url: '/doc' }))
 
-export { app }
 export type AppType = typeof app
 
 export default {

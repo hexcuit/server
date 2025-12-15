@@ -7,7 +7,7 @@ export const apiKeyMiddleware = createMiddleware<{ Bindings: Cloudflare.Env }>(a
 	}
 
 	if (c.req.header('x-api-key') !== c.env.API_KEY) {
-		return c.json({ error: 'Access denied' }, 403)
+		return c.json({ error: 'Unauthorized' }, 401)
 	}
 
 	await next()

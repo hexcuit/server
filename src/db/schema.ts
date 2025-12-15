@@ -1,6 +1,7 @@
 import { relations, sql } from 'drizzle-orm'
 import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema } from 'drizzle-zod'
+import { LOL_DIVISIONS, LOL_ROLES, LOL_TIERS } from '@/constants'
 
 export const users = sqliteTable('users', {
 	discordId: text('discord_id').primaryKey(),
@@ -18,8 +19,8 @@ export const lolRank = sqliteTable('lol_rank', {
 			onDelete: 'cascade',
 			onUpdate: 'cascade',
 		}),
-	tier: text('tier').notNull(),
-	division: text('division').notNull(),
+	tier: text('tier', { enum: LOL_TIERS }).notNull(),
+	division: text('division', { enum: LOL_DIVISIONS }).notNull(),
 })
 
 export const riotAccounts = sqliteTable('riot_accounts', {
@@ -77,10 +78,6 @@ export const recruitments = sqliteTable('recruitments', {
 		.default(sql`(current_timestamp)`)
 		.$onUpdateFn(() => sql`(current_timestamp)`),
 })
-
-// LoLロール定義
-export const LOL_ROLES = ['top', 'jungle', 'mid', 'adc', 'support'] as const
-export type LolRole = (typeof LOL_ROLES)[number]
 
 // 募集参加者テーブル
 export const recruitmentParticipants = sqliteTable('recruitment_participants', {
@@ -256,8 +253,6 @@ export const guildMatchVotesRelations = relations(guildMatchVotes, ({ one }) => 
 }))
 
 export const userZodSchema = createInsertSchema(users)
-
-export const lolRankZodSchema = createInsertSchema(lolRank)
 
 export const recruitmentZodSchema = createInsertSchema(recruitments)
 

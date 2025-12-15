@@ -1,3 +1,5 @@
+import type { LolDivision, LolTier } from '@/constants/lol'
+
 export const INITIAL_RATING = 1200
 export const K_FACTOR_NORMAL = 32
 export const K_FACTOR_PLACEMENT = 64
@@ -9,34 +11,29 @@ const ELO_BASE = 10
 const ELO_DIVISOR = 400
 const MIN_RATING = 0
 
-const DIVISIONS = ['IV', 'III', 'II', 'I'] as const
-
 interface Tier {
-	readonly name: string
+	readonly name: LolTier
 	readonly min: number
 	readonly max: number
 	readonly divisions: number
 }
 
 export const TIERS: readonly Tier[] = [
-	{ name: 'Iron', min: 0, max: 399, divisions: DIVISIONS_PER_TIER },
-	{ name: 'Bronze', min: 400, max: 799, divisions: DIVISIONS_PER_TIER },
-	{ name: 'Silver', min: 800, max: 1199, divisions: DIVISIONS_PER_TIER },
-	{ name: 'Gold', min: 1200, max: 1599, divisions: DIVISIONS_PER_TIER },
-	{ name: 'Platinum', min: 1600, max: 1999, divisions: DIVISIONS_PER_TIER },
-	{ name: 'Emerald', min: 2000, max: 2399, divisions: DIVISIONS_PER_TIER },
-	{ name: 'Diamond', min: 2400, max: 2799, divisions: DIVISIONS_PER_TIER },
-	{ name: 'Master', min: 2800, max: 3199, divisions: 0 },
-	{ name: 'Grandmaster', min: 3200, max: 3599, divisions: 0 },
-	{ name: 'Challenger', min: 3600, max: Number.POSITIVE_INFINITY, divisions: 0 },
+	{ name: 'IRON', min: 0, max: 399, divisions: DIVISIONS_PER_TIER },
+	{ name: 'BRONZE', min: 400, max: 799, divisions: DIVISIONS_PER_TIER },
+	{ name: 'SILVER', min: 800, max: 1199, divisions: DIVISIONS_PER_TIER },
+	{ name: 'GOLD', min: 1200, max: 1599, divisions: DIVISIONS_PER_TIER },
+	{ name: 'PLATINUM', min: 1600, max: 1999, divisions: DIVISIONS_PER_TIER },
+	{ name: 'EMERALD', min: 2000, max: 2399, divisions: DIVISIONS_PER_TIER },
+	{ name: 'DIAMOND', min: 2400, max: 2799, divisions: DIVISIONS_PER_TIER },
+	{ name: 'MASTER', min: 2800, max: 3199, divisions: 0 },
+	{ name: 'GRANDMASTER', min: 3200, max: 3599, divisions: 0 },
+	{ name: 'CHALLENGER', min: 3600, max: Number.POSITIVE_INFINITY, divisions: 0 },
 ] as const
 
-export type TierName = (typeof TIERS)[number]['name']
-export type Division = (typeof DIVISIONS)[number]
-
 export interface RankDisplay {
-	tier: TierName
-	division: Division | null
+	tier: LolTier
+	division: LolDivision | null
 	lp: number
 }
 
@@ -90,7 +87,7 @@ export function calculateTeamAverageRating(ratings: number[]): number {
  * @param index Division index (0-3)
  * @returns Division 文字列 (IV, III, II, I)
  */
-function getDivision(index: number): Division {
+function getDivision(index: number): LolDivision {
 	switch (index) {
 		case 0:
 			return 'IV'
@@ -118,14 +115,14 @@ export function getRankDisplay(rating: number): RankDisplay {
 	const positionInTier = rating - tier.min
 
 	if (tier.divisions === 0) {
-		return { tier: tier.name as TierName, division: null, lp: positionInTier }
+		return { tier: tier.name, division: null, lp: positionInTier }
 	}
 
 	const divisionIndex = Math.floor(positionInTier / DIVISION_POINT_RANGE)
 	const division = getDivision(divisionIndex)
 	const lp = positionInTier % DIVISION_POINT_RANGE
 
-	return { tier: tier.name as TierName, division, lp }
+	return { tier: tier.name, division, lp }
 }
 
 /**

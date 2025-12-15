@@ -1,9 +1,10 @@
 import { z } from '@hono/zod-openapi'
-import { lolRankZodSchema } from '@/db/schema'
+import { createInsertSchema } from 'drizzle-zod'
+import { lolRank } from '@/db/schema'
 
 // ========== リクエストスキーマ ==========
 
-export const RankSchema = lolRankZodSchema.openapi('LolRank')
+export const RankSchema = createInsertSchema(lolRank).openapi('LolRank')
 
 export const GetRanksQuerySchema = z
 	.object({

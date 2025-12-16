@@ -19,11 +19,11 @@
 	"scripts": {
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy --minify",
-		"build": "tsup && tsc --emitDeclarationOnly",
+		"build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly",
 		"check": "biome check",
 		"check:fix": "biome check --fix --unsafe",
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "tsc -p tsconfig.build.json --noEmit",
 		"generate": "drizzle-kit generate",
 		"test": "vitest run",
 		"test:watch": "vitest",

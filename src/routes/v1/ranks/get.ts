@@ -7,15 +7,15 @@ import { GetRanksQuerySchema, GetRanksResponseSchema } from './schemas'
 const getRanksRoute = createRoute({
 	method: 'get',
 	path: '/',
-	tags: ['LoL Rank'],
-	summary: 'LoLランク情報を取得',
-	description: 'Discord IDのリストから対応するLoLランク情報を取得します',
+	tags: ['LoL Ranks'],
+	summary: 'Get LoL ranks',
+	description: 'Get LoL rank information for a list of Discord IDs',
 	request: {
 		query: GetRanksQuerySchema,
 	},
 	responses: {
 		200: {
-			description: 'ランク情報の取得に成功',
+			description: 'Successfully retrieved rank information',
 			content: {
 				'application/json': {
 					schema: GetRanksResponseSchema,
@@ -26,15 +26,15 @@ const getRanksRoute = createRoute({
 })
 
 export const getRanksRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(getRanksRoute, async (c) => {
-	const { discordIds } = c.req.valid('query')
+	const { id } = c.req.valid('query')
 
 	const db = drizzle(c.env.DB)
 
-	const ranks = await db.select().from(lolRank).where(inArray(lolRank.discordId, discordIds))
+	const ranks = await db.select().from(lolRank).where(inArray(lolRank.discordId, id))
 
 	const ranksMap = new Map(ranks.map((rank) => [rank.discordId, rank]))
 
-	const result = discordIds.map((discordId) => {
+	const result = id.map((discordId) => {
 		const rank = ranksMap.get(discordId)
 		return (
 			rank || {

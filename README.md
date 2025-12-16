@@ -5,7 +5,11 @@ Hono RPC type-safe client for Project LoL Server
 ## Installation
 
 ```bash
+# Stable release
 npm install @hexcuit/server
+
+# Canary release (latest main branch)
+npm install @hexcuit/server@canary
 ```
 
 ## Usage
@@ -56,12 +60,10 @@ npm run build
 
 ## Publishing
 
-This package is automatically published to npm via GitHub Actions when a new version tag is pushed:
+This package is automatically published to npm via GitHub Actions:
 
-```bash
-npm version patch  # 0.1.7 → 0.1.8
-git push --follow-tags
-```
+- **Stable release**: When a changeset PR is merged
+- **Canary release**: When any PR is merged to main (`@canary` tag)
 
 ## License
 

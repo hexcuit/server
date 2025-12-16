@@ -41,6 +41,23 @@ documentation:
       - CHANGELOG.md
       - LICENSE
 
+utils:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/utils/**
+
+tests:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/**/__tests__/**
+      - vitest.config.ts
+
+core:
+  - changed-files:
+    - any-glob-to-any-file:
+      - src/index.ts
+      - src/constants/**
+
 configuration:
   - changed-files:
     - any-glob-to-any-file:

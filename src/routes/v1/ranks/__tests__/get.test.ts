@@ -26,8 +26,11 @@ describe('GET /v1/ranks', () => {
 
 	beforeEach(async () => {
 		const db = drizzle(env.DB)
+		const user2 = 'test-user-456'
 		await db.delete(lolRank).where(eq(lolRank.discordId, testDiscordId))
+		await db.delete(lolRank).where(eq(lolRank.discordId, user2))
 		await db.delete(users).where(eq(users.discordId, testDiscordId))
+		await db.delete(users).where(eq(users.discordId, user2))
 
 		await db.insert(users).values({ discordId: testDiscordId })
 		await db.insert(lolRank).values({

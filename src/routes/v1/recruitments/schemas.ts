@@ -1,11 +1,26 @@
 import { z } from '@hono/zod-openapi'
 import { LOL_ROLES } from '@/constants'
 
-// ========== リクエストスキーマ ==========
+// ========== Path Parameters ==========
+
+export const RecruitmentPathParamsSchema = z
+	.object({
+		id: z.uuid(),
+	})
+	.openapi('RecruitmentPathParams')
+
+export const ParticipantPathParamsSchema = z
+	.object({
+		id: z.uuid(),
+		discordId: z.string().min(1),
+	})
+	.openapi('ParticipantPathParams')
+
+// ========== Request Schemas ==========
 
 export const RoleSchema = z.enum(LOL_ROLES)
 
-export const CreateRecruitmentSchema = z
+export const CreateRecruitmentBodySchema = z
 	.object({
 		id: z.uuid(),
 		guildId: z.string(),
@@ -16,25 +31,24 @@ export const CreateRecruitmentSchema = z
 		anonymous: z.boolean(),
 		startTime: z.string().optional(),
 	})
-	.openapi('CreateRecruitment')
+	.openapi('CreateRecruitmentBody')
 
-export const JoinRecruitmentSchema = z
+export const JoinRecruitmentBodySchema = z
 	.object({
-		recruitmentId: z.uuid(),
 		discordId: z.string(),
 		mainRole: RoleSchema.optional(),
 		subRole: RoleSchema.optional(),
 	})
-	.openapi('JoinRecruitment')
+	.openapi('JoinRecruitmentBody')
 
-export const LeaveRecruitmentSchema = z
+export const UpdateRoleBodySchema = z
 	.object({
-		recruitmentId: z.uuid(),
-		discordId: z.string(),
+		mainRole: RoleSchema.optional(),
+		subRole: RoleSchema.optional(),
 	})
-	.openapi('LeaveRecruitment')
+	.openapi('UpdateRoleBody')
 
-// ========== レスポンススキーマ ==========
+// ========== Response Schemas ==========
 
 export const ParticipantSchema = z
 	.object({
@@ -63,8 +77,9 @@ export const RecruitmentSchema = z
 
 export const CreateRecruitmentResponseSchema = z
 	.object({
-		success: z.boolean(),
-		recruitmentId: z.string(),
+		recruitment: z.object({
+			id: z.string(),
+		}),
 	})
 	.openapi('CreateRecruitmentResponse')
 
@@ -87,30 +102,26 @@ export const GetRecruitmentResponseSchema = z
 
 export const JoinResponseSchema = z
 	.object({
-		success: z.boolean(),
+		participant: ParticipantSchema,
 		isFull: z.boolean(),
 		count: z.number(),
-		participants: z.array(ParticipantSchema),
 	})
 	.openapi('JoinResponse')
 
 export const LeaveResponseSchema = z
 	.object({
-		success: z.boolean(),
 		count: z.number(),
-		participants: z.array(ParticipantSchema),
 	})
 	.openapi('LeaveResponse')
 
 export const UpdateRoleResponseSchema = z
 	.object({
-		success: z.boolean(),
-		participants: z.array(ParticipantSchema),
+		participant: ParticipantSchema,
 	})
 	.openapi('UpdateRoleResponse')
 
-export const SuccessResponseSchema = z
+export const DeleteRecruitmentResponseSchema = z
 	.object({
-		success: z.boolean(),
+		deleted: z.boolean(),
 	})
 	.openapi('DeleteRecruitmentResponse')

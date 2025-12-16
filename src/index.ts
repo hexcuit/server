@@ -1,16 +1,14 @@
 import { swaggerUI } from '@hono/swagger-ui'
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { guildRouter } from '@/routes/guild'
-import { recruitRouter } from '@/routes/recruit'
 import { v1Router } from '@/routes/v1'
 import version from '../package.json'
 
 export const app = new OpenAPIHono()
-	// v1 API (新しいRESTful設計)
+	// v1 API
 	.route('/v1', v1Router)
-	// Legacy API (後で移行予定)
+	// Legacy API (to be migrated)
 	.route('/guild', guildRouter)
-	.route('/recruit', recruitRouter)
 
 // OpenAPI仕様ドキュメントを /doc で提供
 app.doc('/docs.json', {

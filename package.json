@@ -29,7 +29,9 @@
 		"test:watch": "vitest",
 		"test:coverage": "vitest run --coverage",
 		"version": "changeset version && bun i --lockfile-only",
-		"release": "changeset publish"
+		"version:canary": "changeset version --snapshot canary && bun i --lockfile-only",
+		"release": "changeset publish",
+		"release:canary": "changeset publish --tag canary --no-git-tag"
 	},
 	"dependencies": {
 		"@hono/zod-openapi": "1.1.5",

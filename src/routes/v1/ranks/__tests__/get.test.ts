@@ -1,52 +1,26 @@
-import { eq } from 'drizzle-orm'
+import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { getPlatformProxy } from 'wrangler'
-import { lolRank, users } from '@/db/schema'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { lolRank } from '@/db/schema'
 import { app } from '@/index'
 
 describe('GET /v1/ranks', () => {
-	const testDiscordId = 'test-user-123'
-	const apiKey = 'test-api-key'
-
-	let env: { DB: D1Database; API_KEY: string }
-	let dispose: () => Promise<void>
-
-	beforeAll(async () => {
-		const proxy = await getPlatformProxy<{ DB: D1Database; API_KEY: string }>({
-			configPath: './wrangler.jsonc',
-		})
-		env = { ...proxy.env, API_KEY: apiKey }
-		dispose = proxy.dispose
-	})
-
-	afterAll(async () => {
-		await dispose()
-	})
+	let ctx: TestContext
 
 	beforeEach(async () => {
+		ctx = createTestContext()
 		const db = drizzle(env.DB)
-		const user2 = 'test-user-456'
-		await db.delete(lolRank).where(eq(lolRank.discordId, testDiscordId))
-		await db.delete(lolRank).where(eq(lolRank.discordId, user2))
-		await db.delete(users).where(eq(users.discordId, testDiscordId))
-		await db.delete(users).where(eq(users.discordId, user2))
-
-		await db.insert(users).values({ discordId: testDiscordId })
-		await db.insert(lolRank).values({
-			discordId: testDiscordId,
-			tier: 'DIAMOND',
-			division: 'III',
-		})
+		await setupTestUsers(db, ctx, { withLolRank: true })
 	})
 
 	it('returns rank for registered user', async () => {
 		const res = await app.request(
-			`/v1/ranks?id=${testDiscordId}`,
+			`/v1/ranks?id=${ctx.discordId}`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -60,21 +34,21 @@ describe('GET /v1/ranks', () => {
 		expect(data).toHaveProperty('ranks')
 		expect(data.ranks).toHaveLength(1)
 		expect(data.ranks[0]).toEqual({
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			tier: 'DIAMOND',
 			division: 'III',
 		})
 	})
 
 	it('returns UNRANKED for unregistered user', async () => {
-		const unrankedId = 'unranked-user'
+		const unrankedId = `unranked-${ctx.prefix}`
 
 		const res = await app.request(
 			`/v1/ranks?id=${unrankedId}`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -96,20 +70,19 @@ describe('GET /v1/ranks', () => {
 	it('returns ranks for multiple users', async () => {
 		const db = drizzle(env.DB)
 
-		const user2 = 'test-user-456'
-		await db.insert(users).values({ discordId: user2 })
+		// Setup second user with rank
 		await db.insert(lolRank).values({
-			discordId: user2,
+			discordId: ctx.discordId2,
 			tier: 'PLATINUM',
 			division: 'I',
 		})
 
 		const res = await app.request(
-			`/v1/ranks?id=${testDiscordId}&id=${user2}`,
+			`/v1/ranks?id=${ctx.discordId}&id=${ctx.discordId2}`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -121,14 +94,11 @@ describe('GET /v1/ranks', () => {
 			ranks: Array<{ discordId: string; tier: string; division: string }>
 		}
 		expect(data.ranks).toHaveLength(2)
-
-		await db.delete(lolRank).where(eq(lolRank.discordId, user2))
-		await db.delete(users).where(eq(users.discordId, user2))
 	})
 
 	it('returns 401 without API key', async () => {
 		const res = await app.request(
-			`/v1/ranks?id=${testDiscordId}`,
+			`/v1/ranks?id=${ctx.discordId}`,
 			{
 				method: 'GET',
 			},

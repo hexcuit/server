@@ -1,45 +1,26 @@
-import { eq } from 'drizzle-orm'
+import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { getPlatformProxy } from 'wrangler'
-import { recruitments, users } from '@/db/schema'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { recruitments } from '@/db/schema'
 import { app } from '@/index'
 
 describe('GET /v1/recruitments/{id}', () => {
-	const apiKey = 'test-api-key'
-	const recruitmentId = crypto.randomUUID()
-	const testGuildId = 'test-guild-123'
-	const testChannelId = 'test-channel-123'
-	const testMessageId = 'test-message-123'
-	const testCreatorId = 'test-creator-123'
-
-	let env: { DB: D1Database; API_KEY: string }
-	let dispose: () => Promise<void>
-
-	beforeAll(async () => {
-		const proxy = await getPlatformProxy<{ DB: D1Database; API_KEY: string }>({
-			configPath: './wrangler.jsonc',
-		})
-		env = { ...proxy.env, API_KEY: apiKey }
-		dispose = proxy.dispose
-	})
-
-	afterAll(async () => {
-		await dispose()
-	})
+	let ctx: TestContext
+	let recruitmentId: string
 
 	beforeEach(async () => {
+		ctx = createTestContext()
+		recruitmentId = ctx.generateRecruitmentId()
 		const db = drizzle(env.DB)
-		await db.delete(recruitments).where(eq(recruitments.id, recruitmentId))
-		await db.delete(users).where(eq(users.discordId, testCreatorId))
+		await setupTestUsers(db, ctx)
 
-		await db.insert(users).values({ discordId: testCreatorId })
 		await db.insert(recruitments).values({
 			id: recruitmentId,
-			guildId: testGuildId,
-			channelId: testChannelId,
-			messageId: testMessageId,
-			creatorId: testCreatorId,
+			guildId: ctx.guildId,
+			channelId: ctx.channelId,
+			messageId: ctx.messageId,
+			creatorId: ctx.discordId,
 			type: 'normal',
 			anonymous: false,
 			status: 'open',
@@ -52,7 +33,7 @@ describe('GET /v1/recruitments/{id}', () => {
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -76,7 +57,7 @@ describe('GET /v1/recruitments/{id}', () => {
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,

@@ -1,69 +1,24 @@
-import { and, eq } from 'drizzle-orm'
+import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { getPlatformProxy } from 'wrangler'
-import { guildMatches, guildMatchParticipants, guildRatings, users } from '@/db/schema'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { guildMatches, guildMatchParticipants } from '@/db/schema'
 import { app } from '@/index'
 
 describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
-	const testGuildId = 'test-guild-123'
-	const testDiscordId = 'test-user-123'
-	const testDiscordId2 = 'test-user-456'
-	const apiKey = 'test-api-key'
-
-	const matchId1 = crypto.randomUUID()
-	const matchId2 = crypto.randomUUID()
-	const matchId3 = crypto.randomUUID()
-
-	let env: { DB: D1Database; API_KEY: string }
-	let dispose: () => Promise<void>
-
-	beforeAll(async () => {
-		const proxy = await getPlatformProxy<{ DB: D1Database; API_KEY: string }>({
-			configPath: './wrangler.jsonc',
-		})
-		env = { ...proxy.env, API_KEY: apiKey }
-		dispose = proxy.dispose
-	})
-
-	afterAll(async () => {
-		await dispose()
-	})
+	let ctx: TestContext
 
 	beforeEach(async () => {
+		ctx = createTestContext()
 		const db = drizzle(env.DB)
-
-		// Clean up test data
-		await db.delete(guildMatchParticipants).where(eq(guildMatchParticipants.matchId, matchId1))
-		await db.delete(guildMatchParticipants).where(eq(guildMatchParticipants.matchId, matchId2))
-		await db.delete(guildMatchParticipants).where(eq(guildMatchParticipants.matchId, matchId3))
-		await db.delete(guildMatches).where(eq(guildMatches.id, matchId1))
-		await db.delete(guildMatches).where(eq(guildMatches.id, matchId2))
-		await db.delete(guildMatches).where(eq(guildMatches.id, matchId3))
-		await db
-			.delete(guildRatings)
-			.where(and(eq(guildRatings.guildId, testGuildId), eq(guildRatings.discordId, testDiscordId)))
-		await db
-			.delete(guildRatings)
-			.where(and(eq(guildRatings.guildId, testGuildId), eq(guildRatings.discordId, testDiscordId2)))
-		await db.delete(users).where(eq(users.discordId, testDiscordId))
-		await db.delete(users).where(eq(users.discordId, testDiscordId2))
-
-		// Set up test users
-		await db.insert(users).values({ discordId: testDiscordId })
-		await db.insert(users).values({ discordId: testDiscordId2 })
-		await db.insert(guildRatings).values({
-			guildId: testGuildId,
-			discordId: testDiscordId,
-			rating: 1500,
-			wins: 0,
-			losses: 0,
-			placementGames: 0,
-		})
+		await setupTestUsers(db, ctx, { withRatings: true })
 	})
 
 	it('returns match history for a user', async () => {
 		const db = drizzle(env.DB)
+		const matchId1 = ctx.generateMatchId()
+		const matchId2 = ctx.generateMatchId()
+		const matchId3 = ctx.generateMatchId()
 
 		// Create 3 matches with the user participating
 		const now = new Date()
@@ -74,14 +29,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		// Match 1: User on blue team (won)
 		await db.insert(guildMatches).values({
 			id: matchId1,
-			guildId: testGuildId,
+			guildId: ctx.guildId,
 			winningTeam: 'blue',
 			createdAt: match1Time,
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId1,
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			team: 'blue',
 			role: 'top',
 			ratingBefore: 1500,
@@ -91,14 +46,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		// Match 2: User on red team (lost)
 		await db.insert(guildMatches).values({
 			id: matchId2,
-			guildId: testGuildId,
+			guildId: ctx.guildId,
 			winningTeam: 'blue',
 			createdAt: match2Time,
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId2,
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			team: 'red',
 			role: 'jungle',
 			ratingBefore: 1525,
@@ -108,14 +63,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		// Match 3: User on blue team (won)
 		await db.insert(guildMatches).values({
 			id: matchId3,
-			guildId: testGuildId,
+			guildId: ctx.guildId,
 			winningTeam: 'blue',
 			createdAt: match3Time,
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId3,
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			team: 'blue',
 			role: 'mid',
 			ratingBefore: 1510,
@@ -123,11 +78,11 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		})
 
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/users/${testDiscordId}/history`,
+			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -150,8 +105,8 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			}>
 		}
 
-		expect(data.guildId).toBe(testGuildId)
-		expect(data.discordId).toBe(testDiscordId)
+		expect(data.guildId).toBe(ctx.guildId)
+		expect(data.discordId).toBe(ctx.discordId)
 		expect(data.history).toHaveLength(3)
 
 		// Verify matches are ordered by createdAt (most recent first)
@@ -190,19 +145,19 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		// Create 3 matches
 		const now = new Date()
 		for (let i = 0; i < 3; i++) {
-			const matchId = crypto.randomUUID()
+			const matchId = ctx.generateMatchId()
 			const matchTime = new Date(now.getTime() - (3 - i) * 1000).toISOString()
 
 			await db.insert(guildMatches).values({
 				id: matchId,
-				guildId: testGuildId,
+				guildId: ctx.guildId,
 				winningTeam: 'blue',
 				createdAt: matchTime,
 			})
 			await db.insert(guildMatchParticipants).values({
 				id: crypto.randomUUID(),
 				matchId,
-				discordId: testDiscordId,
+				discordId: ctx.discordId,
 				team: 'blue',
 				role: 'top',
 				ratingBefore: 1500,
@@ -212,11 +167,11 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 
 		// Request with limit=2
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/users/${testDiscordId}/history?limit=2`,
+			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history?limit=2`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -234,19 +189,19 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		// Create 7 matches
 		const now = new Date()
 		for (let i = 0; i < 7; i++) {
-			const matchId = crypto.randomUUID()
+			const matchId = ctx.generateMatchId()
 			const matchTime = new Date(now.getTime() - (7 - i) * 1000).toISOString()
 
 			await db.insert(guildMatches).values({
 				id: matchId,
-				guildId: testGuildId,
+				guildId: ctx.guildId,
 				winningTeam: 'blue',
 				createdAt: matchTime,
 			})
 			await db.insert(guildMatchParticipants).values({
 				id: crypto.randomUUID(),
 				matchId,
-				discordId: testDiscordId,
+				discordId: ctx.discordId,
 				team: 'blue',
 				role: 'top',
 				ratingBefore: 1500,
@@ -256,11 +211,11 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 
 		// Request without limit (should default to 5)
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/users/${testDiscordId}/history`,
+			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -274,11 +229,11 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 
 	it('returns empty history for user with no matches', async () => {
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/users/${testDiscordId}/history`,
+			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -292,25 +247,27 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			history: Array<unknown>
 		}
 
-		expect(data.guildId).toBe(testGuildId)
-		expect(data.discordId).toBe(testDiscordId)
+		expect(data.guildId).toBe(ctx.guildId)
+		expect(data.discordId).toBe(ctx.discordId)
 		expect(data.history).toHaveLength(0)
 	})
 
 	it('only returns matches for the specified guild', async () => {
 		const db = drizzle(env.DB)
-		const otherGuildId = 'other-guild-456'
+		const otherGuildId = `other-guild-${ctx.prefix}`
+		const matchId1 = ctx.generateMatchId()
+		const matchId2 = ctx.generateMatchId()
 
 		// Create match in test guild
 		await db.insert(guildMatches).values({
 			id: matchId1,
-			guildId: testGuildId,
+			guildId: ctx.guildId,
 			winningTeam: 'blue',
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId1,
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			team: 'blue',
 			role: 'top',
 			ratingBefore: 1500,
@@ -326,7 +283,7 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId2,
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			team: 'blue',
 			role: 'top',
 			ratingBefore: 1500,
@@ -334,11 +291,11 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		})
 
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/users/${testDiscordId}/history`,
+			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -353,33 +310,35 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 
 	it('only returns matches for the specified user', async () => {
 		const db = drizzle(env.DB)
+		const matchId1 = ctx.generateMatchId()
+		const matchId2 = ctx.generateMatchId()
 
-		// Create match with testDiscordId
+		// Create match with ctx.discordId
 		await db.insert(guildMatches).values({
 			id: matchId1,
-			guildId: testGuildId,
+			guildId: ctx.guildId,
 			winningTeam: 'blue',
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId1,
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			team: 'blue',
 			role: 'top',
 			ratingBefore: 1500,
 			ratingAfter: 1525,
 		})
 
-		// Create match with testDiscordId2
+		// Create match with ctx.discordId2
 		await db.insert(guildMatches).values({
 			id: matchId2,
-			guildId: testGuildId,
+			guildId: ctx.guildId,
 			winningTeam: 'blue',
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId2,
-			discordId: testDiscordId2,
+			discordId: ctx.discordId2,
 			team: 'blue',
 			role: 'top',
 			ratingBefore: 1500,
@@ -387,11 +346,11 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		})
 
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/users/${testDiscordId}/history`,
+			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -406,7 +365,7 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 
 	it('returns 401 without API key', async () => {
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/users/${testDiscordId}/history`,
+			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
 			{
 				method: 'GET',
 			},
@@ -418,17 +377,18 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 
 	it('calculates negative rating change correctly for losses', async () => {
 		const db = drizzle(env.DB)
+		const matchId1 = ctx.generateMatchId()
 
 		// Create a match where user lost rating
 		await db.insert(guildMatches).values({
 			id: matchId1,
-			guildId: testGuildId,
+			guildId: ctx.guildId,
 			winningTeam: 'blue',
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId1,
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			team: 'red',
 			role: 'adc',
 			ratingBefore: 1600,
@@ -436,11 +396,11 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		})
 
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/users/${testDiscordId}/history`,
+			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,

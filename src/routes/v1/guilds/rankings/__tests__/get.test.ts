@@ -1,56 +1,30 @@
-import { and, eq } from 'drizzle-orm'
+import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { getPlatformProxy } from 'wrangler'
-import { guildRatings, users } from '@/db/schema'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { guildRatings } from '@/db/schema'
 import { app } from '@/index'
 import { PLACEMENT_GAMES } from '@/utils/elo'
 
 describe('GET /v1/guilds/{guildId}/rankings', () => {
-	const testDiscordId = 'test-user-123'
-	const testDiscordId2 = 'test-user-456'
-	const testGuildId = 'test-guild-123'
-	const apiKey = 'test-api-key'
-
-	let env: { DB: D1Database; API_KEY: string }
-	let dispose: () => Promise<void>
-
-	beforeAll(async () => {
-		const proxy = await getPlatformProxy<{ DB: D1Database; API_KEY: string }>({
-			configPath: './wrangler.jsonc',
-		})
-		env = { ...proxy.env, API_KEY: apiKey }
-		dispose = proxy.dispose
-	})
-
-	afterAll(async () => {
-		await dispose()
-	})
+	let ctx: TestContext
 
 	beforeEach(async () => {
+		ctx = createTestContext()
 		const db = drizzle(env.DB)
-		await db
-			.delete(guildRatings)
-			.where(and(eq(guildRatings.guildId, testGuildId), eq(guildRatings.discordId, testDiscordId)))
-		await db
-			.delete(guildRatings)
-			.where(and(eq(guildRatings.guildId, testGuildId), eq(guildRatings.discordId, testDiscordId2)))
-		await db.delete(users).where(eq(users.discordId, testDiscordId))
-		await db.delete(users).where(eq(users.discordId, testDiscordId2))
 
-		await db.insert(users).values({ discordId: testDiscordId })
-		await db.insert(users).values({ discordId: testDiscordId2 })
+		await setupTestUsers(db, ctx)
 		await db.insert(guildRatings).values({
-			guildId: testGuildId,
-			discordId: testDiscordId,
+			guildId: ctx.guildId,
+			discordId: ctx.discordId,
 			rating: 1600,
 			wins: 10,
 			losses: 5,
 			placementGames: PLACEMENT_GAMES,
 		})
 		await db.insert(guildRatings).values({
-			guildId: testGuildId,
-			discordId: testDiscordId2,
+			guildId: ctx.guildId,
+			discordId: ctx.discordId2,
 			rating: 1500,
 			wins: 8,
 			losses: 7,
@@ -60,11 +34,11 @@ describe('GET /v1/guilds/{guildId}/rankings', () => {
 
 	it('returns rankings sorted by rating', async () => {
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/rankings`,
+			`/v1/guilds/${ctx.guildId}/rankings`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -76,22 +50,22 @@ describe('GET /v1/guilds/{guildId}/rankings', () => {
 			guildId: string
 			rankings: Array<{ position: number; discordId: string; rating: number }>
 		}
-		expect(data.guildId).toBe(testGuildId)
+		expect(data.guildId).toBe(ctx.guildId)
 		expect(data.rankings).toHaveLength(2)
 		expect(data.rankings[0]?.position).toBe(1)
-		expect(data.rankings[0]?.discordId).toBe(testDiscordId)
+		expect(data.rankings[0]?.discordId).toBe(ctx.discordId)
 		expect(data.rankings[0]?.rating).toBe(1600)
 		expect(data.rankings[1]?.position).toBe(2)
-		expect(data.rankings[1]?.discordId).toBe(testDiscordId2)
+		expect(data.rankings[1]?.discordId).toBe(ctx.discordId2)
 	})
 
 	it('respects limit parameter', async () => {
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/rankings?limit=1`,
+			`/v1/guilds/${ctx.guildId}/rankings?limit=1`,
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -107,7 +81,7 @@ describe('GET /v1/guilds/{guildId}/rankings', () => {
 
 	it('returns 401 without API key', async () => {
 		const res = await app.request(
-			`/v1/guilds/${testGuildId}/rankings`,
+			`/v1/guilds/${ctx.guildId}/rankings`,
 			{
 				method: 'GET',
 			},

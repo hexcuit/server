@@ -1,43 +1,26 @@
+import { env } from 'cloudflare:test'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { getPlatformProxy } from 'wrangler'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createTestContext, type TestContext } from '@/__tests__/test-utils'
 import { lolRank, users } from '@/db/schema'
 import { app } from '@/index'
 
 describe('PUT /v1/ranks/{discordId}', () => {
-	const testDiscordId = 'test-user-123'
-	const apiKey = 'test-api-key'
-
-	let env: { DB: D1Database; API_KEY: string }
-	let dispose: () => Promise<void>
-
-	beforeAll(async () => {
-		const proxy = await getPlatformProxy<{ DB: D1Database; API_KEY: string }>({
-			configPath: './wrangler.jsonc',
-		})
-		env = { ...proxy.env, API_KEY: apiKey }
-		dispose = proxy.dispose
-	})
-
-	afterAll(async () => {
-		await dispose()
-	})
+	let ctx: TestContext
 
 	beforeEach(async () => {
-		const db = drizzle(env.DB)
-		await db.delete(lolRank).where(eq(lolRank.discordId, testDiscordId))
-		await db.delete(users).where(eq(users.discordId, testDiscordId))
+		ctx = createTestContext()
 	})
 
 	it('returns 201 when creating a new rank', async () => {
 		const res = await app.request(
-			`/v1/ranks/${testDiscordId}`,
+			`/v1/ranks/${ctx.discordId}`,
 			{
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 				body: JSON.stringify({
 					tier: 'GOLD',
@@ -52,13 +35,13 @@ describe('PUT /v1/ranks/{discordId}', () => {
 		const data = (await res.json()) as { rank: { discordId: string; tier: string; division: string } }
 		expect(data).toHaveProperty('rank')
 		expect(data.rank).toEqual({
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			tier: 'GOLD',
 			division: 'II',
 		})
 
 		const db = drizzle(env.DB)
-		const saved = await db.select().from(lolRank).where(eq(lolRank.discordId, testDiscordId)).get()
+		const saved = await db.select().from(lolRank).where(eq(lolRank.discordId, ctx.discordId)).get()
 
 		expect(saved).toBeDefined()
 		expect(saved?.tier).toBe('GOLD')
@@ -68,20 +51,20 @@ describe('PUT /v1/ranks/{discordId}', () => {
 	it('returns 200 when updating an existing rank', async () => {
 		const db = drizzle(env.DB)
 
-		await db.insert(users).values({ discordId: testDiscordId })
+		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(lolRank).values({
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			tier: 'SILVER',
 			division: 'I',
 		})
 
 		const res = await app.request(
-			`/v1/ranks/${testDiscordId}`,
+			`/v1/ranks/${ctx.discordId}`,
 			{
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 				body: JSON.stringify({
 					tier: 'PLATINUM',
@@ -95,19 +78,19 @@ describe('PUT /v1/ranks/{discordId}', () => {
 
 		const data = (await res.json()) as { rank: { discordId: string; tier: string; division: string } }
 		expect(data.rank).toEqual({
-			discordId: testDiscordId,
+			discordId: ctx.discordId,
 			tier: 'PLATINUM',
 			division: 'IV',
 		})
 
-		const updated = await db.select().from(lolRank).where(eq(lolRank.discordId, testDiscordId)).get()
+		const updated = await db.select().from(lolRank).where(eq(lolRank.discordId, ctx.discordId)).get()
 		expect(updated?.tier).toBe('PLATINUM')
 		expect(updated?.division).toBe('IV')
 	})
 
 	it('returns 401 without API key', async () => {
 		const res = await app.request(
-			`/v1/ranks/${testDiscordId}`,
+			`/v1/ranks/${ctx.discordId}`,
 			{
 				method: 'PUT',
 				headers: {
@@ -126,7 +109,7 @@ describe('PUT /v1/ranks/{discordId}', () => {
 
 	it('returns 401 with invalid API key', async () => {
 		const res = await app.request(
-			`/v1/ranks/${testDiscordId}`,
+			`/v1/ranks/${ctx.discordId}`,
 			{
 				method: 'PUT',
 				headers: {
@@ -146,12 +129,12 @@ describe('PUT /v1/ranks/{discordId}', () => {
 
 	it('returns 400 on validation error', async () => {
 		const res = await app.request(
-			`/v1/ranks/${testDiscordId}`,
+			`/v1/ranks/${ctx.discordId}`,
 			{
 				method: 'PUT',
 				headers: {
 					'Content-Type': 'application/json',
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 				body: JSON.stringify({}),
 			},

@@ -1,49 +1,26 @@
-import { eq } from 'drizzle-orm'
+import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { getPlatformProxy } from 'wrangler'
-import { recruitmentParticipants, recruitments, users } from '@/db/schema'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { recruitmentParticipants, recruitments } from '@/db/schema'
 import { app } from '@/index'
 
 describe('DELETE /v1/recruitments/{id}/participants/{discordId}', () => {
-	const apiKey = 'test-api-key'
-	const recruitmentId = crypto.randomUUID()
-	const testGuildId = 'test-guild-123'
-	const testChannelId = 'test-channel-123'
-	const testMessageId = 'test-message-123'
-	const testCreatorId = 'test-creator-123'
-	const testUserId = 'test-user-456'
-
-	let env: { DB: D1Database; API_KEY: string }
-	let dispose: () => Promise<void>
-
-	beforeAll(async () => {
-		const proxy = await getPlatformProxy<{ DB: D1Database; API_KEY: string }>({
-			configPath: './wrangler.jsonc',
-		})
-		env = { ...proxy.env, API_KEY: apiKey }
-		dispose = proxy.dispose
-	})
-
-	afterAll(async () => {
-		await dispose()
-	})
+	let ctx: TestContext
+	let recruitmentId: string
 
 	beforeEach(async () => {
+		ctx = createTestContext()
+		recruitmentId = ctx.generateRecruitmentId()
 		const db = drizzle(env.DB)
-		await db.delete(recruitmentParticipants).where(eq(recruitmentParticipants.recruitmentId, recruitmentId))
-		await db.delete(recruitments).where(eq(recruitments.id, recruitmentId))
-		await db.delete(users).where(eq(users.discordId, testCreatorId))
-		await db.delete(users).where(eq(users.discordId, testUserId))
+		await setupTestUsers(db, ctx)
 
-		await db.insert(users).values({ discordId: testCreatorId })
-		await db.insert(users).values({ discordId: testUserId })
 		await db.insert(recruitments).values({
 			id: recruitmentId,
-			guildId: testGuildId,
-			channelId: testChannelId,
-			messageId: testMessageId,
-			creatorId: testCreatorId,
+			guildId: ctx.guildId,
+			channelId: ctx.channelId,
+			messageId: ctx.messageId,
+			creatorId: ctx.discordId,
 			type: 'normal',
 			anonymous: false,
 			status: 'open',
@@ -51,7 +28,7 @@ describe('DELETE /v1/recruitments/{id}/participants/{discordId}', () => {
 		await db.insert(recruitmentParticipants).values({
 			id: crypto.randomUUID(),
 			recruitmentId,
-			discordId: testUserId,
+			discordId: ctx.discordId2,
 			mainRole: 'adc',
 			subRole: null,
 		})
@@ -59,11 +36,11 @@ describe('DELETE /v1/recruitments/{id}/participants/{discordId}', () => {
 
 	it('leaves recruitment and returns 200', async () => {
 		const res = await app.request(
-			`/v1/recruitments/${recruitmentId}/participants/${testUserId}`,
+			`/v1/recruitments/${recruitmentId}/participants/${ctx.discordId2}`,
 			{
 				method: 'DELETE',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -77,11 +54,11 @@ describe('DELETE /v1/recruitments/{id}/participants/{discordId}', () => {
 
 	it('returns 404 when not a participant', async () => {
 		const res = await app.request(
-			`/v1/recruitments/${recruitmentId}/participants/non-participant`,
+			`/v1/recruitments/${recruitmentId}/participants/non-participant-${ctx.prefix}`,
 			{
 				method: 'DELETE',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,

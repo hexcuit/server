@@ -71,6 +71,23 @@ describe('DELETE /v1/guilds/{guildId}/matches/{matchId}', () => {
 		expect(res.status).toBe(404)
 	})
 
+	it('returns 404 when accessing match from different guild', async () => {
+		const otherGuildId = `other-guild-${ctx.prefix}`
+
+		const res = await app.request(
+			`/v1/guilds/${otherGuildId}/matches/${matchId}`,
+			{
+				method: 'DELETE',
+				headers: {
+					'x-api-key': env.API_KEY,
+				},
+			},
+			env,
+		)
+
+		expect(res.status).toBe(404)
+	})
+
 	it('returns 400 for non-voting match', async () => {
 		const db = drizzle(env.DB)
 		await db.update(guildPendingMatches).set({ status: 'confirmed' }).where(eq(guildPendingMatches.id, matchId))

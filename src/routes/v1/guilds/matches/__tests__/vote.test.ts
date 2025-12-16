@@ -102,6 +102,27 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/votes', () => {
 		expect(res.status).toBe(404)
 	})
 
+	it('returns 404 when accessing match with different guildId', async () => {
+		const differentGuildId = crypto.randomUUID()
+		const res = await app.request(
+			`/v1/guilds/${differentGuildId}/matches/${matchId}/votes`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-api-key': env.API_KEY,
+				},
+				body: JSON.stringify({
+					discordId: ctx.discordId,
+					vote: 'blue',
+				}),
+			},
+			env,
+		)
+
+		expect(res.status).toBe(404)
+	})
+
 	it('returns 401 without API key', async () => {
 		const res = await app.request(
 			`/v1/guilds/${ctx.guildId}/matches/${matchId}/votes`,
@@ -119,5 +140,138 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/votes', () => {
 		)
 
 		expect(res.status).toBe(401)
+	})
+
+	it('returns 400 when match is not in voting state', async () => {
+		const db = drizzle(env.DB)
+		const completedMatchId = ctx.generatePendingMatchId()
+
+		const teamAssignments = {
+			[ctx.discordId]: { team: 'blue', role: 'top', rating: 1500 },
+			[ctx.discordId2]: { team: 'red', role: 'top', rating: 1500 },
+		}
+
+		await db.insert(guildPendingMatches).values({
+			id: completedMatchId,
+			guildId: ctx.guildId,
+			channelId: ctx.channelId,
+			messageId: ctx.messageId,
+			status: 'completed',
+			teamAssignments: JSON.stringify(teamAssignments),
+			blueVotes: 0,
+			redVotes: 0,
+		})
+
+		const res = await app.request(
+			`/v1/guilds/${ctx.guildId}/matches/${completedMatchId}/votes`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-api-key': env.API_KEY,
+				},
+				body: JSON.stringify({
+					discordId: ctx.discordId,
+					vote: 'blue',
+				}),
+			},
+			env,
+		)
+
+		expect(res.status).toBe(400)
+	})
+
+	it('changes vote from blue to red', async () => {
+		// First vote blue
+		await app.request(
+			`/v1/guilds/${ctx.guildId}/matches/${matchId}/votes`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-api-key': env.API_KEY,
+				},
+				body: JSON.stringify({
+					discordId: ctx.discordId,
+					vote: 'blue',
+				}),
+			},
+			env,
+		)
+
+		// Change to red
+		const res = await app.request(
+			`/v1/guilds/${ctx.guildId}/matches/${matchId}/votes`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-api-key': env.API_KEY,
+				},
+				body: JSON.stringify({
+					discordId: ctx.discordId,
+					vote: 'red',
+				}),
+			},
+			env,
+		)
+
+		expect(res.status).toBe(200)
+
+		const data = (await res.json()) as {
+			changed: boolean
+			blueVotes: number
+			redVotes: number
+		}
+		expect(data.changed).toBe(true)
+		expect(data.blueVotes).toBe(0)
+		expect(data.redVotes).toBe(1)
+	})
+
+	it('returns unchanged when voting same option again', async () => {
+		// First vote blue
+		await app.request(
+			`/v1/guilds/${ctx.guildId}/matches/${matchId}/votes`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-api-key': env.API_KEY,
+				},
+				body: JSON.stringify({
+					discordId: ctx.discordId,
+					vote: 'blue',
+				}),
+			},
+			env,
+		)
+
+		// Vote blue again
+		const res = await app.request(
+			`/v1/guilds/${ctx.guildId}/matches/${matchId}/votes`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'x-api-key': env.API_KEY,
+				},
+				body: JSON.stringify({
+					discordId: ctx.discordId,
+					vote: 'blue',
+				}),
+			},
+			env,
+		)
+
+		expect(res.status).toBe(200)
+
+		const data = (await res.json()) as {
+			changed: boolean
+			blueVotes: number
+			redVotes: number
+		}
+		expect(data.changed).toBe(false)
+		expect(data.blueVotes).toBe(1)
+		expect(data.redVotes).toBe(0)
 	})
 })

@@ -129,7 +129,7 @@ export const guildRatings = sqliteTable(
 				onDelete: 'cascade',
 				onUpdate: 'cascade',
 			}),
-		rating: integer('rating').notNull().default(1500),
+		rating: integer('rating').notNull(),
 		wins: integer('wins').notNull().default(0),
 		losses: integer('losses').notNull().default(0),
 		placementGames: integer('placement_games').notNull().default(0),

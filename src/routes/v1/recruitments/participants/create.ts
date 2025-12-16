@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { and, count, eq } from 'drizzle-orm'
+import { and, count, eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { HTTPException } from 'hono/http-exception'
 import { recruitmentParticipants, recruitments, users } from '@/db/schema'
@@ -51,18 +51,7 @@ export const createParticipantRouter = new OpenAPIHono<{ Bindings: Cloudflare.En
 			throw new HTTPException(400, { message: 'Recruitment is not open' })
 		}
 
-		const participantCount = await db
-			.select({ count: count() })
-			.from(recruitmentParticipants)
-			.where(eq(recruitmentParticipants.recruitmentId, id))
-			.get()
-
-		const currentCount = participantCount?.count || 0
 		const capacity = recruitment.capacity
-
-		if (currentCount >= capacity) {
-			throw new HTTPException(400, { message: 'Recruitment is full' })
-		}
 
 		const existing = await db
 			.select()
@@ -76,16 +65,26 @@ export const createParticipantRouter = new OpenAPIHono<{ Bindings: Cloudflare.En
 
 		await db.insert(users).values({ discordId }).onConflictDoNothing()
 
+		// Use conditional INSERT to atomically check capacity and insert participant
 		const participantId = crypto.randomUUID()
-		await db.insert(recruitmentParticipants).values({
-			id: participantId,
-			recruitmentId: id,
-			discordId,
-			mainRole: mainRole || null,
-			subRole: subRole || null,
-		})
+		const insertResult = await db.run(sql`
+			INSERT INTO recruitment_participants (id, recruitment_id, discord_id, main_role, sub_role)
+			SELECT ${participantId}, ${id}, ${discordId}, ${mainRole || null}, ${subRole || null}
+			WHERE (SELECT COUNT(*) FROM recruitment_participants WHERE recruitment_id = ${id}) < ${capacity}
+		`)
 
-		const newCount = currentCount + 1
+		if (insertResult.meta.changes === 0) {
+			throw new HTTPException(400, { message: 'Recruitment is full' })
+		}
+
+		// Get updated count after successful insertion
+		const participantCount = await db
+			.select({ count: count() })
+			.from(recruitmentParticipants)
+			.where(eq(recruitmentParticipants.recruitmentId, id))
+			.get()
+
+		const newCount = participantCount?.count || 1
 		const isFull = newCount >= capacity
 
 		if (isFull) {

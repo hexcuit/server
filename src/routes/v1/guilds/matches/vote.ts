@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { HTTPException } from 'hono/http-exception'
 import { guildMatchVotes, guildPendingMatches } from '@/db/schema'
@@ -39,13 +39,13 @@ const voteMatchRoute = createRoute({
 })
 
 export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(voteMatchRoute, async (c) => {
-	const { matchId } = c.req.valid('param')
+	const { guildId, matchId } = c.req.valid('param')
 	const { discordId, vote } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
 	const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
 
-	if (!match) {
+	if (!match || match.guildId !== guildId) {
 		throw new HTTPException(404, { message: 'Match not found' })
 	}
 
@@ -83,18 +83,27 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 			.set({ vote })
 			.where(and(eq(guildMatchVotes.pendingMatchId, matchId), eq(guildMatchVotes.discordId, discordId)))
 
-		const newBlueVotes = vote === 'blue' ? match.blueVotes + 1 : match.blueVotes - 1
-		const newRedVotes = vote === 'red' ? match.redVotes + 1 : match.redVotes - 1
+		// Use SQL increment for atomic vote count updates
+		const blueIncrement = vote === 'blue' ? 1 : -1
+		const redIncrement = vote === 'red' ? 1 : -1
 
-		await db
+		const [updatedMatch] = await db
 			.update(guildPendingMatches)
-			.set({ blueVotes: newBlueVotes, redVotes: newRedVotes })
+			.set({
+				blueVotes: sql`${guildPendingMatches.blueVotes} + ${blueIncrement}`,
+				redVotes: sql`${guildPendingMatches.redVotes} + ${redIncrement}`,
+			})
 			.where(eq(guildPendingMatches.id, matchId))
+			.returning({ blueVotes: guildPendingMatches.blueVotes, redVotes: guildPendingMatches.redVotes })
+
+		if (!updatedMatch) {
+			throw new HTTPException(404, { message: 'Match not found' })
+		}
 
 		return c.json({
 			changed: true,
-			blueVotes: newBlueVotes,
-			redVotes: newRedVotes,
+			blueVotes: updatedMatch.blueVotes,
+			redVotes: updatedMatch.redVotes,
 			totalParticipants,
 			votesRequired,
 		})
@@ -106,18 +115,27 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 		vote,
 	})
 
-	const newBlueVotes = vote === 'blue' ? match.blueVotes + 1 : match.blueVotes
-	const newRedVotes = vote === 'red' ? match.redVotes + 1 : match.redVotes
+	// Use SQL increment for atomic vote count updates
+	const blueIncrement = vote === 'blue' ? 1 : 0
+	const redIncrement = vote === 'red' ? 1 : 0
 
-	await db
+	const [updatedMatch] = await db
 		.update(guildPendingMatches)
-		.set({ blueVotes: newBlueVotes, redVotes: newRedVotes })
+		.set({
+			blueVotes: sql`${guildPendingMatches.blueVotes} + ${blueIncrement}`,
+			redVotes: sql`${guildPendingMatches.redVotes} + ${redIncrement}`,
+		})
 		.where(eq(guildPendingMatches.id, matchId))
+		.returning({ blueVotes: guildPendingMatches.blueVotes, redVotes: guildPendingMatches.redVotes })
+
+	if (!updatedMatch) {
+		throw new HTTPException(404, { message: 'Match not found' })
+	}
 
 	return c.json({
 		changed: true,
-		blueVotes: newBlueVotes,
-		redVotes: newRedVotes,
+		blueVotes: updatedMatch.blueVotes,
+		redVotes: updatedMatch.redVotes,
 		totalParticipants,
 		votesRequired,
 	})

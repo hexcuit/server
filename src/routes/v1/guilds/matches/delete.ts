@@ -31,12 +31,16 @@ const deleteMatchRoute = createRoute({
 export const deleteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
 	deleteMatchRoute,
 	async (c) => {
-		const { matchId } = c.req.valid('param')
+		const { guildId, matchId } = c.req.valid('param')
 		const db = drizzle(c.env.DB)
 
 		const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
 
 		if (!match) {
+			throw new HTTPException(404, { message: 'Match not found' })
+		}
+
+		if (match.guildId !== guildId) {
 			throw new HTTPException(404, { message: 'Match not found' })
 		}
 

@@ -5,7 +5,7 @@ import { HTTPException } from 'hono/http-exception'
 import { recruitmentParticipants, recruitments } from '@/db/schema'
 import { LeaveResponseSchema, ParticipantPathParamsSchema } from './schemas'
 
-const leaveRecruitmentRoute = createRoute({
+const deleteParticipantRoute = createRoute({
 	method: 'delete',
 	path: '/{id}/participants/{discordId}',
 	tags: ['Recruitments'],
@@ -26,8 +26,8 @@ const leaveRecruitmentRoute = createRoute({
 	},
 })
 
-export const leaveRecruitmentRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
-	leaveRecruitmentRoute,
+export const deleteParticipantRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
+	deleteParticipantRoute,
 	async (c) => {
 		const { id, discordId } = c.req.valid('param')
 		const db = drizzle(c.env.DB)

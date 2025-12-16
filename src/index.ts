@@ -1,14 +1,17 @@
 import { swaggerUI } from '@hono/swagger-ui'
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { guildRouter } from '@/routes/guild'
+import { HTTPException } from 'hono/http-exception'
 import { v1Router } from '@/routes/v1'
 import version from '../package.json'
 
-export const app = new OpenAPIHono()
-	// v1 API
-	.route('/v1', v1Router)
-	// Legacy API (to be migrated)
-	.route('/guild', guildRouter)
+export const app = new OpenAPIHono().route('/v1', v1Router)
+
+app.onError((err, c) => {
+	if (err instanceof HTTPException) {
+		return c.json({ message: err.message }, err.status)
+	}
+	return c.json({ message: 'Internal Server Error' }, 500)
+})
 
 // OpenAPI仕様ドキュメントを /doc で提供
 app.doc('/docs.json', {

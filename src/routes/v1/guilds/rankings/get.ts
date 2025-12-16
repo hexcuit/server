@@ -3,25 +3,29 @@ import { and, desc, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { guildRatings } from '@/db/schema'
 import { formatRankDisplay, getRankDisplay, PLACEMENT_GAMES } from '@/utils/elo'
-import { GetRankingQuerySchema, GetRankingResponseSchema } from './schemas'
+import { GetRankingQuerySchema, GetRankingResponseSchema, GuildIdParamSchema } from '../schemas'
 
 const getRankingRoute = createRoute({
 	method: 'get',
-	path: '/ranking',
-	tags: ['Guild Rating'],
-	summary: 'ランキング取得',
-	description: 'ギルドのレートランキングを取得します',
-	request: { query: GetRankingQuerySchema },
+	path: '/',
+	tags: ['Guild Rankings'],
+	summary: 'Get guild rankings',
+	description: 'Get guild rating rankings',
+	request: {
+		params: GuildIdParamSchema,
+		query: GetRankingQuerySchema,
+	},
 	responses: {
 		200: {
-			description: 'ランキング取得成功',
+			description: 'Successfully retrieved rankings',
 			content: { 'application/json': { schema: GetRankingResponseSchema } },
 		},
 	},
 })
 
 export const getRankingRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(getRankingRoute, async (c) => {
-	const { guildId, limit } = c.req.valid('query')
+	const { guildId } = c.req.valid('param')
+	const { limit } = c.req.valid('query')
 	const db = drizzle(c.env.DB)
 
 	const rankings = await db

@@ -3,9 +3,10 @@ import { and, count, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { HTTPException } from 'hono/http-exception'
 import { recruitmentParticipants, recruitments, users } from '@/db/schema'
-import { JoinRecruitmentBodySchema, JoinResponseSchema, RecruitmentPathParamsSchema } from './schemas'
+import { RecruitmentPathParamsSchema } from '../schemas'
+import { JoinRecruitmentBodySchema, JoinResponseSchema } from './schemas'
 
-const joinRecruitmentRoute = createRoute({
+const createParticipantRoute = createRoute({
 	method: 'post',
 	path: '/{id}/participants',
 	tags: ['Recruitments'],
@@ -33,8 +34,8 @@ const joinRecruitmentRoute = createRoute({
 	},
 })
 
-export const joinRecruitmentRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
-	joinRecruitmentRoute,
+export const createParticipantRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
+	createParticipantRoute,
 	async (c) => {
 		const { id } = c.req.valid('param')
 		const { discordId, mainRole, subRole } = c.req.valid('json')

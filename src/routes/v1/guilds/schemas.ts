@@ -1,25 +1,38 @@
 import { z } from '@hono/zod-openapi'
 import { LOL_ROLES } from '@/constants'
 
-// ========== リクエストスキーマ ==========
+// ========== Path Parameters ==========
+
+export const GuildIdParamSchema = z
+	.object({
+		guildId: z.string().openapi({ description: 'Guild ID' }),
+	})
+	.openapi('GuildIdParam')
+
+export const MatchIdParamSchema = z
+	.object({
+		guildId: z.string().openapi({ description: 'Guild ID' }),
+		matchId: z.string().uuid().openapi({ description: 'Match UUID' }),
+	})
+	.openapi('MatchIdParam')
+
+export const UserHistoryParamSchema = z
+	.object({
+		guildId: z.string().openapi({ description: 'Guild ID' }),
+		discordId: z.string().openapi({ description: 'Discord ID' }),
+	})
+	.openapi('UserHistoryParam')
+
+// ========== Query Parameters ==========
 
 export const GetRatingsQuerySchema = z
 	.object({
-		guildId: z.string(),
-		discordIds: z.array(z.string()).or(z.string().transform((val) => [val])),
+		id: z.array(z.string()).or(z.string().transform((val) => [val])),
 	})
 	.openapi('GetRatingsQuery')
 
-export const CreateRatingSchema = z
-	.object({
-		guildId: z.string(),
-		discordId: z.string(),
-	})
-	.openapi('CreateRating')
-
 export const GetRankingQuerySchema = z
 	.object({
-		guildId: z.string(),
 		limit: z
 			.string()
 			.optional()
@@ -27,16 +40,22 @@ export const GetRankingQuerySchema = z
 	})
 	.openapi('GetRankingQuery')
 
-export const GetMatchHistoryQuerySchema = z
+export const GetHistoryQuerySchema = z
 	.object({
-		guildId: z.string(),
-		discordId: z.string(),
 		limit: z
 			.string()
 			.optional()
 			.transform((val) => (val ? Number.parseInt(val, 10) : 5)),
 	})
-	.openapi('GetMatchHistoryQuery')
+	.openapi('GetHistoryQuery')
+
+// ========== Request Body Schemas ==========
+
+export const UpsertRatingBodySchema = z
+	.object({
+		discordId: z.string(),
+	})
+	.openapi('UpsertRatingBody')
 
 export const TeamAssignmentSchema = z
 	.object({
@@ -51,24 +70,23 @@ export type TeamAssignments = Record<string, TeamAssignment>
 
 export const TeamAssignmentsSchema = z.record(z.string(), TeamAssignmentSchema)
 
-export const CreateMatchSchema = z
+export const CreateMatchBodySchema = z
 	.object({
 		id: z.uuid(),
-		guildId: z.string(),
 		channelId: z.string(),
 		messageId: z.string(),
 		teamAssignments: z.record(z.string(), TeamAssignmentSchema),
 	})
-	.openapi('CreateMatch')
+	.openapi('CreateMatchBody')
 
-export const VoteSchema = z
+export const VoteBodySchema = z
 	.object({
 		discordId: z.string(),
 		vote: z.enum(['blue', 'red']),
 	})
-	.openapi('Vote')
+	.openapi('VoteBody')
 
-// ========== レスポンススキーマ ==========
+// ========== Response Schemas ==========
 
 export const RankDetailSchema = z
 	.object({
@@ -98,13 +116,12 @@ export const GetRatingsResponseSchema = z
 	})
 	.openapi('GetRatingsResponse')
 
-export const CreateRatingResponseSchema = z
+export const UpsertRatingResponseSchema = z
 	.object({
-		success: z.boolean(),
 		created: z.boolean(),
 		rating: RatingItemSchema,
 	})
-	.openapi('CreateRatingResponse')
+	.openapi('UpsertRatingResponse')
 
 export const RankingItemSchema = z
 	.object({
@@ -128,7 +145,6 @@ export const GetRankingResponseSchema = z
 
 export const CreateMatchResponseSchema = z
 	.object({
-		success: z.boolean(),
 		matchId: z.string(),
 	})
 	.openapi('CreateMatchResponse')
@@ -165,7 +181,6 @@ export const GetMatchResponseSchema = z
 
 export const VoteResponseSchema = z
 	.object({
-		success: z.boolean(),
 		changed: z.boolean(),
 		blueVotes: z.number(),
 		redVotes: z.number(),
@@ -187,18 +202,17 @@ export const RatingChangeSchema = z
 
 export const ConfirmMatchResponseSchema = z
 	.object({
-		success: z.boolean(),
 		matchId: z.string(),
 		winningTeam: z.enum(['blue', 'red']),
 		ratingChanges: z.array(RatingChangeSchema),
 	})
 	.openapi('ConfirmMatchResponse')
 
-export const SuccessResponseSchema = z
+export const DeleteMatchResponseSchema = z
 	.object({
-		success: z.boolean(),
+		deleted: z.boolean(),
 	})
-	.openapi('SuccessResponse')
+	.openapi('DeleteMatchResponse')
 
 export const MatchHistoryItemSchema = z
 	.object({
@@ -221,7 +235,7 @@ export const GetMatchHistoryResponseSchema = z
 	})
 	.openapi('GetMatchHistoryResponse')
 
-// ========== ヘルパー関数 ==========
+// ========== Helper Functions ==========
 
 export const parseTeamAssignments = (json: string): TeamAssignments => {
 	return TeamAssignmentsSchema.parse(JSON.parse(json))

@@ -1,30 +1,45 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { HTTPException } from 'hono/http-exception'
 import { guildMatchVotes, guildPendingMatches } from '@/db/schema'
-import { calculateMajority, parseTeamAssignments, VoteResponseSchema, VoteSchema } from './schemas'
+import {
+	calculateMajority,
+	MatchIdParamSchema,
+	parseTeamAssignments,
+	VoteBodySchema,
+	VoteResponseSchema,
+} from '../schemas'
 
 const voteMatchRoute = createRoute({
 	method: 'post',
-	path: '/match/{id}/vote',
-	tags: ['Guild Rating'],
-	summary: '投票',
-	description: '試合の勝敗に投票します',
+	path: '/{matchId}/votes',
+	tags: ['Guild Matches'],
+	summary: 'Vote on match',
+	description: 'Vote on the match outcome',
 	request: {
-		params: z.object({ id: z.string().uuid() }),
-		body: { content: { 'application/json': { schema: VoteSchema } } },
+		params: MatchIdParamSchema,
+		body: { content: { 'application/json': { schema: VoteBodySchema } } },
 	},
 	responses: {
 		200: {
-			description: '投票成功',
+			description: 'Vote registered',
 			content: { 'application/json': { schema: VoteResponseSchema } },
+		},
+		400: {
+			description: 'Match is not in voting state',
+		},
+		403: {
+			description: 'Not a participant',
+		},
+		404: {
+			description: 'Match not found',
 		},
 	},
 })
 
 export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(voteMatchRoute, async (c) => {
-	const matchId = c.req.valid('param').id
+	const { matchId } = c.req.valid('param')
 	const { discordId, vote } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
@@ -55,7 +70,6 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 	if (existingVote) {
 		if (existingVote.vote === vote) {
 			return c.json({
-				success: true,
 				changed: false,
 				blueVotes: match.blueVotes,
 				redVotes: match.redVotes,
@@ -78,7 +92,6 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 			.where(eq(guildPendingMatches.id, matchId))
 
 		return c.json({
-			success: true,
 			changed: true,
 			blueVotes: newBlueVotes,
 			redVotes: newRedVotes,
@@ -102,7 +115,6 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 		.where(eq(guildPendingMatches.id, matchId))
 
 	return c.json({
-		success: true,
 		changed: true,
 		blueVotes: newBlueVotes,
 		redVotes: newRedVotes,

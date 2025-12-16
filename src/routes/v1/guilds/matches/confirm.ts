@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { HTTPException } from 'hono/http-exception'
@@ -11,21 +11,27 @@ import {
 	isInPlacement,
 	PLACEMENT_GAMES,
 } from '@/utils/elo'
-import { ConfirmMatchResponseSchema, calculateMajority, parseTeamAssignments } from './schemas'
+import { ConfirmMatchResponseSchema, calculateMajority, MatchIdParamSchema, parseTeamAssignments } from '../schemas'
 
 const confirmMatchRoute = createRoute({
 	method: 'post',
-	path: '/match/{id}/confirm',
-	tags: ['Guild Rating'],
-	summary: '試合確定',
-	description: '投票結果に基づいて試合を確定します',
+	path: '/{matchId}/confirm',
+	tags: ['Guild Matches'],
+	summary: 'Confirm match',
+	description: 'Confirm match based on voting results',
 	request: {
-		params: z.object({ id: z.string().uuid() }),
+		params: MatchIdParamSchema,
 	},
 	responses: {
 		200: {
-			description: '試合確定成功',
+			description: 'Match confirmed',
 			content: { 'application/json': { schema: ConfirmMatchResponseSchema } },
+		},
+		400: {
+			description: 'Match is not in voting state or not enough votes',
+		},
+		404: {
+			description: 'Match not found',
 		},
 	},
 })
@@ -33,7 +39,7 @@ const confirmMatchRoute = createRoute({
 export const confirmMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
 	confirmMatchRoute,
 	async (c) => {
-		const matchId = c.req.valid('param').id
+		const { matchId } = c.req.valid('param')
 		const db = drizzle(c.env.DB)
 
 		const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
@@ -158,7 +164,6 @@ export const confirmMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>(
 		}
 
 		return c.json({
-			success: true,
 			matchId: finalMatchId,
 			winningTeam,
 			ratingChanges: ratingChanges.map((rc) => ({

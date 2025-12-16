@@ -9,16 +9,7 @@ export const RecruitmentPathParamsSchema = z
 	})
 	.openapi('RecruitmentPathParams')
 
-export const ParticipantPathParamsSchema = z
-	.object({
-		id: z.uuid(),
-		discordId: z.string().min(1),
-	})
-	.openapi('ParticipantPathParams')
-
 // ========== Request Schemas ==========
-
-export const RoleSchema = z.enum(LOL_ROLES)
 
 export const CreateRecruitmentBodySchema = z
 	.object({
@@ -33,30 +24,7 @@ export const CreateRecruitmentBodySchema = z
 	})
 	.openapi('CreateRecruitmentBody')
 
-export const JoinRecruitmentBodySchema = z
-	.object({
-		discordId: z.string(),
-		mainRole: RoleSchema.optional(),
-		subRole: RoleSchema.optional(),
-	})
-	.openapi('JoinRecruitmentBody')
-
-export const UpdateRoleBodySchema = z
-	.object({
-		mainRole: RoleSchema.optional(),
-		subRole: RoleSchema.optional(),
-	})
-	.openapi('UpdateRoleBody')
-
 // ========== Response Schemas ==========
-
-export const ParticipantSchema = z
-	.object({
-		discordId: z.string(),
-		mainRole: z.enum(LOL_ROLES).nullable(),
-		subRole: z.enum(LOL_ROLES).nullable(),
-	})
-	.openapi('Participant')
 
 export const RecruitmentSchema = z
 	.object({
@@ -99,26 +67,6 @@ export const GetRecruitmentResponseSchema = z
 		count: z.number(),
 	})
 	.openapi('GetRecruitmentResponse')
-
-export const JoinResponseSchema = z
-	.object({
-		participant: ParticipantSchema,
-		isFull: z.boolean(),
-		count: z.number(),
-	})
-	.openapi('JoinResponse')
-
-export const LeaveResponseSchema = z
-	.object({
-		count: z.number(),
-	})
-	.openapi('LeaveResponse')
-
-export const UpdateRoleResponseSchema = z
-	.object({
-		participant: ParticipantSchema,
-	})
-	.openapi('UpdateRoleResponse')
 
 export const DeleteRecruitmentResponseSchema = z
 	.object({

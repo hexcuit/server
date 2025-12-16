@@ -1,29 +1,32 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { HTTPException } from 'hono/http-exception'
 import { guildMatchVotes, guildPendingMatches } from '@/db/schema'
-import { calculateMajority, GetMatchResponseSchema, parseTeamAssignments } from './schemas'
+import { calculateMajority, GetMatchResponseSchema, MatchIdParamSchema, parseTeamAssignments } from '../schemas'
 
 const getMatchRoute = createRoute({
 	method: 'get',
-	path: '/match/{id}',
-	tags: ['Guild Rating'],
-	summary: '試合取得',
-	description: '試合の詳細情報を取得します',
+	path: '/{matchId}',
+	tags: ['Guild Matches'],
+	summary: 'Get match',
+	description: 'Get match details',
 	request: {
-		params: z.object({ id: z.string().uuid() }),
+		params: MatchIdParamSchema,
 	},
 	responses: {
 		200: {
-			description: '試合情報の取得に成功',
+			description: 'Successfully retrieved match',
 			content: { 'application/json': { schema: GetMatchResponseSchema } },
+		},
+		404: {
+			description: 'Match not found',
 		},
 	},
 })
 
 export const getMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(getMatchRoute, async (c) => {
-	const matchId = c.req.valid('param').id
+	const { matchId } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
 	const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()

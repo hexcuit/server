@@ -1,20 +1,21 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { guildPendingMatches, users } from '@/db/schema'
-import { CreateMatchResponseSchema, CreateMatchSchema } from './schemas'
+import { CreateMatchBodySchema, CreateMatchResponseSchema, GuildIdParamSchema } from '../schemas'
 
 const createMatchRoute = createRoute({
 	method: 'post',
-	path: '/match',
-	tags: ['Guild Rating'],
-	summary: '試合作成',
-	description: '投票を開始するための試合を作成します',
+	path: '/',
+	tags: ['Guild Matches'],
+	summary: 'Create match',
+	description: 'Create a match to start voting',
 	request: {
-		body: { content: { 'application/json': { schema: CreateMatchSchema } } },
+		params: GuildIdParamSchema,
+		body: { content: { 'application/json': { schema: CreateMatchBodySchema } } },
 	},
 	responses: {
-		200: {
-			description: '試合作成成功',
+		201: {
+			description: 'Match created',
 			content: { 'application/json': { schema: CreateMatchResponseSchema } },
 		},
 	},
@@ -23,7 +24,8 @@ const createMatchRoute = createRoute({
 export const createMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
 	createMatchRoute,
 	async (c) => {
-		const { id, guildId, channelId, messageId, teamAssignments } = c.req.valid('json')
+		const { guildId } = c.req.valid('param')
+		const { id, channelId, messageId, teamAssignments } = c.req.valid('json')
 		const db = drizzle(c.env.DB)
 
 		const discordIds = Object.keys(teamAssignments)
@@ -42,6 +44,6 @@ export const createMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 			redVotes: 0,
 		})
 
-		return c.json({ success: true, matchId: id })
+		return c.json({ matchId: id }, 201)
 	},
 )

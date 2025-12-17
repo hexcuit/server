@@ -1,26 +1,9 @@
+import { env } from 'cloudflare:test'
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { getPlatformProxy } from 'wrangler'
+import { describe, expect, it } from 'vitest'
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 
 describe('apiKeyMiddleware', () => {
-	const apiKey = 'test-api-key'
-
-	let env: { DB: D1Database; API_KEY: string }
-	let dispose: () => Promise<void>
-
-	beforeAll(async () => {
-		const proxy = await getPlatformProxy<{ DB: D1Database; API_KEY: string }>({
-			configPath: './wrangler.jsonc',
-		})
-		env = { ...proxy.env, API_KEY: apiKey }
-		dispose = proxy.dispose
-	})
-
-	afterAll(async () => {
-		await dispose()
-	})
-
 	it('should pass with valid API key', async () => {
 		const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 			.use(apiKeyMiddleware)
@@ -31,7 +14,7 @@ describe('apiKeyMiddleware', () => {
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			env,
@@ -97,7 +80,7 @@ describe('apiKeyMiddleware', () => {
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
 			envWithoutApiKey,
@@ -122,10 +105,10 @@ describe('apiKeyMiddleware', () => {
 			{
 				method: 'GET',
 				headers: {
-					'x-api-key': apiKey,
+					'x-api-key': env.API_KEY,
 				},
 			},
-			envWithoutApiKey as { DB: D1Database; API_KEY: string },
+			envWithoutApiKey as typeof env,
 		)
 
 		expect(res.status).toBe(500)

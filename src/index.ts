@@ -1,47 +1,24 @@
 import { swaggerUI } from '@hono/swagger-ui'
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
-import { guildRouter } from '@/routes/guild'
-import { lolRouter } from '@/routes/lol'
-import { recruitRouter } from '@/routes/recruit'
+import { OpenAPIHono } from '@hono/zod-openapi'
+import { HTTPException } from 'hono/http-exception'
+import { v1Router } from '@/routes/v1'
 import version from '../package.json'
 
-// ヘルスチェック
-const healthRoute = createRoute({
-	method: 'get',
-	path: '/',
-	tags: ['Health'],
-	summary: 'ヘルスチェック',
-	description: 'サーバーの稼働状況を確認します',
-	security: [],
-	responses: {
-		200: {
-			description: 'サーバー稼働中',
-			content: {
-				'application/json': {
-					schema: z.object({
-						status: z.string(),
-						version: z.string(),
-					}),
-				},
-			},
-		},
-	},
+export const app = new OpenAPIHono().route('/v1', v1Router)
+
+app.onError((err, c) => {
+	if (err instanceof HTTPException) {
+		return c.json({ message: err.message }, err.status)
+	}
+	return c.json({ message: 'Internal Server Error' }, 500)
 })
-export const app = new OpenAPIHono()
-	.openapi(healthRoute, (c) => {
-		return c.json({ status: 'ok', version: version.version })
-	})
-	.route('/lol', lolRouter)
-	.route('/guild', guildRouter)
-	.route('/recruit', recruitRouter)
 
 // OpenAPI仕様ドキュメントを /doc で提供
-app.doc('/doc', {
+app.doc('/docs.json', {
 	openapi: '3.1.0',
 	info: {
 		version: version.version,
 		title: 'Hexcuit API',
-		description: 'League of Legends rank tracking and team balancing API',
 	},
 	security: [{ apiKey: [] }],
 })
@@ -55,7 +32,7 @@ app.openAPIRegistry.registerComponent('securitySchemes', 'apiKey', {
 })
 
 // Swagger UIを /ui で提供
-app.get('/ui', swaggerUI({ url: '/doc' }))
+app.get('/docs', swaggerUI({ url: '/docs.json' }))
 
 export type AppType = typeof app
 

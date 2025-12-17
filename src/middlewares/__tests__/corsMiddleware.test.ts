@@ -1,26 +1,12 @@
+import { env } from 'cloudflare:test'
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { getPlatformProxy } from 'wrangler'
+import { describe, expect, it } from 'vitest'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
 
 describe('corsMiddleware', () => {
 	const allowedOrigin = 'https://example.com'
 	const anotherAllowedOrigin = 'https://another.example.com'
-
-	let env: { DB: D1Database; CORS_ORIGIN: string }
-	let dispose: () => Promise<void>
-
-	beforeAll(async () => {
-		const proxy = await getPlatformProxy<{ DB: D1Database; CORS_ORIGIN: string }>({
-			configPath: './wrangler.jsonc',
-		})
-		env = { ...proxy.env, CORS_ORIGIN: `${allowedOrigin},${anotherAllowedOrigin}` }
-		dispose = proxy.dispose
-	})
-
-	afterAll(async () => {
-		await dispose()
-	})
+	const corsEnv = { ...env, CORS_ORIGIN: `${allowedOrigin},${anotherAllowedOrigin}` }
 
 	it('should accept requests from allowed origin', async () => {
 		const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
@@ -35,7 +21,7 @@ describe('corsMiddleware', () => {
 					Origin: allowedOrigin,
 				},
 			},
-			env,
+			corsEnv,
 		)
 
 		expect(res.status).toBe(200)
@@ -56,7 +42,7 @@ describe('corsMiddleware', () => {
 					Origin: anotherAllowedOrigin,
 				},
 			},
-			env,
+			corsEnv,
 		)
 
 		expect(res.status).toBe(200)
@@ -76,7 +62,7 @@ describe('corsMiddleware', () => {
 					Origin: 'https://malicious.com',
 				},
 			},
-			env,
+			corsEnv,
 		)
 
 		// Request is processed but CORS headers are not set
@@ -94,7 +80,7 @@ describe('corsMiddleware', () => {
 			{
 				method: 'GET',
 			},
-			env,
+			corsEnv,
 		)
 
 		expect(res.status).toBe(200)
@@ -132,7 +118,7 @@ describe('corsMiddleware', () => {
 			.get('/test', (c) => c.json({ success: true }))
 
 		// Remove CORS_ORIGIN
-		const { CORS_ORIGIN: _, ...envWithoutCors } = env
+		const { CORS_ORIGIN: _, ...envWithoutCors } = corsEnv
 
 		const res = await app.request(
 			'/test',
@@ -142,7 +128,7 @@ describe('corsMiddleware', () => {
 					Origin: allowedOrigin,
 				},
 			},
-			envWithoutCors as { DB: D1Database; CORS_ORIGIN: string },
+			envWithoutCors as typeof corsEnv,
 		)
 
 		expect(res.status).toBe(500)

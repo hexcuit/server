@@ -13,7 +13,7 @@ describe('PUT /v1/ranks/{discordId}', () => {
 		ctx = createTestContext()
 	})
 
-	it('returns 201 when creating a new rank', async () => {
+	it('returns 200 when creating a new rank', async () => {
 		const res = await app.request(
 			`/v1/ranks/${ctx.discordId}`,
 			{
@@ -30,7 +30,7 @@ describe('PUT /v1/ranks/{discordId}', () => {
 			env,
 		)
 
-		expect(res.status).toBe(201)
+		expect(res.status).toBe(200)
 
 		const data = (await res.json()) as { rank: { discordId: string; tier: string; division: string } }
 		expect(data).toHaveProperty('rank')

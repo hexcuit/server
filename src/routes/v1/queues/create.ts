@@ -1,5 +1,6 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
+import { HTTPException } from 'hono/http-exception'
 import { queues, users } from '@/db/schema'
 import { CreateQueueBodySchema, CreateQueueResponseSchema } from './schemas'
 
@@ -27,6 +28,9 @@ const createQueueRoute = createRoute({
 				},
 			},
 		},
+		409: {
+			description: 'Queue with the specified ID already exists',
+		},
 	},
 })
 
@@ -38,17 +42,24 @@ export const createQueueRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 		await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
 
-		await db.insert(queues).values({
-			id: data.id,
-			guildId: data.guildId,
-			channelId: data.channelId,
-			messageId: data.messageId,
-			creatorId: data.creatorId,
-			type: data.type,
-			anonymous: data.anonymous,
-			startTime: data.startTime || null,
-			status: 'open',
-		})
+		try {
+			await db.insert(queues).values({
+				id: data.id,
+				guildId: data.guildId,
+				channelId: data.channelId,
+				messageId: data.messageId,
+				creatorId: data.creatorId,
+				type: data.type,
+				anonymous: data.anonymous,
+				startTime: data.startTime || null,
+				status: 'open',
+			})
+		} catch (error) {
+			if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
+				throw new HTTPException(409, { message: 'Queue with the specified ID already exists' })
+			}
+			throw error
+		}
 
 		return c.json({ queue: { id: data.id } }, 201)
 	},

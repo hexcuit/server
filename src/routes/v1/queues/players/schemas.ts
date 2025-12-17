@@ -16,7 +16,7 @@ export const RoleSchema = z.enum(LOL_ROLES)
 
 export const JoinQueueBodySchema = z
 	.object({
-		discordId: z.string(),
+		discordId: z.string().min(1),
 		mainRole: RoleSchema.optional(),
 		subRole: RoleSchema.optional(),
 	})

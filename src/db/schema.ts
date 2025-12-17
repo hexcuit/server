@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { LOL_DIVISIONS, LOL_ROLES, LOL_TIERS } from '@/constants'
 
@@ -80,24 +80,28 @@ export const queues = sqliteTable('queues', {
 })
 
 // キュープレイヤーテーブル
-export const queuePlayers = sqliteTable('queue_players', {
-	id: text('id').primaryKey(),
-	queueId: text('queue_id')
-		.notNull()
-		.references(() => queues.id, {
-			onDelete: 'cascade',
-			onUpdate: 'cascade',
-		}),
-	discordId: text('discord_id')
-		.notNull()
-		.references(() => users.discordId, {
-			onDelete: 'cascade',
-			onUpdate: 'cascade',
-		}),
-	mainRole: text('main_role', { enum: LOL_ROLES }),
-	subRole: text('sub_role', { enum: LOL_ROLES }),
-	joinedAt: text('joined_at').notNull().default(sql`(current_timestamp)`),
-})
+export const queuePlayers = sqliteTable(
+	'queue_players',
+	{
+		id: text('id').primaryKey(),
+		queueId: text('queue_id')
+			.notNull()
+			.references(() => queues.id, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
+		discordId: text('discord_id')
+			.notNull()
+			.references(() => users.discordId, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
+		mainRole: text('main_role', { enum: LOL_ROLES }),
+		subRole: text('sub_role', { enum: LOL_ROLES }),
+		joinedAt: text('joined_at').notNull().default(sql`(current_timestamp)`),
+	},
+	(table) => [unique().on(table.queueId, table.discordId)],
+)
 
 export const queuesRelations = relations(queues, ({ one, many }) => ({
 	creator: one(users, {

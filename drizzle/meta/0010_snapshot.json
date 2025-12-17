@@ -1,8 +1,8 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "17c86888-5a34-481f-a843-65a861e30702",
-	"prevId": "a24d7df9-8d33-498e-9d98-9b8c4d49dda5",
+	"id": "a24d7df9-8d33-498e-9d98-9b8c4d49dda5",
+	"prevId": "392ae692-104c-4b05-8fc5-be222f0f917d",
 	"tables": {
 		"guild_match_participants": {
 			"name": "guild_match_participants",
@@ -444,13 +444,7 @@
 					"default": "(current_timestamp)"
 				}
 			},
-			"indexes": {
-				"queue_players_queue_id_discord_id_unique": {
-					"name": "queue_players_queue_id_discord_id_unique",
-					"columns": ["queue_id", "discord_id"],
-					"isUnique": true
-				}
-			},
+			"indexes": {},
 			"foreignKeys": {
 				"queue_players_queue_id_queues_id_fk": {
 					"name": "queue_players_queue_id_queues_id_fk",
@@ -684,8 +678,15 @@
 	"enums": {},
 	"_meta": {
 		"schemas": {},
-		"tables": {},
-		"columns": {}
+		"tables": {
+			"\"lol_rank\"": "\"lol_ranks\"",
+			"\"recruitment_participants\"": "\"queue_players\"",
+			"\"recruitments\"": "\"queues\""
+		},
+		"columns": {
+			"\"guild_matches\".\"recruitment_id\"": "\"guild_matches\".\"queue_id\"",
+			"\"queue_players\".\"recruitment_id\"": "\"queue_players\".\"queue_id\""
+		}
 	},
 	"internal": {
 		"indexes": {}

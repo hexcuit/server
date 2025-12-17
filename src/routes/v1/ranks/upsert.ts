@@ -1,5 +1,4 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { lolRanks, users } from '@/db/schema'
 import { RankPathParamsSchema, UpsertRankBodySchema, UpsertRankResponseSchema } from './schemas'
@@ -9,7 +8,7 @@ const upsertRankRoute = createRoute({
 	path: '/{discordId}',
 	tags: ['LoL Ranks'],
 	summary: 'Create or update LoL rank',
-	description: 'Create or update LoL rank information for a Discord ID. Returns 201 for creation, 200 for update.',
+	description: 'Create or update LoL rank information for a Discord ID.',
 	request: {
 		params: RankPathParamsSchema,
 		body: {
@@ -22,15 +21,7 @@ const upsertRankRoute = createRoute({
 	},
 	responses: {
 		200: {
-			description: 'Rank updated successfully',
-			content: {
-				'application/json': {
-					schema: UpsertRankResponseSchema,
-				},
-			},
-		},
-		201: {
-			description: 'Rank created successfully',
+			description: 'Rank upserted successfully',
 			content: {
 				'application/json': {
 					schema: UpsertRankResponseSchema,
@@ -43,28 +34,13 @@ const upsertRankRoute = createRoute({
 export const upsertRankRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(upsertRankRoute, async (c) => {
 	const { discordId } = c.req.valid('param')
 	const { tier, division } = c.req.valid('json')
-
 	const db = drizzle(c.env.DB)
 
-	// Check for existing record
-	const existing = await db.select().from(lolRanks).where(eq(lolRanks.discordId, discordId)).get()
-
-	await db
-		.insert(users)
-		.values({
-			discordId,
-		})
-		.onConflictDoNothing()
-
+	await db.insert(users).values({ discordId }).onConflictDoNothing()
 	await db.insert(lolRanks).values({ discordId, tier, division }).onConflictDoUpdate({
 		target: lolRanks.discordId,
 		set: { tier, division },
 	})
 
-	const rank = { discordId, tier, division }
-
-	if (existing) {
-		return c.json({ rank }, 200)
-	}
-	return c.json({ rank }, 201)
+	return c.json({ rank: { discordId, tier, division } }, 200)
 })

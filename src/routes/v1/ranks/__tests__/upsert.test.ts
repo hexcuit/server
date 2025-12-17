@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestContext, type TestContext } from '@/__tests__/test-utils'
-import { lolRank, users } from '@/db/schema'
+import { lolRanks, users } from '@/db/schema'
 import { app } from '@/index'
 
 describe('PUT /v1/ranks/{discordId}', () => {
@@ -41,7 +41,7 @@ describe('PUT /v1/ranks/{discordId}', () => {
 		})
 
 		const db = drizzle(env.DB)
-		const saved = await db.select().from(lolRank).where(eq(lolRank.discordId, ctx.discordId)).get()
+		const saved = await db.select().from(lolRanks).where(eq(lolRanks.discordId, ctx.discordId)).get()
 
 		expect(saved).toBeDefined()
 		expect(saved?.tier).toBe('GOLD')
@@ -52,7 +52,7 @@ describe('PUT /v1/ranks/{discordId}', () => {
 		const db = drizzle(env.DB)
 
 		await db.insert(users).values({ discordId: ctx.discordId })
-		await db.insert(lolRank).values({
+		await db.insert(lolRanks).values({
 			discordId: ctx.discordId,
 			tier: 'SILVER',
 			division: 'I',
@@ -83,7 +83,7 @@ describe('PUT /v1/ranks/{discordId}', () => {
 			division: 'IV',
 		})
 
-		const updated = await db.select().from(lolRank).where(eq(lolRank.discordId, ctx.discordId)).get()
+		const updated = await db.select().from(lolRanks).where(eq(lolRanks.discordId, ctx.discordId)).get()
 		expect(updated?.tier).toBe('PLATINUM')
 		expect(updated?.division).toBe('IV')
 	})

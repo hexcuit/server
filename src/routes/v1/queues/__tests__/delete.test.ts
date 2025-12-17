@@ -3,21 +3,21 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { recruitments } from '@/db/schema'
+import { queues } from '@/db/schema'
 import { app } from '@/index'
 
-describe('DELETE /v1/recruitments/{id}', () => {
+describe('DELETE /v1/queues/{id}', () => {
 	let ctx: TestContext
-	let recruitmentId: string
+	let queueId: string
 
 	beforeEach(async () => {
 		ctx = createTestContext()
-		recruitmentId = ctx.generateRecruitmentId()
+		queueId = ctx.generateQueueId()
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
 
-		await db.insert(recruitments).values({
-			id: recruitmentId,
+		await db.insert(queues).values({
+			id: queueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
 			messageId: ctx.messageId,
@@ -28,9 +28,9 @@ describe('DELETE /v1/recruitments/{id}', () => {
 		})
 	})
 
-	it('deletes recruitment and returns 200', async () => {
+	it('deletes queue and returns 200', async () => {
 		const res = await app.request(
-			`/v1/recruitments/${recruitmentId}`,
+			`/v1/queues/${queueId}`,
 			{
 				method: 'DELETE',
 				headers: {
@@ -46,7 +46,7 @@ describe('DELETE /v1/recruitments/{id}', () => {
 		expect(data.deleted).toBe(true)
 
 		const db = drizzle(env.DB)
-		const deleted = await db.select().from(recruitments).where(eq(recruitments.id, recruitmentId)).get()
+		const deleted = await db.select().from(queues).where(eq(queues.id, queueId)).get()
 		expect(deleted).toBeUndefined()
 	})
 })

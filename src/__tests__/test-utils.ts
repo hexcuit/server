@@ -1,5 +1,5 @@
 import type { DrizzleD1Database } from 'drizzle-orm/d1'
-import { guildRatings, lolRank, users } from '@/db/schema'
+import { guildRatings, lolRanks, users } from '@/db/schema'
 
 /**
  * Test context that holds unique IDs for each test run.
@@ -22,8 +22,8 @@ export interface TestContext {
 	generateMatchId: () => string
 	/** Generate a new unique pending match ID */
 	generatePendingMatchId: () => string
-	/** Generate a new unique recruitment ID */
-	generateRecruitmentId: () => string
+	/** Generate a new unique queue ID */
+	generateQueueId: () => string
 	/** Generate a new unique user ID */
 	generateUserId: () => string
 }
@@ -44,7 +44,7 @@ export function createTestContext(): TestContext {
 		messageId: `message-${prefix}`,
 		generateMatchId: () => crypto.randomUUID(),
 		generatePendingMatchId: () => crypto.randomUUID(),
-		generateRecruitmentId: () => crypto.randomUUID(),
+		generateQueueId: () => crypto.randomUUID(),
 		generateUserId: () => `user-${crypto.randomUUID().slice(0, 8)}`,
 	}
 }
@@ -76,7 +76,7 @@ export async function setupTestUsers(
 	}
 
 	if (options?.withLolRank) {
-		await db.insert(lolRank).values({
+		await db.insert(lolRanks).values({
 			discordId: ctx.discordId,
 			tier: 'DIAMOND',
 			division: 'III',

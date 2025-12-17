@@ -2,21 +2,21 @@ import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { recruitmentParticipants, recruitments } from '@/db/schema'
+import { queuePlayers, queues } from '@/db/schema'
 import { app } from '@/index'
 
-describe('PATCH /v1/recruitments/{id}/participants/{discordId}', () => {
+describe('PATCH /v1/queues/{id}/players/{discordId}', () => {
 	let ctx: TestContext
-	let recruitmentId: string
+	let queueId: string
 
 	beforeEach(async () => {
 		ctx = createTestContext()
-		recruitmentId = ctx.generateRecruitmentId()
+		queueId = ctx.generateQueueId()
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
 
-		await db.insert(recruitments).values({
-			id: recruitmentId,
+		await db.insert(queues).values({
+			id: queueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
 			messageId: ctx.messageId,
@@ -25,9 +25,9 @@ describe('PATCH /v1/recruitments/{id}/participants/{discordId}', () => {
 			anonymous: false,
 			status: 'open',
 		})
-		await db.insert(recruitmentParticipants).values({
+		await db.insert(queuePlayers).values({
 			id: crypto.randomUUID(),
-			recruitmentId,
+			queueId: queueId,
 			discordId: ctx.discordId2,
 			mainRole: 'adc',
 			subRole: null,
@@ -36,7 +36,7 @@ describe('PATCH /v1/recruitments/{id}/participants/{discordId}', () => {
 
 	it('updates role and returns 200', async () => {
 		const res = await app.request(
-			`/v1/recruitments/${recruitmentId}/participants/${ctx.discordId2}`,
+			`/v1/queues/${queueId}/players/${ctx.discordId2}`,
 			{
 				method: 'PATCH',
 				headers: {
@@ -54,15 +54,15 @@ describe('PATCH /v1/recruitments/{id}/participants/{discordId}', () => {
 		expect(res.status).toBe(200)
 
 		const data = (await res.json()) as {
-			participant: { discordId: string; mainRole: string; subRole: string }
+			player: { discordId: string; mainRole: string; subRole: string }
 		}
-		expect(data.participant.mainRole).toBe('mid')
-		expect(data.participant.subRole).toBe('jungle')
+		expect(data.player.mainRole).toBe('mid')
+		expect(data.player.subRole).toBe('jungle')
 	})
 
-	it('returns 404 when not a participant', async () => {
+	it('returns 404 when not a player', async () => {
 		const res = await app.request(
-			`/v1/recruitments/${recruitmentId}/participants/non-participant-${ctx.prefix}`,
+			`/v1/queues/${queueId}/players/non-player-${ctx.prefix}`,
 			{
 				method: 'PATCH',
 				headers: {

@@ -71,6 +71,20 @@
 			"when": 1765873492877,
 			"tag": "0009_eminent_secret_warriors",
 			"breakpoints": true
+		},
+		{
+			"idx": 10,
+			"version": "6",
+			"when": 1765951979365,
+			"tag": "0010_lyrical_ted_forrester",
+			"breakpoints": true
+		},
+		{
+			"idx": 11,
+			"version": "6",
+			"when": 1765952468640,
+			"tag": "0011_volatile_black_panther",
+			"breakpoints": true
 		}
 	]
 }

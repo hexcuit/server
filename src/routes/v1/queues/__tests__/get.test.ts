@@ -2,21 +2,21 @@ import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { recruitments } from '@/db/schema'
+import { queues } from '@/db/schema'
 import { app } from '@/index'
 
-describe('GET /v1/recruitments/{id}', () => {
+describe('GET /v1/queues/{id}', () => {
 	let ctx: TestContext
-	let recruitmentId: string
+	let queueId: string
 
 	beforeEach(async () => {
 		ctx = createTestContext()
-		recruitmentId = ctx.generateRecruitmentId()
+		queueId = ctx.generateQueueId()
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
 
-		await db.insert(recruitments).values({
-			id: recruitmentId,
+		await db.insert(queues).values({
+			id: queueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
 			messageId: ctx.messageId,
@@ -27,9 +27,9 @@ describe('GET /v1/recruitments/{id}', () => {
 		})
 	})
 
-	it('returns recruitment with participants', async () => {
+	it('returns queue with participants', async () => {
 		const res = await app.request(
-			`/v1/recruitments/${recruitmentId}`,
+			`/v1/queues/${queueId}`,
 			{
 				method: 'GET',
 				headers: {
@@ -42,18 +42,18 @@ describe('GET /v1/recruitments/{id}', () => {
 		expect(res.status).toBe(200)
 
 		const data = (await res.json()) as {
-			recruitment: { id: string }
-			participants: unknown[]
+			queue: { id: string }
+			players: unknown[]
 			count: number
 		}
-		expect(data.recruitment.id).toBe(recruitmentId)
-		expect(data.participants).toEqual([])
+		expect(data.queue.id).toBe(queueId)
+		expect(data.players).toEqual([])
 		expect(data.count).toBe(0)
 	})
 
-	it('returns 404 for non-existent recruitment', async () => {
+	it('returns 404 for non-existent queue', async () => {
 		const res = await app.request(
-			`/v1/recruitments/${crypto.randomUUID()}`,
+			`/v1/queues/${crypto.randomUUID()}`,
 			{
 				method: 'GET',
 				headers: {

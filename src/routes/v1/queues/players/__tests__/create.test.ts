@@ -2,21 +2,21 @@ import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { recruitments } from '@/db/schema'
+import { queues } from '@/db/schema'
 import { app } from '@/index'
 
-describe('POST /v1/recruitments/{id}/participants', () => {
+describe('POST /v1/queues/{id}/players', () => {
 	let ctx: TestContext
-	let recruitmentId: string
+	let queueId: string
 
 	beforeEach(async () => {
 		ctx = createTestContext()
-		recruitmentId = ctx.generateRecruitmentId()
+		queueId = ctx.generateQueueId()
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
 
-		await db.insert(recruitments).values({
-			id: recruitmentId,
+		await db.insert(queues).values({
+			id: queueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
 			messageId: ctx.messageId,
@@ -27,9 +27,9 @@ describe('POST /v1/recruitments/{id}/participants', () => {
 		})
 	})
 
-	it('joins recruitment and returns 201', async () => {
+	it('joins queue and returns 201', async () => {
 		const res = await app.request(
-			`/v1/recruitments/${recruitmentId}/participants`,
+			`/v1/queues/${queueId}/players`,
 			{
 				method: 'POST',
 				headers: {
@@ -48,20 +48,20 @@ describe('POST /v1/recruitments/{id}/participants', () => {
 		expect(res.status).toBe(201)
 
 		const data = (await res.json()) as {
-			participant: { discordId: string; mainRole: string; subRole: string }
+			player: { discordId: string; mainRole: string; subRole: string }
 			count: number
 			isFull: boolean
 		}
-		expect(data.participant.discordId).toBe(ctx.discordId2)
-		expect(data.participant.mainRole).toBe('mid')
-		expect(data.participant.subRole).toBe('top')
+		expect(data.player.discordId).toBe(ctx.discordId2)
+		expect(data.player.mainRole).toBe('mid')
+		expect(data.player.subRole).toBe('top')
 		expect(data.count).toBe(1)
 		expect(data.isFull).toBe(false)
 	})
 
-	it('returns 404 for non-existent recruitment', async () => {
+	it('returns 404 for non-existent queue', async () => {
 		const res = await app.request(
-			`/v1/recruitments/${crypto.randomUUID()}/participants`,
+			`/v1/queues/${crypto.randomUUID()}/players`,
 			{
 				method: 'POST',
 				headers: {
@@ -81,7 +81,7 @@ describe('POST /v1/recruitments/{id}/participants', () => {
 	it('returns 400 when already joined', async () => {
 		// Join first
 		await app.request(
-			`/v1/recruitments/${recruitmentId}/participants`,
+			`/v1/queues/${queueId}/players`,
 			{
 				method: 'POST',
 				headers: {
@@ -97,7 +97,7 @@ describe('POST /v1/recruitments/{id}/participants', () => {
 
 		// Try to join again
 		const res = await app.request(
-			`/v1/recruitments/${recruitmentId}/participants`,
+			`/v1/queues/${queueId}/players`,
 			{
 				method: 'POST',
 				headers: {

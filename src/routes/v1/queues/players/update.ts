@@ -3,17 +3,17 @@ import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { HTTPException } from 'hono/http-exception'
 import type { LolRole } from '@/constants'
-import { recruitmentParticipants } from '@/db/schema'
-import { ParticipantPathParamsSchema, UpdateRoleBodySchema, UpdateRoleResponseSchema } from './schemas'
+import { queuePlayers } from '@/db/schema'
+import { PlayerPathParamsSchema, UpdateRoleBodySchema, UpdateRoleResponseSchema } from './schemas'
 
-const updateParticipantRoute = createRoute({
+const updatePlayerRoute = createRoute({
 	method: 'patch',
-	path: '/{id}/participants/{discordId}',
-	tags: ['Recruitments'],
-	summary: 'Update participant role',
-	description: 'Update the role of a participant',
+	path: '/{id}/players/{discordId}',
+	tags: ['Queues'],
+	summary: 'Update player role',
+	description: 'Update the role of a player',
 	request: {
-		params: ParticipantPathParamsSchema,
+		params: PlayerPathParamsSchema,
 		body: {
 			content: {
 				'application/json': {
@@ -34,8 +34,8 @@ const updateParticipantRoute = createRoute({
 	},
 })
 
-export const updateParticipantRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
-	updateParticipantRoute,
+export const updatePlayerRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
+	updatePlayerRoute,
 	async (c) => {
 		const { id, discordId } = c.req.valid('param')
 		const { mainRole, subRole } = c.req.valid('json')
@@ -43,12 +43,12 @@ export const updateParticipantRouter = new OpenAPIHono<{ Bindings: Cloudflare.En
 
 		const existing = await db
 			.select()
-			.from(recruitmentParticipants)
-			.where(and(eq(recruitmentParticipants.recruitmentId, id), eq(recruitmentParticipants.discordId, discordId)))
+			.from(queuePlayers)
+			.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
 			.get()
 
 		if (!existing) {
-			throw new HTTPException(404, { message: 'Participant not found' })
+			throw new HTTPException(404, { message: 'Player not found' })
 		}
 
 		const updateData: { mainRole?: LolRole | null; subRole?: LolRole | null } = {}
@@ -57,19 +57,19 @@ export const updateParticipantRouter = new OpenAPIHono<{ Bindings: Cloudflare.En
 
 		if (Object.keys(updateData).length > 0) {
 			await db
-				.update(recruitmentParticipants)
+				.update(queuePlayers)
 				.set(updateData)
-				.where(and(eq(recruitmentParticipants.recruitmentId, id), eq(recruitmentParticipants.discordId, discordId)))
+				.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
 		}
 
 		const updated = await db
 			.select()
-			.from(recruitmentParticipants)
-			.where(and(eq(recruitmentParticipants.recruitmentId, id), eq(recruitmentParticipants.discordId, discordId)))
+			.from(queuePlayers)
+			.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
 			.get()
 
 		return c.json({
-			participant: {
+			player: {
 				discordId,
 				mainRole: updated?.mainRole || null,
 				subRole: updated?.subRole || null,

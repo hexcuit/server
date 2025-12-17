@@ -1,44 +1,44 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
-import { recruitments, users } from '@/db/schema'
-import { CreateRecruitmentBodySchema, CreateRecruitmentResponseSchema } from './schemas'
+import { queues, users } from '@/db/schema'
+import { CreateQueueBodySchema, CreateQueueResponseSchema } from './schemas'
 
-const createRecruitmentRoute = createRoute({
+const createQueueRoute = createRoute({
 	method: 'post',
 	path: '/',
-	tags: ['Recruitments'],
-	summary: 'Create recruitment',
-	description: 'Create a new recruitment',
+	tags: ['Queues'],
+	summary: 'Create queue',
+	description: 'Create a new queue',
 	request: {
 		body: {
 			content: {
 				'application/json': {
-					schema: CreateRecruitmentBodySchema,
+					schema: CreateQueueBodySchema,
 				},
 			},
 		},
 	},
 	responses: {
 		201: {
-			description: 'Recruitment created successfully',
+			description: 'Queue created successfully',
 			content: {
 				'application/json': {
-					schema: CreateRecruitmentResponseSchema,
+					schema: CreateQueueResponseSchema,
 				},
 			},
 		},
 	},
 })
 
-export const createRecruitmentRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
-	createRecruitmentRoute,
+export const createQueueRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
+	createQueueRoute,
 	async (c) => {
 		const data = c.req.valid('json')
 		const db = drizzle(c.env.DB)
 
 		await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
 
-		await db.insert(recruitments).values({
+		await db.insert(queues).values({
 			id: data.id,
 			guildId: data.guildId,
 			channelId: data.channelId,
@@ -50,6 +50,6 @@ export const createRecruitmentRouter = new OpenAPIHono<{ Bindings: Cloudflare.En
 			status: 'open',
 		})
 
-		return c.json({ recruitment: { id: data.id } }, 201)
+		return c.json({ queue: { id: data.id } }, 201)
 	},
 )

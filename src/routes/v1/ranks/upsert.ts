@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { lolRank, users } from '@/db/schema'
+import { lolRanks, users } from '@/db/schema'
 import { RankPathParamsSchema, UpsertRankBodySchema, UpsertRankResponseSchema } from './schemas'
 
 const upsertRankRoute = createRoute({
@@ -47,7 +47,7 @@ export const upsertRankRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().
 	const db = drizzle(c.env.DB)
 
 	// Check for existing record
-	const existing = await db.select().from(lolRank).where(eq(lolRank.discordId, discordId)).get()
+	const existing = await db.select().from(lolRanks).where(eq(lolRanks.discordId, discordId)).get()
 
 	await db
 		.insert(users)
@@ -56,8 +56,8 @@ export const upsertRankRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().
 		})
 		.onConflictDoNothing()
 
-	await db.insert(lolRank).values({ discordId, tier, division }).onConflictDoUpdate({
-		target: lolRank.discordId,
+	await db.insert(lolRanks).values({ discordId, tier, division }).onConflictDoUpdate({
+		target: lolRanks.discordId,
 		set: { tier, division },
 	})
 

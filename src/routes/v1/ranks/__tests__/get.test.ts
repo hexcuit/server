@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { lolRank } from '@/db/schema'
+import { lolRanks } from '@/db/schema'
 import { app } from '@/index'
 
 describe('GET /v1/ranks', () => {
@@ -71,7 +71,7 @@ describe('GET /v1/ranks', () => {
 		const db = drizzle(env.DB)
 
 		// Setup second user with rank
-		await db.insert(lolRank).values({
+		await db.insert(lolRanks).values({
 			discordId: ctx.discordId2,
 			tier: 'PLATINUM',
 			division: 'I',

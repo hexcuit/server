@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { lolRank } from '@/db/schema'
+import { lolRanks } from '@/db/schema'
 import { GetRanksQuerySchema, GetRanksResponseSchema } from './schemas'
 
 const getRanksRoute = createRoute({
@@ -30,7 +30,7 @@ export const getRanksRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().op
 
 	const db = drizzle(c.env.DB)
 
-	const ranks = await db.select().from(lolRank).where(inArray(lolRank.discordId, id))
+	const ranks = await db.select().from(lolRanks).where(inArray(lolRanks.discordId, id))
 
 	const ranksMap = new Map(ranks.map((rank) => [rank.discordId, rank]))
 

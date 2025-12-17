@@ -3,15 +3,15 @@ import { LOL_ROLES } from '@/constants'
 
 // ========== Path Parameters ==========
 
-export const RecruitmentPathParamsSchema = z
+export const QueuePathParamsSchema = z
 	.object({
 		id: z.uuid(),
 	})
-	.openapi('RecruitmentPathParams')
+	.openapi('QueuePathParams')
 
 // ========== Request Schemas ==========
 
-export const CreateRecruitmentBodySchema = z
+export const CreateQueueBodySchema = z
 	.object({
 		id: z.uuid(),
 		guildId: z.string(),
@@ -22,11 +22,11 @@ export const CreateRecruitmentBodySchema = z
 		anonymous: z.boolean(),
 		startTime: z.string().optional(),
 	})
-	.openapi('CreateRecruitmentBody')
+	.openapi('CreateQueueBody')
 
 // ========== Response Schemas ==========
 
-export const RecruitmentSchema = z
+export const QueueSchema = z
 	.object({
 		id: z.string(),
 		guildId: z.string(),
@@ -41,23 +41,23 @@ export const RecruitmentSchema = z
 		createdAt: z.string(),
 		updatedAt: z.string(),
 	})
-	.openapi('Recruitment')
+	.openapi('Queue')
 
-export const CreateRecruitmentResponseSchema = z
+export const CreateQueueResponseSchema = z
 	.object({
-		recruitment: z.object({
+		queue: z.object({
 			id: z.string(),
 		}),
 	})
-	.openapi('CreateRecruitmentResponse')
+	.openapi('CreateQueueResponse')
 
-export const GetRecruitmentResponseSchema = z
+export const GetQueueResponseSchema = z
 	.object({
-		recruitment: RecruitmentSchema,
-		participants: z.array(
+		queue: QueueSchema,
+		players: z.array(
 			z.object({
 				id: z.string(),
-				recruitmentId: z.string(),
+				queueId: z.string(),
 				discordId: z.string(),
 				mainRole: z.enum(LOL_ROLES).nullable(),
 				subRole: z.enum(LOL_ROLES).nullable(),
@@ -66,10 +66,10 @@ export const GetRecruitmentResponseSchema = z
 		),
 		count: z.number(),
 	})
-	.openapi('GetRecruitmentResponse')
+	.openapi('GetQueueResponse')
 
-export const DeleteRecruitmentResponseSchema = z
+export const DeleteQueueResponseSchema = z
 	.object({
 		deleted: z.boolean(),
 	})
-	.openapi('DeleteRecruitmentResponse')
+	.openapi('DeleteQueueResponse')

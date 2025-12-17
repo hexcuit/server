@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi'
 import { createInsertSchema } from 'drizzle-zod'
-import { lolRank } from '@/db/schema'
+import { lolRanks } from '@/db/schema'
 
 // ========== Path Parameters ==========
 
@@ -19,7 +19,7 @@ export const GetRanksQuerySchema = z
 	.openapi('GetRanksQuery')
 
 // Exclude discordId as it comes from path params
-export const UpsertRankBodySchema = createInsertSchema(lolRank).omit({ discordId: true }).openapi('UpsertRankBody')
+export const UpsertRankBodySchema = createInsertSchema(lolRanks).omit({ discordId: true }).openapi('UpsertRankBody')
 
 // ========== Response Schemas ==========
 

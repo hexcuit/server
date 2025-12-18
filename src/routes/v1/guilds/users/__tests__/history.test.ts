@@ -30,15 +30,15 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		await db.insert(guildMatches).values({
 			id: matchId1,
 			guildId: ctx.guildId,
-			winningTeam: 'blue',
+			winningTeam: 'BLUE',
 			createdAt: match1Time,
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId1,
 			discordId: ctx.discordId,
-			team: 'blue',
-			role: 'top',
+			team: 'BLUE',
+			role: 'TOP',
 			ratingBefore: 1500,
 			ratingAfter: 1525,
 		})
@@ -47,15 +47,15 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		await db.insert(guildMatches).values({
 			id: matchId2,
 			guildId: ctx.guildId,
-			winningTeam: 'blue',
+			winningTeam: 'BLUE',
 			createdAt: match2Time,
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId2,
 			discordId: ctx.discordId,
-			team: 'red',
-			role: 'jungle',
+			team: 'RED',
+			role: 'JUNGLE',
 			ratingBefore: 1525,
 			ratingAfter: 1510,
 		})
@@ -64,15 +64,15 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		await db.insert(guildMatches).values({
 			id: matchId3,
 			guildId: ctx.guildId,
-			winningTeam: 'blue',
+			winningTeam: 'BLUE',
 			createdAt: match3Time,
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId3,
 			discordId: ctx.discordId,
-			team: 'blue',
-			role: 'mid',
+			team: 'BLUE',
+			role: 'MIDDLE',
 			ratingBefore: 1510,
 			ratingAfter: 1535,
 		})
@@ -95,7 +95,7 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			discordId: string
 			history: Array<{
 				matchId: string
-				team: 'blue' | 'red'
+				team: 'BLUE' | 'RED'
 				role: string
 				ratingBefore: number
 				ratingAfter: number
@@ -115,24 +115,24 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		expect(data.history[2]?.matchId).toBe(matchId1)
 
 		// Verify match 3 details (most recent)
-		expect(data.history[0]?.team).toBe('blue')
-		expect(data.history[0]?.role).toBe('mid')
+		expect(data.history[0]?.team).toBe('BLUE')
+		expect(data.history[0]?.role).toBe('MIDDLE')
 		expect(data.history[0]?.ratingBefore).toBe(1510)
 		expect(data.history[0]?.ratingAfter).toBe(1535)
 		expect(data.history[0]?.change).toBe(25)
 		expect(data.history[0]?.won).toBe(true)
 
 		// Verify match 2 details (lost)
-		expect(data.history[1]?.team).toBe('red')
-		expect(data.history[1]?.role).toBe('jungle')
+		expect(data.history[1]?.team).toBe('RED')
+		expect(data.history[1]?.role).toBe('JUNGLE')
 		expect(data.history[1]?.ratingBefore).toBe(1525)
 		expect(data.history[1]?.ratingAfter).toBe(1510)
 		expect(data.history[1]?.change).toBe(-15)
 		expect(data.history[1]?.won).toBe(false)
 
 		// Verify match 1 details (won)
-		expect(data.history[2]?.team).toBe('blue')
-		expect(data.history[2]?.role).toBe('top')
+		expect(data.history[2]?.team).toBe('BLUE')
+		expect(data.history[2]?.role).toBe('TOP')
 		expect(data.history[2]?.ratingBefore).toBe(1500)
 		expect(data.history[2]?.ratingAfter).toBe(1525)
 		expect(data.history[2]?.change).toBe(25)
@@ -151,15 +151,15 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			await db.insert(guildMatches).values({
 				id: matchId,
 				guildId: ctx.guildId,
-				winningTeam: 'blue',
+				winningTeam: 'BLUE',
 				createdAt: matchTime,
 			})
 			await db.insert(guildMatchParticipants).values({
 				id: crypto.randomUUID(),
 				matchId,
 				discordId: ctx.discordId,
-				team: 'blue',
-				role: 'top',
+				team: 'BLUE',
+				role: 'TOP',
 				ratingBefore: 1500,
 				ratingAfter: 1525,
 			})
@@ -195,15 +195,15 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			await db.insert(guildMatches).values({
 				id: matchId,
 				guildId: ctx.guildId,
-				winningTeam: 'blue',
+				winningTeam: 'BLUE',
 				createdAt: matchTime,
 			})
 			await db.insert(guildMatchParticipants).values({
 				id: crypto.randomUUID(),
 				matchId,
 				discordId: ctx.discordId,
-				team: 'blue',
-				role: 'top',
+				team: 'BLUE',
+				role: 'TOP',
 				ratingBefore: 1500,
 				ratingAfter: 1525,
 			})
@@ -262,14 +262,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		await db.insert(guildMatches).values({
 			id: matchId1,
 			guildId: ctx.guildId,
-			winningTeam: 'blue',
+			winningTeam: 'BLUE',
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId1,
 			discordId: ctx.discordId,
-			team: 'blue',
-			role: 'top',
+			team: 'BLUE',
+			role: 'TOP',
 			ratingBefore: 1500,
 			ratingAfter: 1525,
 		})
@@ -278,14 +278,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		await db.insert(guildMatches).values({
 			id: matchId2,
 			guildId: otherGuildId,
-			winningTeam: 'blue',
+			winningTeam: 'BLUE',
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId2,
 			discordId: ctx.discordId,
-			team: 'blue',
-			role: 'top',
+			team: 'BLUE',
+			role: 'TOP',
 			ratingBefore: 1500,
 			ratingAfter: 1525,
 		})
@@ -317,14 +317,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		await db.insert(guildMatches).values({
 			id: matchId1,
 			guildId: ctx.guildId,
-			winningTeam: 'blue',
+			winningTeam: 'BLUE',
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId1,
 			discordId: ctx.discordId,
-			team: 'blue',
-			role: 'top',
+			team: 'BLUE',
+			role: 'TOP',
 			ratingBefore: 1500,
 			ratingAfter: 1525,
 		})
@@ -333,14 +333,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		await db.insert(guildMatches).values({
 			id: matchId2,
 			guildId: ctx.guildId,
-			winningTeam: 'blue',
+			winningTeam: 'BLUE',
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId2,
 			discordId: ctx.discordId2,
-			team: 'blue',
-			role: 'top',
+			team: 'BLUE',
+			role: 'TOP',
 			ratingBefore: 1500,
 			ratingAfter: 1525,
 		})
@@ -383,14 +383,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		await db.insert(guildMatches).values({
 			id: matchId1,
 			guildId: ctx.guildId,
-			winningTeam: 'blue',
+			winningTeam: 'BLUE',
 		})
 		await db.insert(guildMatchParticipants).values({
 			id: crypto.randomUUID(),
 			matchId: matchId1,
 			discordId: ctx.discordId,
-			team: 'red',
-			role: 'adc',
+			team: 'RED',
+			role: 'BOTTOM',
 			ratingBefore: 1600,
 			ratingAfter: 1575,
 		})

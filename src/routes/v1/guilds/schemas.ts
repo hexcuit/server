@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi'
-import { LOL_ROLES } from '@/constants'
+import { LOL_ROLES, LOL_TEAMS } from '@/constants'
 
 // ========== Path Parameters ==========
 
@@ -59,7 +59,7 @@ export const UpsertRatingBodySchema = z
 
 export const TeamAssignmentSchema = z
 	.object({
-		team: z.enum(['blue', 'red']),
+		team: z.enum(LOL_TEAMS),
 		role: z.enum(LOL_ROLES),
 		rating: z.number(),
 	})
@@ -82,7 +82,7 @@ export const CreateMatchBodySchema = z
 export const VoteBodySchema = z
 	.object({
 		discordId: z.string(),
-		vote: z.enum(['blue', 'red']),
+		vote: z.enum(LOL_TEAMS),
 	})
 	.openapi('VoteBody')
 
@@ -152,7 +152,7 @@ export const CreateMatchResponseSchema = z
 export const VoteItemSchema = z
 	.object({
 		discordId: z.string(),
-		vote: z.enum(['blue', 'red']),
+		vote: z.enum(LOL_TEAMS),
 	})
 	.openapi('VoteItem')
 
@@ -192,7 +192,7 @@ export const VoteResponseSchema = z
 export const RatingChangeSchema = z
 	.object({
 		discordId: z.string(),
-		team: z.enum(['blue', 'red']),
+		team: z.enum(LOL_TEAMS),
 		ratingBefore: z.number(),
 		ratingAfter: z.number(),
 		change: z.number(),
@@ -203,7 +203,7 @@ export const RatingChangeSchema = z
 export const ConfirmMatchResponseSchema = z
 	.object({
 		matchId: z.string(),
-		winningTeam: z.enum(['blue', 'red']),
+		winningTeam: z.enum(LOL_TEAMS),
 		ratingChanges: z.array(RatingChangeSchema),
 	})
 	.openapi('ConfirmMatchResponse')
@@ -217,8 +217,8 @@ export const DeleteMatchResponseSchema = z
 export const MatchHistoryItemSchema = z
 	.object({
 		matchId: z.string(),
-		team: z.enum(['blue', 'red']),
-		role: z.string(),
+		team: z.enum(LOL_TEAMS),
+		role: z.enum(LOL_ROLES),
 		ratingBefore: z.number(),
 		ratingAfter: z.number(),
 		change: z.number(),

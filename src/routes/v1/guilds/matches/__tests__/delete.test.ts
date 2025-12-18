@@ -18,8 +18,8 @@ describe('DELETE /v1/guilds/{guildId}/matches/{matchId}', () => {
 		await setupTestUsers(db, ctx)
 
 		const teamAssignments = {
-			[ctx.discordId]: { team: 'blue', role: 'top', rating: 1500 },
-			[ctx.discordId2]: { team: 'red', role: 'top', rating: 1500 },
+			[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+			[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 		}
 
 		await db.insert(guildPendingMatches).values({

@@ -29,7 +29,7 @@ describe('PATCH /v1/queues/{id}/players/{discordId}', () => {
 			id: crypto.randomUUID(),
 			queueId: queueId,
 			discordId: ctx.discordId2,
-			mainRole: 'adc',
+			mainRole: 'BOTTOM',
 			subRole: null,
 		})
 	})
@@ -44,8 +44,8 @@ describe('PATCH /v1/queues/{id}/players/{discordId}', () => {
 					'x-api-key': env.API_KEY,
 				},
 				body: JSON.stringify({
-					mainRole: 'mid',
-					subRole: 'jungle',
+					mainRole: 'MIDDLE',
+					subRole: 'JUNGLE',
 				}),
 			},
 			env,
@@ -56,8 +56,8 @@ describe('PATCH /v1/queues/{id}/players/{discordId}', () => {
 		const data = (await res.json()) as {
 			player: { discordId: string; mainRole: string; subRole: string }
 		}
-		expect(data.player.mainRole).toBe('mid')
-		expect(data.player.subRole).toBe('jungle')
+		expect(data.player.mainRole).toBe('MIDDLE')
+		expect(data.player.subRole).toBe('JUNGLE')
 	})
 
 	it('returns 404 when not a player', async () => {
@@ -70,7 +70,7 @@ describe('PATCH /v1/queues/{id}/players/{discordId}', () => {
 					'x-api-key': env.API_KEY,
 				},
 				body: JSON.stringify({
-					mainRole: 'mid',
+					mainRole: 'MIDDLE',
 				}),
 			},
 			env,

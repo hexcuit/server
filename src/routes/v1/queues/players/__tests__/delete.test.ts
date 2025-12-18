@@ -29,7 +29,7 @@ describe('DELETE /v1/queues/{id}/players/{discordId}', () => {
 			id: crypto.randomUUID(),
 			queueId: queueId,
 			discordId: ctx.discordId2,
-			mainRole: 'adc',
+			mainRole: 'BOTTOM',
 			subRole: null,
 		})
 	})

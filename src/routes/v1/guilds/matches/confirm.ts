@@ -56,15 +56,15 @@ export const confirmMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>(
 		const totalParticipants = Object.keys(teamAssignments).length
 		const votesRequired = calculateMajority(totalParticipants)
 
-		const winningTeam = match.blueVotes >= votesRequired ? 'blue' : match.redVotes >= votesRequired ? 'red' : null
+		const winningTeam = match.blueVotes >= votesRequired ? 'BLUE' : match.redVotes >= votesRequired ? 'RED' : null
 
 		if (!winningTeam) {
 			throw new HTTPException(400, { message: 'Not enough votes' })
 		}
 		const participants = Object.entries(teamAssignments)
 
-		const blueRatings = participants.filter(([, a]) => a.team === 'blue').map(([, a]) => a.rating)
-		const redRatings = participants.filter(([, a]) => a.team === 'red').map(([, a]) => a.rating)
+		const blueRatings = participants.filter(([, a]) => a.team === 'BLUE').map(([, a]) => a.rating)
+		const redRatings = participants.filter(([, a]) => a.team === 'RED').map(([, a]) => a.rating)
 		const blueAverage = calculateTeamAverageRating(blueRatings)
 		const redAverage = calculateTeamAverageRating(redRatings)
 
@@ -78,7 +78,7 @@ export const confirmMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>(
 
 		const ratingChanges: Array<{
 			discordId: string
-			team: 'blue' | 'red'
+			team: 'BLUE' | 'RED'
 			role: string
 			ratingBefore: number
 			ratingAfter: number
@@ -86,8 +86,8 @@ export const confirmMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>(
 		}> = []
 
 		for (const [discordId, assignment] of participants) {
-			const isBlue = assignment.team === 'blue'
-			const won = (isBlue && winningTeam === 'blue') || (!isBlue && winningTeam === 'red')
+			const isBlue = assignment.team === 'BLUE'
+			const won = (isBlue && winningTeam === 'BLUE') || (!isBlue && winningTeam === 'RED')
 			const opponentAverage = isBlue ? redAverage : blueAverage
 
 			const currentRating = ratingsMap.get(discordId)

@@ -38,8 +38,8 @@ describe('POST /v1/queues/{id}/players', () => {
 				},
 				body: JSON.stringify({
 					discordId: ctx.discordId2,
-					mainRole: 'mid',
-					subRole: 'top',
+					mainRole: 'MIDDLE',
+					subRole: 'TOP',
 				}),
 			},
 			env,
@@ -53,8 +53,8 @@ describe('POST /v1/queues/{id}/players', () => {
 			isFull: boolean
 		}
 		expect(data.player.discordId).toBe(ctx.discordId2)
-		expect(data.player.mainRole).toBe('mid')
-		expect(data.player.subRole).toBe('top')
+		expect(data.player.mainRole).toBe('MIDDLE')
+		expect(data.player.subRole).toBe('TOP')
 		expect(data.count).toBe(1)
 		expect(data.isFull).toBe(false)
 	})

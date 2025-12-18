@@ -156,7 +156,7 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/votes', () => {
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
 			messageId: ctx.messageId,
-			status: 'completed',
+			status: 'confirmed',
 			teamAssignments: JSON.stringify(teamAssignments),
 			blueVotes: 0,
 			redVotes: 0,

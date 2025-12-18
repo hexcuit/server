@@ -84,8 +84,8 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 			.where(and(eq(guildMatchVotes.pendingMatchId, matchId), eq(guildMatchVotes.discordId, discordId)))
 
 		// Use SQL increment for atomic vote count updates
-		const blueIncrement = vote === 'blue' ? 1 : -1
-		const redIncrement = vote === 'red' ? 1 : -1
+		const blueIncrement = vote === 'BLUE' ? 1 : -1
+		const redIncrement = vote === 'RED' ? 1 : -1
 
 		const [updatedMatch] = await db
 			.update(guildPendingMatches)
@@ -116,8 +116,8 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 	})
 
 	// Use SQL increment for atomic vote count updates
-	const blueIncrement = vote === 'blue' ? 1 : 0
-	const redIncrement = vote === 'red' ? 1 : 0
+	const blueIncrement = vote === 'BLUE' ? 1 : 0
+	const redIncrement = vote === 'RED' ? 1 : 0
 
 	const [updatedMatch] = await db
 		.update(guildPendingMatches)

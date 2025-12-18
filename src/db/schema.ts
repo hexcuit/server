@@ -1,7 +1,7 @@
 import { relations, sql } from 'drizzle-orm'
 import { integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema } from 'drizzle-zod'
-import { LOL_DIVISIONS, LOL_ROLES, LOL_TIERS } from '@/constants'
+import { LOL_DIVISIONS, LOL_ROLES, LOL_TEAMS, LOL_TIERS } from '@/constants'
 
 export const users = sqliteTable('users', {
 	discordId: text('discord_id').primaryKey(),
@@ -53,7 +53,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 	guildMatchParticipants: many(guildMatchParticipants),
 }))
 
-// キューテーブル
+// キューチE�Eブル
 export const queues = sqliteTable('queues', {
 	id: text('id').primaryKey(),
 	guildId: text('guild_id').notNull(),
@@ -79,7 +79,7 @@ export const queues = sqliteTable('queues', {
 		.$onUpdateFn(() => sql`(current_timestamp)`),
 })
 
-// キュープレイヤーテーブル
+// キュープレイヤーチE�Eブル
 export const queuePlayers = sqliteTable(
 	'queue_players',
 	{
@@ -122,7 +122,7 @@ export const queuePlayersRelations = relations(queuePlayers, ({ one }) => ({
 	}),
 }))
 
-// サーバー内レーティングテーブル
+// サーバ�E冁E��ーチE��ングチE�Eブル
 export const guildRatings = sqliteTable(
 	'guild_ratings',
 	{
@@ -146,7 +146,7 @@ export const guildRatings = sqliteTable(
 	(table) => [primaryKey({ columns: [table.guildId, table.discordId] })],
 )
 
-// 試合履歴テーブル
+// 試合履歴チE�Eブル
 export const guildMatches = sqliteTable('guild_matches', {
 	id: text('id').primaryKey(),
 	guildId: text('guild_id').notNull(),
@@ -154,11 +154,11 @@ export const guildMatches = sqliteTable('guild_matches', {
 		onDelete: 'set null',
 		onUpdate: 'cascade',
 	}),
-	winningTeam: text('winning_team', { enum: ['blue', 'red'] }).notNull(),
+	winningTeam: text('winning_team', { enum: LOL_TEAMS }).notNull(),
 	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
 })
 
-// 試合参加者テーブル
+// 試合参加老E��ーブル
 export const guildMatchParticipants = sqliteTable('guild_match_participants', {
 	id: text('id').primaryKey(),
 	matchId: text('match_id')
@@ -173,7 +173,7 @@ export const guildMatchParticipants = sqliteTable('guild_match_participants', {
 			onDelete: 'cascade',
 			onUpdate: 'cascade',
 		}),
-	team: text('team', { enum: ['blue', 'red'] }).notNull(),
+	team: text('team', { enum: LOL_TEAMS }).notNull(),
 	role: text('role', { enum: LOL_ROLES }).notNull(),
 	ratingBefore: integer('rating_before').notNull(),
 	ratingAfter: integer('rating_after').notNull(),
@@ -220,7 +220,7 @@ export const guildPendingMatches = sqliteTable('guild_pending_matches', {
 	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
 })
 
-// 試合投票テーブル
+// 試合投票チE�Eブル
 export const guildMatchVotes = sqliteTable(
 	'guild_match_votes',
 	{
@@ -236,7 +236,7 @@ export const guildMatchVotes = sqliteTable(
 				onDelete: 'cascade',
 				onUpdate: 'cascade',
 			}),
-		vote: text('vote', { enum: ['blue', 'red'] }).notNull(),
+		vote: text('vote', { enum: LOL_TEAMS }).notNull(),
 	},
 	(table) => [primaryKey({ columns: [table.pendingMatchId, table.discordId] })],
 )

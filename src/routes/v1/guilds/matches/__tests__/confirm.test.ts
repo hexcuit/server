@@ -25,8 +25,8 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 			])
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({
@@ -55,10 +55,10 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 
 			const data = (await res.json()) as {
 				matchId: string
-				winningTeam: 'blue' | 'red'
+				winningTeam: 'BLUE' | 'RED'
 				ratingChanges: Array<{
 					discordId: string
-					team: 'blue' | 'red'
+					team: 'BLUE' | 'RED'
 					ratingBefore: number
 					ratingAfter: number
 					change: number
@@ -66,22 +66,22 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				}>
 			}
 
-			expect(data.winningTeam).toBe('blue')
+			expect(data.winningTeam).toBe('BLUE')
 			expect(data.ratingChanges).toHaveLength(2)
 
 			const player1Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId)
 			expect(player1Change).toBeDefined()
-			expect(player1Change?.team).toBe('blue')
+			expect(player1Change?.team).toBe('BLUE')
 			expect(player1Change?.change).toBeGreaterThan(0)
 
 			const player2Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId2)
 			expect(player2Change).toBeDefined()
-			expect(player2Change?.team).toBe('red')
+			expect(player2Change?.team).toBe('RED')
 			expect(player2Change?.change).toBeLessThan(0)
 
 			const matches = await db.select().from(guildMatches).where(eq(guildMatches.id, data.matchId))
 			expect(matches).toHaveLength(1)
-			expect(matches[0]?.winningTeam).toBe('blue')
+			expect(matches[0]?.winningTeam).toBe('BLUE')
 
 			const participants = await db
 				.select()
@@ -117,8 +117,8 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 			])
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({
@@ -147,10 +147,10 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 
 			const data = (await res.json()) as {
 				matchId: string
-				winningTeam: 'blue' | 'red'
+				winningTeam: 'BLUE' | 'RED'
 			}
 
-			expect(data.winningTeam).toBe('red')
+			expect(data.winningTeam).toBe('RED')
 
 			const updatedRatings = await db.select().from(guildRatings).where(eq(guildRatings.guildId, ctx.guildId))
 			const player1Rating = updatedRatings.find((r) => r.discordId === ctx.discordId)
@@ -170,8 +170,8 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 			await setupTestUsers(db, ctx)
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({
@@ -228,10 +228,10 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 			])
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'blue', role: 'MIDDLE', rating: 1500 },
-				[player3]: { team: 'red', role: 'TOP', rating: 1500 },
-				[player4]: { team: 'red', role: 'MIDDLE', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'BLUE', role: 'MIDDLE', rating: 1500 },
+				[player3]: { team: 'RED', role: 'TOP', rating: 1500 },
+				[player4]: { team: 'RED', role: 'MIDDLE', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({
@@ -260,11 +260,11 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 
 			const data = (await res.json()) as {
 				matchId: string
-				winningTeam: 'blue' | 'red'
+				winningTeam: 'BLUE' | 'RED'
 				ratingChanges: Array<{ discordId: string }>
 			}
 
-			expect(data.winningTeam).toBe('blue')
+			expect(data.winningTeam).toBe('BLUE')
 			expect(data.ratingChanges).toHaveLength(4)
 		})
 	})
@@ -294,8 +294,8 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 			const matchId = ctx.generatePendingMatchId()
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({
@@ -330,8 +330,8 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 			const matchId = ctx.generatePendingMatchId()
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({
@@ -366,8 +366,8 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 			const matchId = ctx.generatePendingMatchId()
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({
@@ -406,9 +406,9 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				.values([{ guildId: ctx.guildId, discordId: player3, rating: 1500, wins: 0, losses: 0, placementGames: 0 }])
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
-				[player3]: { team: 'red', role: 'MIDDLE', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
+				[player3]: { team: 'RED', role: 'MIDDLE', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({
@@ -437,10 +437,10 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 
 			const data = (await res.json()) as {
 				matchId: string
-				winningTeam: 'blue' | 'red'
+				winningTeam: 'BLUE' | 'RED'
 			}
 
-			expect(data.winningTeam).toBe('blue')
+			expect(data.winningTeam).toBe('BLUE')
 		})
 
 		it('returns 400 for tie (equal votes)', async () => {
@@ -450,10 +450,10 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 			const player4 = ctx.generateUserId()
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
-				[player3]: { team: 'blue', role: 'MIDDLE', rating: 1500 },
-				[player4]: { team: 'red', role: 'MIDDLE', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
+				[player3]: { team: 'BLUE', role: 'MIDDLE', rating: 1500 },
+				[player4]: { team: 'RED', role: 'MIDDLE', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({
@@ -494,8 +494,8 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 			])
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({
@@ -545,8 +545,8 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 			])
 
 			const teamAssignments = {
-				[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 			}
 
 			await db.insert(guildPendingMatches).values({

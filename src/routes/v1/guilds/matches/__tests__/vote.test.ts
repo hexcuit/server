@@ -17,8 +17,8 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/votes', () => {
 		await setupTestUsers(db, ctx)
 
 		const teamAssignments = {
-			[ctx.discordId]: { team: 'blue', role: 'top', rating: 1500 },
-			[ctx.discordId2]: { team: 'red', role: 'top', rating: 1500 },
+			[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
+			[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
 		}
 
 		await db.insert(guildPendingMatches).values({
@@ -147,8 +147,8 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/votes', () => {
 		const completedMatchId = ctx.generatePendingMatchId()
 
 		const teamAssignments = {
-			[ctx.discordId]: { team: 'blue', role: 'top', rating: 1500 },
-			[ctx.discordId2]: { team: 'red', role: 'top', rating: 1500 },
+			[ctx.discordId]: { team: 'blue', role: 'TOP', rating: 1500 },
+			[ctx.discordId2]: { team: 'red', role: 'TOP', rating: 1500 },
 		}
 
 		await db.insert(guildPendingMatches).values({

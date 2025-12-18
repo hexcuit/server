@@ -19,8 +19,8 @@ describe('POST /v1/guilds/{guildId}/matches', () => {
 		const player2 = ctx.generateUserId()
 
 		const teamAssignments = {
-			[player1]: { team: 'blue', role: 'top', rating: 1500 },
-			[player2]: { team: 'red', role: 'top', rating: 1500 },
+			[player1]: { team: 'blue', role: 'TOP', rating: 1500 },
+			[player2]: { team: 'red', role: 'TOP', rating: 1500 },
 		}
 
 		const res = await app.request(

@@ -1,13 +1,14 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
+import { hc } from 'hono/client'
 import { guildRatings, users } from '@/db/schema'
 import { formatRankDisplay, getRankDisplay, INITIAL_RATING, isInPlacement } from '@/utils/elo'
 import { GuildIdParamSchema, UpsertRatingBodySchema, UpsertRatingResponseSchema } from '../schemas'
 
-const upsertRatingRoute = createRoute({
+const route = createRoute({
 	method: 'put',
-	path: '/',
+	path: '/v1/guilds/{guildId}/ratings',
 	tags: ['Guild Ratings'],
 	summary: 'Initialize guild rating',
 	description: 'Initialize guild rating for first-time participation',
@@ -27,68 +28,71 @@ const upsertRatingRoute = createRoute({
 	},
 })
 
-export const upsertRatingRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
-	upsertRatingRoute,
-	async (c) => {
-		const { guildId } = c.req.valid('param')
-		const { discordId } = c.req.valid('json')
-		const db = drizzle(c.env.DB)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
-		await db.insert(users).values({ discordId }).onConflictDoNothing()
+export const typedApp = app.openapi(route, async (c) => {
+	const { guildId } = c.req.valid('param')
+	const { discordId } = c.req.valid('json')
+	const db = drizzle(c.env.DB)
 
-		const existing = await db
-			.select()
-			.from(guildRatings)
-			.where(and(eq(guildRatings.guildId, guildId), eq(guildRatings.discordId, discordId)))
-			.get()
+	await db.insert(users).values({ discordId }).onConflictDoNothing()
 
-		if (existing) {
-			const rankDisplay = getRankDisplay(existing.rating)
-			return c.json(
-				{
-					created: false,
-					rating: {
-						discordId,
-						guildId,
-						rating: existing.rating,
-						wins: existing.wins,
-						losses: existing.losses,
-						placementGames: existing.placementGames,
-						isPlacement: isInPlacement(existing.placementGames),
-						rank: formatRankDisplay(rankDisplay),
-						rankDetail: rankDisplay,
-					},
-				},
-				200,
-			)
-		}
+	const existing = await db
+		.select()
+		.from(guildRatings)
+		.where(and(eq(guildRatings.guildId, guildId), eq(guildRatings.discordId, discordId)))
+		.get()
 
-		await db.insert(guildRatings).values({
-			guildId,
-			discordId,
-			rating: INITIAL_RATING,
-			wins: 0,
-			losses: 0,
-			placementGames: 0,
-		})
-
-		const rankDisplay = getRankDisplay(INITIAL_RATING)
+	if (existing) {
+		const rankDisplay = getRankDisplay(existing.rating)
 		return c.json(
 			{
-				created: true,
+				created: false,
 				rating: {
 					discordId,
 					guildId,
-					rating: INITIAL_RATING,
-					wins: 0,
-					losses: 0,
-					placementGames: 0,
-					isPlacement: true,
+					rating: existing.rating,
+					wins: existing.wins,
+					losses: existing.losses,
+					placementGames: existing.placementGames,
+					isPlacement: isInPlacement(existing.placementGames),
 					rank: formatRankDisplay(rankDisplay),
 					rankDetail: rankDisplay,
 				},
 			},
-			201,
+			200,
 		)
-	},
-)
+	}
+
+	await db.insert(guildRatings).values({
+		guildId,
+		discordId,
+		rating: INITIAL_RATING,
+		wins: 0,
+		losses: 0,
+		placementGames: 0,
+	})
+
+	const rankDisplay = getRankDisplay(INITIAL_RATING)
+	return c.json(
+		{
+			created: true,
+			rating: {
+				discordId,
+				guildId,
+				rating: INITIAL_RATING,
+				wins: 0,
+				losses: 0,
+				placementGames: 0,
+				isPlacement: true,
+				rank: formatRankDisplay(rankDisplay),
+				rankDetail: rankDisplay,
+			},
+		},
+		201,
+	)
+})
+
+export default app
+
+export const hcWithType = (...args: Parameters<typeof hc>) => hc<typeof typedApp>(...args)

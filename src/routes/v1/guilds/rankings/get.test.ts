@@ -1,18 +1,14 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import {
-	authHeaders,
-	createApiClient,
-	createTestContext,
-	setupTestUsers,
-	type TestContext,
-} from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildRatings } from '@/db/schema'
 import { PLACEMENT_GAMES } from '@/utils/elo'
+import { typedApp } from './get'
 
 describe('getRankings', () => {
-	const client = createApiClient()
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 
 	beforeEach(async () => {
@@ -39,7 +35,10 @@ describe('getRankings', () => {
 	})
 
 	it('returns rankings sorted by rating', async () => {
-		const res = await client.v1.guilds[':guildId'].rankings.$get({ param: { guildId: ctx.guildId } }, authHeaders)
+		const res = await client.v1.guilds[':guildId'].rankings.$get(
+			{ param: { guildId: ctx.guildId }, query: {} },
+			authHeaders,
+		)
 
 		expect(res.status).toBe(200)
 

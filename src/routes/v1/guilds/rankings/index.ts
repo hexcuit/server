@@ -1,4 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { getRankingRouter } from './get'
+import get from './get'
 
-export const rankingsRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().route('/', getRankingRouter)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+app.route('/', get)
+
+export default app

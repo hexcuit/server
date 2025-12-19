@@ -1,17 +1,13 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import {
-	authHeaders,
-	createApiClient,
-	createTestContext,
-	setupTestUsers,
-	type TestContext,
-} from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildRatings } from '@/db/schema'
+import { typedApp } from './get'
 
 describe('getRatings', () => {
-	const client = createApiClient()
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 
 	beforeEach(async () => {

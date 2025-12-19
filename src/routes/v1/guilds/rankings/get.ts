@@ -1,13 +1,14 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, desc, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
+import { hc } from 'hono/client'
 import { guildRatings } from '@/db/schema'
 import { formatRankDisplay, getRankDisplay, PLACEMENT_GAMES } from '@/utils/elo'
 import { GetRankingQuerySchema, GetRankingResponseSchema, GuildIdParamSchema } from '../schemas'
 
-const getRankingRoute = createRoute({
+const route = createRoute({
 	method: 'get',
-	path: '/',
+	path: '/v1/guilds/{guildId}/rankings',
 	tags: ['Guild Rankings'],
 	summary: 'Get guild rankings',
 	description: 'Get guild rating rankings',
@@ -23,7 +24,9 @@ const getRankingRoute = createRoute({
 	},
 })
 
-export const getRankingRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(getRankingRoute, async (c) => {
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+export const typedApp = app.openapi(route, async (c) => {
 	const { guildId } = c.req.valid('param')
 	const { limit } = c.req.valid('query')
 	const db = drizzle(c.env.DB)
@@ -51,3 +54,7 @@ export const getRankingRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().
 
 	return c.json({ guildId, rankings: result })
 })
+
+export default app
+
+export const hcWithType = (...args: Parameters<typeof hc>) => hc<typeof typedApp>(...args)

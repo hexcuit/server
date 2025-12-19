@@ -1,17 +1,13 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import {
-	authHeaders,
-	createApiClient,
-	createTestContext,
-	setupTestUsers,
-	type TestContext,
-} from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildRatings } from '@/db/schema'
+import { typedApp } from './upsert'
 
 describe('upsertRating', () => {
-	const client = createApiClient()
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 
 	beforeEach(async () => {
@@ -29,10 +25,12 @@ describe('upsertRating', () => {
 
 		expect(res.status).toBe(201)
 
-		const data = await res.json()
-		expect(data.created).toBe(true)
-		expect(data.rating.discordId).toBe(ctx.discordId)
-		expect(data.rating.rating).toBe(1200) // INITIAL_RATING
+		if (res.status === 201) {
+			const data = await res.json()
+			expect(data.created).toBe(true)
+			expect(data.rating.discordId).toBe(ctx.discordId)
+			expect(data.rating.rating).toBe(1200) // INITIAL_RATING
+		}
 	})
 
 	it('returns existing rating with 200', async () => {
@@ -57,8 +55,10 @@ describe('upsertRating', () => {
 
 		expect(res.status).toBe(200)
 
-		const data = await res.json()
-		expect(data.created).toBe(false)
-		expect(data.rating.rating).toBe(1500)
+		if (res.status === 200) {
+			const data = await res.json()
+			expect(data.created).toBe(false)
+			expect(data.rating.rating).toBe(1500)
+		}
 	})
 })

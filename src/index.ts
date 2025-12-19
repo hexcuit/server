@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { Scalar } from '@scalar/hono-api-reference'
-import { HTTPException } from 'hono/http-exception'
 import v1 from '@/routes/v1'
 import version from '../package.json'
 
@@ -25,12 +24,5 @@ app.doc('/docs.json', {
 app.get('/docs', Scalar({ url: '/docs.json' }))
 
 app.route('/', v1)
-
-app.onError((err, c) => {
-	if (err instanceof HTTPException) {
-		return c.json({ message: err.message }, err.status)
-	}
-	return c.json({ message: 'Internal Server Error' }, 500)
-})
 
 export default app

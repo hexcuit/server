@@ -68,8 +68,8 @@ export const GetQueueResponseSchema = z
 	})
 	.openapi('GetQueueResponse')
 
-export const DeleteQueueResponseSchema = z
+export const RemoveQueueResponseSchema = z
 	.object({
-		deleted: z.boolean(),
+		removed: z.boolean(),
 	})
-	.openapi('DeleteQueueResponse')
+	.openapi('RemoveQueueResponse')

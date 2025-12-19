@@ -1,12 +1,14 @@
 import { env } from 'cloudflare:test'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { queues } from '@/db/schema'
-import { app } from '@/index'
+import { typedApp } from '@/routes/v1/queues/remove'
 
-describe('DELETE /v1/queues/{id}', () => {
+describe('removeQueue', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 	let queueId: string
 
@@ -29,21 +31,12 @@ describe('DELETE /v1/queues/{id}', () => {
 	})
 
 	it('deletes queue and returns 200', async () => {
-		const res = await app.request(
-			`/v1/queues/${queueId}`,
-			{
-				method: 'DELETE',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
-		)
+		const res = await client.v1.queues[':id'].$delete({ param: { id: queueId } }, authHeaders)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as { deleted: boolean }
-		expect(data.deleted).toBe(true)
+		const data = await res.json()
+		expect(data.removed).toBe(true)
 
 		const db = drizzle(env.DB)
 		const deleted = await db.select().from(queues).where(eq(queues.id, queueId)).get()

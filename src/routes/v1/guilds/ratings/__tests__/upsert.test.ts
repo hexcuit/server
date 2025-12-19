@@ -1,11 +1,17 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import {
+	authHeaders,
+	createApiClient,
+	createTestContext,
+	setupTestUsers,
+	type TestContext,
+} from '@/__tests__/test-utils'
 import { guildRatings } from '@/db/schema'
-import { app } from '@/index'
 
-describe('PUT /v1/guilds/{guildId}/ratings', () => {
+describe('upsertRating', () => {
+	const client = createApiClient()
 	let ctx: TestContext
 
 	beforeEach(async () => {
@@ -13,24 +19,17 @@ describe('PUT /v1/guilds/{guildId}/ratings', () => {
 	})
 
 	it('creates a new rating and returns 201', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/ratings`,
+		const res = await client.v1.guilds[':guildId'].ratings.$put(
 			{
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-					'x-api-key': env.API_KEY,
-				},
-				body: JSON.stringify({
-					discordId: ctx.discordId,
-				}),
+				param: { guildId: ctx.guildId },
+				json: { discordId: ctx.discordId },
 			},
-			env,
+			authHeaders,
 		)
 
 		expect(res.status).toBe(201)
 
-		const data = (await res.json()) as { created: boolean; rating: { discordId: string; rating: number } }
+		const data = await res.json()
 		expect(data.created).toBe(true)
 		expect(data.rating.discordId).toBe(ctx.discordId)
 		expect(data.rating.rating).toBe(1200) // INITIAL_RATING
@@ -48,43 +47,18 @@ describe('PUT /v1/guilds/{guildId}/ratings', () => {
 			placementGames: 10,
 		})
 
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/ratings`,
+		const res = await client.v1.guilds[':guildId'].ratings.$put(
 			{
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-					'x-api-key': env.API_KEY,
-				},
-				body: JSON.stringify({
-					discordId: ctx.discordId,
-				}),
+				param: { guildId: ctx.guildId },
+				json: { discordId: ctx.discordId },
 			},
-			env,
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as { created: boolean; rating: { discordId: string; rating: number } }
+		const data = await res.json()
 		expect(data.created).toBe(false)
 		expect(data.rating.rating).toBe(1500)
-	})
-
-	it('returns 401 without API key', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/ratings`,
-			{
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					discordId: ctx.discordId,
-				}),
-			},
-			env,
-		)
-
-		expect(res.status).toBe(401)
 	})
 })

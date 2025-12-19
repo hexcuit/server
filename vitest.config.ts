@@ -15,7 +15,7 @@ export default defineWorkersConfig({
 	},
 	test: {
 		globals: true,
-		include: ['src/**/__tests__/**/*.test.ts'],
+		include: ['src/**/*.test.ts'],
 		setupFiles: ['./src/__tests__/setup.ts'],
 		poolOptions: {
 			workers: {

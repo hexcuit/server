@@ -1,12 +1,13 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { HTTPException } from 'hono/http-exception'
+import { hc } from 'hono/client'
 import type { LolRole } from '@/constants'
 import { queuePlayers } from '@/db/schema'
+import { ErrorResponseSchema } from '@/utils/schemas'
 import { PlayerPathParamsSchema, UpdateRoleBodySchema, UpdateRoleResponseSchema } from './schemas'
 
-const updatePlayerRoute = createRoute({
+const route = createRoute({
 	method: 'patch',
 	path: '/{id}/players/{discordId}',
 	tags: ['Queues'],
@@ -31,49 +32,63 @@ const updatePlayerRoute = createRoute({
 				},
 			},
 		},
+		404: {
+			description: 'Player not found',
+			content: {
+				'application/json': {
+					schema: ErrorResponseSchema,
+				},
+			},
+		},
 	},
 })
 
-export const updatePlayerRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
-	updatePlayerRoute,
-	async (c) => {
-		const { id, discordId } = c.req.valid('param')
-		const { mainRole, subRole } = c.req.valid('json')
-		const db = drizzle(c.env.DB)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/queues')
 
-		const existing = await db
-			.select()
-			.from(queuePlayers)
+export const typedApp = app.openapi(route, async (c) => {
+	const { id, discordId } = c.req.valid('param')
+	const { mainRole, subRole } = c.req.valid('json')
+	const db = drizzle(c.env.DB)
+
+	const existing = await db
+		.select()
+		.from(queuePlayers)
+		.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
+		.get()
+
+	if (!existing) {
+		return c.json({ message: 'Player not found' }, 404)
+	}
+
+	const updateData: { mainRole?: LolRole | null; subRole?: LolRole | null } = {}
+	if (mainRole !== undefined) updateData.mainRole = mainRole
+	if (subRole !== undefined) updateData.subRole = subRole
+
+	if (Object.keys(updateData).length > 0) {
+		await db
+			.update(queuePlayers)
+			.set(updateData)
 			.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
-			.get()
+	}
 
-		if (!existing) {
-			throw new HTTPException(404, { message: 'Player not found' })
-		}
+	const updated = await db
+		.select()
+		.from(queuePlayers)
+		.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
+		.get()
 
-		const updateData: { mainRole?: LolRole | null; subRole?: LolRole | null } = {}
-		if (mainRole !== undefined) updateData.mainRole = mainRole
-		if (subRole !== undefined) updateData.subRole = subRole
-
-		if (Object.keys(updateData).length > 0) {
-			await db
-				.update(queuePlayers)
-				.set(updateData)
-				.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
-		}
-
-		const updated = await db
-			.select()
-			.from(queuePlayers)
-			.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
-			.get()
-
-		return c.json({
+	return c.json(
+		{
 			player: {
 				discordId,
 				mainRole: updated?.mainRole || null,
 				subRole: updated?.subRole || null,
 			},
-		})
-	},
-)
+		},
+		200,
+	)
+})
+
+export default app
+
+export const hcWithType = (...args: Parameters<typeof hc>) => hc<typeof typedApp>(...args)

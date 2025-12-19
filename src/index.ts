@@ -3,14 +3,10 @@ import { Scalar } from '@scalar/hono-api-reference'
 import { HTTPException } from 'hono/http-exception'
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
-import { v1Router } from '@/routes/v1'
+import v1 from '@/routes/v1'
 import version from '../package.json'
 
-const router = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().route('/v1', v1Router)
-
-export type AppType = typeof router
-
-export const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 app.doc('/docs.json', {
 	openapi: '3.1.0',
@@ -32,7 +28,7 @@ app.get('/docs', Scalar({ url: '/docs.json' }))
 
 app.use(corsMiddleware)
 app.use(apiKeyMiddleware)
-app.route('/', router)
+app.route('/', v1)
 
 app.onError((err, c) => {
 	if (err instanceof HTTPException) {
@@ -41,7 +37,4 @@ app.onError((err, c) => {
 	return c.json({ message: 'Internal Server Error' }, 500)
 })
 
-export default {
-	port: 3001,
-	fetch: app.fetch,
-}
+export default app

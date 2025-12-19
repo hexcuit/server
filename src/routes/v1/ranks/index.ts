@@ -1,7 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { getRanksRouter } from './get'
-import { upsertRankRouter } from './upsert'
+import get from './get'
+import upsert from './upsert'
 
-export const ranksRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
-	.route('/', getRanksRouter)
-	.route('/', upsertRankRouter)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+app.route('/', get)
+app.route('/', upsert)
+
+export default app

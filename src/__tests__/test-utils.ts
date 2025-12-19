@@ -1,22 +1,11 @@
 import { env } from 'cloudflare:test'
 import type { DrizzleD1Database } from 'drizzle-orm/d1'
-import { testClient } from 'hono/testing'
 import { guildRatings, lolRanks, users } from '@/db/schema'
-import { type AppType, app } from '@/index'
 
 /**
- * Creates a type-safe API test client.
+ * Auth headers for API requests.
  */
-export function createApiClient() {
-	return testClient<AppType>(app, env)
-}
-
-/**
- * Common auth headers for API requests.
- */
-export const authHeaders = {
-	headers: { 'x-api-key': env.API_KEY },
-}
+export const authHeaders = { headers: { 'x-api-key': env.API_KEY } }
 
 /**
  * Test context that holds unique IDs for each test run.

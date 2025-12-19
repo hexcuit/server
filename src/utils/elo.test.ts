@@ -10,7 +10,7 @@ import {
 	K_FACTOR_NORMAL,
 	K_FACTOR_PLACEMENT,
 	PLACEMENT_GAMES,
-} from '../elo'
+} from './elo'
 
 describe('Elo Rating Utilities', () => {
 	describe('定数', () => {

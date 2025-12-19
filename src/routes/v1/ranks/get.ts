@@ -1,10 +1,11 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
+import { hc } from 'hono/client'
 import { lolRanks } from '@/db/schema'
 import { GetRanksQuerySchema, GetRanksResponseSchema } from './schemas'
 
-const getRanksRoute = createRoute({
+const route = createRoute({
 	method: 'get',
 	path: '/',
 	tags: ['LoL Ranks'],
@@ -25,7 +26,9 @@ const getRanksRoute = createRoute({
 	},
 })
 
-export const getRanksRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(getRanksRoute, async (c) => {
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/ranks')
+
+export const typedApp = app.openapi(route, async (c) => {
 	const { id } = c.req.valid('query')
 
 	const db = drizzle(c.env.DB)
@@ -47,3 +50,7 @@ export const getRanksRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().op
 
 	return c.json({ ranks: result })
 })
+
+export default app
+
+export const hcWithType = (...args: Parameters<typeof hc>) => hc<typeof typedApp>(...args)

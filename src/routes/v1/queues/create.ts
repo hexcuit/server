@@ -1,10 +1,10 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
-import { HTTPException } from 'hono/http-exception'
+import { hc } from 'hono/client'
 import { queues, users } from '@/db/schema'
 import { CreateQueueBodySchema, CreateQueueResponseSchema } from './schemas'
 
-const createQueueRoute = createRoute({
+const route = createRoute({
 	method: 'post',
 	path: '/',
 	tags: ['Queues'],
@@ -28,39 +28,32 @@ const createQueueRoute = createRoute({
 				},
 			},
 		},
-		409: {
-			description: 'Queue with the specified ID already exists',
-		},
 	},
 })
 
-export const createQueueRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
-	createQueueRoute,
-	async (c) => {
-		const data = c.req.valid('json')
-		const db = drizzle(c.env.DB)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/queues')
 
-		await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
+export const typedApp = app.openapi(route, async (c) => {
+	const data = c.req.valid('json')
+	const db = drizzle(c.env.DB)
 
-		try {
-			await db.insert(queues).values({
-				id: data.id,
-				guildId: data.guildId,
-				channelId: data.channelId,
-				messageId: data.messageId,
-				creatorId: data.creatorId,
-				type: data.type,
-				anonymous: data.anonymous,
-				startTime: data.startTime || null,
-				status: 'open',
-			})
-		} catch (error) {
-			if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
-				throw new HTTPException(409, { message: 'Queue with the specified ID already exists' })
-			}
-			throw error
-		}
+	await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
 
-		return c.json({ queue: { id: data.id } }, 201)
-	},
-)
+	await db.insert(queues).values({
+		id: data.id,
+		guildId: data.guildId,
+		channelId: data.channelId,
+		messageId: data.messageId,
+		creatorId: data.creatorId,
+		type: data.type,
+		anonymous: data.anonymous,
+		startTime: data.startTime || null,
+		status: 'open',
+	})
+
+	return c.json({ queue: { id: data.id } }, 201)
+})
+
+export default app
+
+export const hcWithType = (...args: Parameters<typeof hc>) => hc<typeof typedApp>(...args)

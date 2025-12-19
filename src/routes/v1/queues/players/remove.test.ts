@@ -1,11 +1,13 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { queuePlayers, queues } from '@/db/schema'
-import { app } from '@/index'
+import { typedApp } from '@/routes/v1/queues/players/remove'
 
-describe('DELETE /v1/queues/{id}/players/{discordId}', () => {
+describe('removeQueuePlayer', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 	let queueId: string
 
@@ -35,35 +37,32 @@ describe('DELETE /v1/queues/{id}/players/{discordId}', () => {
 	})
 
 	it('leaves queue and returns 200', async () => {
-		const res = await app.request(
-			`/v1/queues/${queueId}/players/${ctx.discordId2}`,
-			{
-				method: 'DELETE',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.queues[':id'].players[':discordId'].$delete(
+			{ param: { id: queueId, discordId: ctx.discordId2 } },
+			authHeaders,
 		)
 
+		expect(res.ok).toBe(true)
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as { count: number }
-		expect(data.count).toBe(0)
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.count).toBe(0)
+		}
 	})
 
 	it('returns 404 when not a player', async () => {
-		const res = await app.request(
-			`/v1/queues/${queueId}/players/non-player-${ctx.prefix}`,
-			{
-				method: 'DELETE',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.queues[':id'].players[':discordId'].$delete(
+			{ param: { id: queueId, discordId: `non-player-${ctx.prefix}` } },
+			authHeaders,
 		)
 
+		expect(res.ok).toBe(false)
 		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Player not found')
+		}
 	})
 })

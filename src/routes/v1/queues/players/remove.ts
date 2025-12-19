@@ -1,31 +1,31 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { hc } from 'hono/client'
 import { queuePlayers, queues } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
-import { GetQueueResponseSchema, QueuePathParamsSchema } from './schemas'
+import { LeaveResponseSchema, PlayerPathParamsSchema } from './schemas'
 
 const route = createRoute({
-	method: 'get',
-	path: '/{id}',
+	method: 'delete',
+	path: '/{id}/players/{discordId}',
 	tags: ['Queues'],
-	summary: 'Get queue',
-	description: 'Get queue details with participants',
+	summary: 'Leave queue',
+	description: 'Leave a queue',
 	request: {
-		params: QueuePathParamsSchema,
+		params: PlayerPathParamsSchema,
 	},
 	responses: {
 		200: {
-			description: 'Queue retrieved successfully',
+			description: 'Successfully left queue',
 			content: {
 				'application/json': {
-					schema: GetQueueResponseSchema,
+					schema: LeaveResponseSchema,
 				},
 			},
 		},
 		404: {
-			description: 'Queue not found',
+			description: 'Player not found',
 			content: {
 				'application/json': {
 					schema: ErrorResponseSchema,
@@ -38,25 +38,30 @@ const route = createRoute({
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/queues')
 
 export const typedApp = app.openapi(route, async (c) => {
-	const { id } = c.req.valid('param')
+	const { id, discordId } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
+
+	const existing = await db
+		.select()
+		.from(queuePlayers)
+		.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
+		.get()
+
+	if (!existing) {
+		return c.json({ message: 'Player not found' }, 404)
+	}
+
+	await db.delete(queuePlayers).where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
 
 	const queue = await db.select().from(queues).where(eq(queues.id, id)).get()
 
-	if (!queue) {
-		return c.json({ message: 'Queue not found' }, 404)
+	if (queue?.status === 'full') {
+		await db.update(queues).set({ status: 'open' }).where(eq(queues.id, id))
 	}
 
 	const players = await db.select().from(queuePlayers).where(eq(queuePlayers.queueId, id))
 
-	return c.json(
-		{
-			queue,
-			players,
-			count: players.length,
-		},
-		200,
-	)
+	return c.json({ count: players.length }, 200)
 })
 
 export default app

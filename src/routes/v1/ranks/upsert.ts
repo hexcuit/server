@@ -1,9 +1,10 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
+import { hc } from 'hono/client'
 import { lolRanks, users } from '@/db/schema'
 import { RankPathParamsSchema, UpsertRankBodySchema, UpsertRankResponseSchema } from './schemas'
 
-const upsertRankRoute = createRoute({
+const route = createRoute({
 	method: 'put',
 	path: '/{discordId}',
 	tags: ['LoL Ranks'],
@@ -31,7 +32,9 @@ const upsertRankRoute = createRoute({
 	},
 })
 
-export const upsertRankRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(upsertRankRoute, async (c) => {
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/ranks')
+
+export const typedApp = app.openapi(route, async (c) => {
 	const { discordId } = c.req.valid('param')
 	const { tier, division } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
@@ -44,3 +47,7 @@ export const upsertRankRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().
 
 	return c.json({ rank: { discordId, tier, division } }, 200)
 })
+
+export default app
+
+export const hcWithType = (...args: Parameters<typeof hc>) => hc<typeof typedApp>(...args)

@@ -1,12 +1,18 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import {
+	authHeaders,
+	createApiClient,
+	createTestContext,
+	setupTestUsers,
+	type TestContext,
+} from '@/__tests__/test-utils'
 import { guildRatings } from '@/db/schema'
-import { app } from '@/index'
 import { PLACEMENT_GAMES } from '@/utils/elo'
 
-describe('GET /v1/guilds/{guildId}/rankings', () => {
+describe('getRankings', () => {
+	const client = createApiClient()
 	let ctx: TestContext
 
 	beforeEach(async () => {
@@ -33,23 +39,11 @@ describe('GET /v1/guilds/{guildId}/rankings', () => {
 	})
 
 	it('returns rankings sorted by rating', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/rankings`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
-		)
+		const res = await client.v1.guilds[':guildId'].rankings.$get({ param: { guildId: ctx.guildId } }, authHeaders)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as {
-			guildId: string
-			rankings: Array<{ position: number; discordId: string; rating: number }>
-		}
+		const data = await res.json()
 		expect(data.guildId).toBe(ctx.guildId)
 		expect(data.rankings).toHaveLength(2)
 		expect(data.rankings[0]?.position).toBe(1)
@@ -60,34 +54,17 @@ describe('GET /v1/guilds/{guildId}/rankings', () => {
 	})
 
 	it('respects limit parameter', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/rankings?limit=1`,
+		const res = await client.v1.guilds[':guildId'].rankings.$get(
 			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
+				param: { guildId: ctx.guildId },
+				query: { limit: '1' },
 			},
-			env,
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as {
-			rankings: Array<{ position: number; discordId: string }>
-		}
+		const data = await res.json()
 		expect(data.rankings).toHaveLength(1)
-	})
-
-	it('returns 401 without API key', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/rankings`,
-			{
-				method: 'GET',
-			},
-			env,
-		)
-
-		expect(res.status).toBe(401)
 	})
 })

@@ -1,12 +1,14 @@
 import { env } from 'cloudflare:test'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestContext, type TestContext } from '@/__tests__/test-utils'
 import { guildPendingMatches } from '@/db/schema'
-import { app } from '@/index'
+import { typedApp } from './create'
 
-describe('POST /v1/guilds/{guildId}/matches', () => {
+describe('createMatch', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 
 	beforeEach(async () => {
@@ -19,32 +21,29 @@ describe('POST /v1/guilds/{guildId}/matches', () => {
 		const player2 = ctx.generateUserId()
 
 		const teamAssignments = {
-			[player1]: { team: 'BLUE', role: 'TOP', rating: 1500 },
-			[player2]: { team: 'RED', role: 'TOP', rating: 1500 },
+			[player1]: { team: 'BLUE' as const, role: 'TOP' as const, rating: 1500 },
+			[player2]: { team: 'RED' as const, role: 'TOP' as const, rating: 1500 },
 		}
 
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/matches`,
+		const res = await client.v1.guilds[':guildId'].matches.$post(
 			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'x-api-key': env.API_KEY,
-				},
-				body: JSON.stringify({
+				param: { guildId: ctx.guildId },
+				json: {
 					id: matchId,
 					channelId: ctx.channelId,
 					messageId: ctx.messageId,
 					teamAssignments,
-				}),
+				},
 			},
-			env,
+			{ headers: { 'x-api-key': env.API_KEY } },
 		)
 
 		expect(res.status).toBe(201)
 
-		const data = (await res.json()) as { matchId: string }
-		expect(data.matchId).toBe(matchId)
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.matchId).toBe(matchId)
+		}
 
 		const db = drizzle(env.DB)
 		const saved = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
@@ -55,22 +54,15 @@ describe('POST /v1/guilds/{guildId}/matches', () => {
 	it('returns 401 without API key', async () => {
 		const matchId = ctx.generatePendingMatchId()
 
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/matches`,
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					id: matchId,
-					channelId: ctx.channelId,
-					messageId: ctx.messageId,
-					teamAssignments: {},
-				}),
+		const res = await client.v1.guilds[':guildId'].matches.$post({
+			param: { guildId: ctx.guildId },
+			json: {
+				id: matchId,
+				channelId: ctx.channelId,
+				messageId: ctx.messageId,
+				teamAssignments: {},
 			},
-			env,
-		)
+		})
 
 		expect(res.status).toBe(401)
 	})

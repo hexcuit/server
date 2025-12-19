@@ -1,8 +1,9 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { HTTPException } from 'hono/http-exception'
+import { hc } from 'hono/client'
 import { guildMatchVotes, guildPendingMatches } from '@/db/schema'
+import { ErrorResponseSchema } from '@/utils/schemas'
 import {
 	calculateMajority,
 	MatchIdParamSchema,
@@ -11,9 +12,9 @@ import {
 	VoteResponseSchema,
 } from '../schemas'
 
-const voteMatchRoute = createRoute({
+const route = createRoute({
 	method: 'post',
-	path: '/{matchId}/votes',
+	path: '/v1/guilds/{guildId}/matches/{matchId}/votes',
 	tags: ['Guild Matches'],
 	summary: 'Vote on match',
 	description: 'Vote on the match outcome',
@@ -28,17 +29,22 @@ const voteMatchRoute = createRoute({
 		},
 		400: {
 			description: 'Match is not in voting state',
+			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 		403: {
 			description: 'Not a participant',
+			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 		404: {
 			description: 'Match not found',
+			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 	},
 })
 
-export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(voteMatchRoute, async (c) => {
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, matchId } = c.req.valid('param')
 	const { discordId, vote } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
@@ -46,16 +52,16 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 	const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
 
 	if (!match || match.guildId !== guildId) {
-		throw new HTTPException(404, { message: 'Match not found' })
+		return c.json({ message: 'Match not found' }, 404)
 	}
 
 	if (match.status !== 'voting') {
-		throw new HTTPException(400, { message: 'Match is not in voting state' })
+		return c.json({ message: 'Match is not in voting state' }, 400)
 	}
 
 	const teamAssignments = parseTeamAssignments(match.teamAssignments)
 	if (!teamAssignments[discordId]) {
-		throw new HTTPException(403, { message: 'Not a participant' })
+		return c.json({ message: 'Not a participant' }, 403)
 	}
 
 	const existingVote = await db
@@ -69,13 +75,16 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 
 	if (existingVote) {
 		if (existingVote.vote === vote) {
-			return c.json({
-				changed: false,
-				blueVotes: match.blueVotes,
-				redVotes: match.redVotes,
-				totalParticipants,
-				votesRequired,
-			})
+			return c.json(
+				{
+					changed: false,
+					blueVotes: match.blueVotes,
+					redVotes: match.redVotes,
+					totalParticipants,
+					votesRequired,
+				},
+				200,
+			)
 		}
 
 		await db
@@ -97,16 +106,19 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 			.returning({ blueVotes: guildPendingMatches.blueVotes, redVotes: guildPendingMatches.redVotes })
 
 		if (!updatedMatch) {
-			throw new HTTPException(404, { message: 'Match not found' })
+			return c.json({ message: 'Match not found' }, 404)
 		}
 
-		return c.json({
-			changed: true,
-			blueVotes: updatedMatch.blueVotes,
-			redVotes: updatedMatch.redVotes,
-			totalParticipants,
-			votesRequired,
-		})
+		return c.json(
+			{
+				changed: true,
+				blueVotes: updatedMatch.blueVotes,
+				redVotes: updatedMatch.redVotes,
+				totalParticipants,
+				votesRequired,
+			},
+			200,
+		)
 	}
 
 	await db.insert(guildMatchVotes).values({
@@ -129,14 +141,21 @@ export const voteMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().o
 		.returning({ blueVotes: guildPendingMatches.blueVotes, redVotes: guildPendingMatches.redVotes })
 
 	if (!updatedMatch) {
-		throw new HTTPException(404, { message: 'Match not found' })
+		return c.json({ message: 'Match not found' }, 404)
 	}
 
-	return c.json({
-		changed: true,
-		blueVotes: updatedMatch.blueVotes,
-		redVotes: updatedMatch.redVotes,
-		totalParticipants,
-		votesRequired,
-	})
+	return c.json(
+		{
+			changed: true,
+			blueVotes: updatedMatch.blueVotes,
+			redVotes: updatedMatch.redVotes,
+			totalParticipants,
+			votesRequired,
+		},
+		200,
+	)
 })
+
+export default app
+
+export const hcWithType = (...args: Parameters<typeof hc>) => hc<typeof typedApp>(...args)

@@ -1,11 +1,13 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildPendingMatches } from '@/db/schema'
-import { app } from '@/index'
+import { typedApp } from './get'
 
-describe('GET /v1/guilds/{guildId}/matches/{matchId}', () => {
+describe('getMatch', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 	let matchId: string
 
@@ -34,54 +36,40 @@ describe('GET /v1/guilds/{guildId}/matches/{matchId}', () => {
 	})
 
 	it('returns match details', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/matches/${matchId}`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$get(
+			{ param: { guildId: ctx.guildId, matchId } },
+			{ headers: { 'x-api-key': env.API_KEY } },
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as {
-			match: { id: string; status: string }
-			votes: unknown[]
-			totalParticipants: number
-			votesRequired: number
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.match.id).toBe(matchId)
+			expect(data.match.status).toBe('voting')
+			expect(data.totalParticipants).toBe(2)
+			expect(data.votesRequired).toBe(1)
 		}
-		expect(data.match.id).toBe(matchId)
-		expect(data.match.status).toBe('voting')
-		expect(data.totalParticipants).toBe(2)
-		expect(data.votesRequired).toBe(1) // ceil(2/2) = 1
 	})
 
 	it('returns 404 for non-existent match', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/matches/${crypto.randomUUID()}`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$get(
+			{ param: { guildId: ctx.guildId, matchId: crypto.randomUUID() } },
+			{ headers: { 'x-api-key': env.API_KEY } },
 		)
 
 		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Match not found')
+		}
 	})
 
 	it('returns 401 without API key', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/matches/${matchId}`,
-			{
-				method: 'GET',
-			},
-			env,
-		)
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$get({
+			param: { guildId: ctx.guildId, matchId },
+		})
 
 		expect(res.status).toBe(401)
 	})

@@ -1,17 +1,13 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import {
-	authHeaders,
-	createApiClient,
-	createTestContext,
-	setupTestUsers,
-	type TestContext,
-} from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildMatches, guildMatchParticipants } from '@/db/schema'
+import { typedApp } from '@/routes/v1/guilds/users/get'
 
-describe('getHistory', () => {
-	const client = createApiClient()
+describe('getUser', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 
 	beforeEach(async () => {
@@ -82,8 +78,8 @@ describe('getHistory', () => {
 			ratingAfter: 1535,
 		})
 
-		const res = await client.v1.guilds[':guildId'].users[':discordId'].history.$get(
-			{ param: { guildId: ctx.guildId, discordId: ctx.discordId } },
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
 			authHeaders,
 		)
 
@@ -150,7 +146,7 @@ describe('getHistory', () => {
 			})
 		}
 
-		const res = await client.v1.guilds[':guildId'].users[':discordId'].history.$get(
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
 			{
 				param: { guildId: ctx.guildId, discordId: ctx.discordId },
 				query: { limit: '2' },
@@ -189,8 +185,8 @@ describe('getHistory', () => {
 			})
 		}
 
-		const res = await client.v1.guilds[':guildId'].users[':discordId'].history.$get(
-			{ param: { guildId: ctx.guildId, discordId: ctx.discordId } },
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
 			authHeaders,
 		)
 
@@ -201,8 +197,8 @@ describe('getHistory', () => {
 	})
 
 	it('returns empty history for user with no matches', async () => {
-		const res = await client.v1.guilds[':guildId'].users[':discordId'].history.$get(
-			{ param: { guildId: ctx.guildId, discordId: ctx.discordId } },
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
 			authHeaders,
 		)
 
@@ -253,8 +249,8 @@ describe('getHistory', () => {
 			ratingAfter: 1525,
 		})
 
-		const res = await client.v1.guilds[':guildId'].users[':discordId'].history.$get(
-			{ param: { guildId: ctx.guildId, discordId: ctx.discordId } },
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
 			authHeaders,
 		)
 
@@ -302,8 +298,8 @@ describe('getHistory', () => {
 			ratingAfter: 1525,
 		})
 
-		const res = await client.v1.guilds[':guildId'].users[':discordId'].history.$get(
-			{ param: { guildId: ctx.guildId, discordId: ctx.discordId } },
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
 			authHeaders,
 		)
 
@@ -333,8 +329,8 @@ describe('getHistory', () => {
 			ratingAfter: 1575,
 		})
 
-		const res = await client.v1.guilds[':guildId'].users[':discordId'].history.$get(
-			{ param: { guildId: ctx.guildId, discordId: ctx.discordId } },
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
 			authHeaders,
 		)
 

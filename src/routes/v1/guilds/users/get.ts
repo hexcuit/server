@@ -1,12 +1,13 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, desc, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
+import { hc } from 'hono/client'
 import { guildMatches, guildMatchParticipants } from '@/db/schema'
 import { GetHistoryQuerySchema, GetMatchHistoryResponseSchema, UserHistoryParamSchema } from '../schemas'
 
-const getHistoryRoute = createRoute({
+const route = createRoute({
 	method: 'get',
-	path: '/',
+	path: '/v1/guilds/{guildId}/users/{discordId}',
 	tags: ['Guild Users'],
 	summary: 'Get match history',
 	description: 'Get user match history',
@@ -22,7 +23,9 @@ const getHistoryRoute = createRoute({
 	},
 })
 
-export const getHistoryRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(getHistoryRoute, async (c) => {
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, discordId } = c.req.valid('param')
 	const { limit } = c.req.valid('query')
 	const db = drizzle(c.env.DB)
@@ -56,3 +59,7 @@ export const getHistoryRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().
 
 	return c.json({ guildId, discordId, history })
 })
+
+export default app
+
+export const hcWithType = (...args: Parameters<typeof hc>) => hc<typeof typedApp>(...args)

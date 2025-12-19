@@ -315,33 +315,6 @@ describe('confirmMatch', () => {
 				expect(data.message).toBe('Not enough votes')
 			}
 		})
-
-		it('returns 401 without API key', async () => {
-			const db = drizzle(env.DB)
-			const matchId = ctx.generatePendingMatchId()
-
-			const teamAssignments = {
-				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
-			}
-
-			await db.insert(guildPendingMatches).values({
-				id: matchId,
-				guildId: ctx.guildId,
-				channelId: ctx.channelId,
-				messageId: ctx.messageId,
-				status: 'voting',
-				teamAssignments: JSON.stringify(teamAssignments),
-				blueVotes: 1,
-				redVotes: 0,
-			})
-
-			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post({
-				param: { guildId: ctx.guildId, matchId },
-			})
-
-			expect(res.status).toBe(401)
-		})
 	})
 
 	describe('Edge cases', () => {

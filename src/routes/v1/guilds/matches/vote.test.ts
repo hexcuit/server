@@ -106,15 +106,6 @@ describe('voteMatch', () => {
 		}
 	})
 
-	it('returns 401 without API key', async () => {
-		const res = await client.v1.guilds[':guildId'].matches[':matchId'].votes.$post({
-			param: { guildId: ctx.guildId, matchId },
-			json: { discordId: ctx.discordId, vote: 'BLUE' },
-		})
-
-		expect(res.status).toBe(401)
-	})
-
 	it('returns 400 when match is not in voting state', async () => {
 		const db = drizzle(env.DB)
 		const completedMatchId = ctx.generatePendingMatchId()

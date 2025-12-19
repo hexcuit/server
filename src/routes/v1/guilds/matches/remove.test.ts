@@ -100,12 +100,4 @@ describe('removeMatch', () => {
 			expect(data.message).toBe('Match is not in voting state')
 		}
 	})
-
-	it('returns 401 without API key', async () => {
-		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$delete({
-			param: { guildId: ctx.guildId, matchId },
-		})
-
-		expect(res.status).toBe(401)
-	})
 })

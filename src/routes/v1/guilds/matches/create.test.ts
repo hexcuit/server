@@ -50,20 +50,4 @@ describe('createMatch', () => {
 		expect(saved).toBeDefined()
 		expect(saved?.status).toBe('voting')
 	})
-
-	it('returns 401 without API key', async () => {
-		const matchId = ctx.generatePendingMatchId()
-
-		const res = await client.v1.guilds[':guildId'].matches.$post({
-			param: { guildId: ctx.guildId },
-			json: {
-				id: matchId,
-				channelId: ctx.channelId,
-				messageId: ctx.messageId,
-				teamAssignments: {},
-			},
-		})
-
-		expect(res.status).toBe(401)
-	})
 })

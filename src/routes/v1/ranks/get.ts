@@ -7,7 +7,7 @@ import { GetRanksQuerySchema, GetRanksResponseSchema } from './schemas'
 
 const route = createRoute({
 	method: 'get',
-	path: '/',
+	path: '/v1/ranks',
 	tags: ['LoL Ranks'],
 	summary: 'Get LoL ranks',
 	description: 'Get LoL rank information for a list of Discord IDs',
@@ -26,7 +26,7 @@ const route = createRoute({
 	},
 })
 
-const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/ranks')
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
 	const { id } = c.req.valid('query')

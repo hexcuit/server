@@ -9,7 +9,7 @@ import { JoinQueueBodySchema, JoinResponseSchema } from './schemas'
 
 const route = createRoute({
 	method: 'post',
-	path: '/{id}/players',
+	path: '/v1/queues/{id}/players',
 	tags: ['Queues'],
 	summary: 'Join queue',
 	description: 'Join a queue as a player',
@@ -51,7 +51,7 @@ const route = createRoute({
 	},
 })
 
-const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/queues')
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
 	const { id } = c.req.valid('param')

@@ -8,7 +8,7 @@ import { LeaveResponseSchema, PlayerPathParamsSchema } from './schemas'
 
 const route = createRoute({
 	method: 'delete',
-	path: '/{id}/players/{discordId}',
+	path: '/v1/queues/{id}/players/{discordId}',
 	tags: ['Queues'],
 	summary: 'Leave queue',
 	description: 'Leave a queue',
@@ -35,7 +35,7 @@ const route = createRoute({
 	},
 })
 
-const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/queues')
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
 	const { id, discordId } = c.req.valid('param')

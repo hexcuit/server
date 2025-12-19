@@ -6,7 +6,7 @@ import { CreateQueueBodySchema, CreateQueueResponseSchema } from './schemas'
 
 const route = createRoute({
 	method: 'post',
-	path: '/',
+	path: '/v1/queues',
 	tags: ['Queues'],
 	summary: 'Create queue',
 	description: 'Create a new queue',
@@ -31,7 +31,7 @@ const route = createRoute({
 	},
 })
 
-const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/queues')
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
 	const data = c.req.valid('json')

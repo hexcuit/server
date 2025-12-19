@@ -9,7 +9,7 @@ import { PlayerPathParamsSchema, UpdateRoleBodySchema, UpdateRoleResponseSchema 
 
 const route = createRoute({
 	method: 'patch',
-	path: '/{id}/players/{discordId}',
+	path: '/v1/queues/{id}/players/{discordId}',
 	tags: ['Queues'],
 	summary: 'Update player role',
 	description: 'Update the role of a player',
@@ -43,7 +43,7 @@ const route = createRoute({
 	},
 })
 
-const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/queues')
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
 	const { id, discordId } = c.req.valid('param')

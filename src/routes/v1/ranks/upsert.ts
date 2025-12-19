@@ -6,7 +6,7 @@ import { RankPathParamsSchema, UpsertRankBodySchema, UpsertRankResponseSchema } 
 
 const route = createRoute({
 	method: 'put',
-	path: '/{discordId}',
+	path: '/v1/ranks/{discordId}',
 	tags: ['LoL Ranks'],
 	summary: 'Create or update LoL rank',
 	description: 'Create or update LoL rank information for a Discord ID.',
@@ -32,7 +32,7 @@ const route = createRoute({
 	},
 })
 
-const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().basePath('v1/ranks')
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
 	const { discordId } = c.req.valid('param')

@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildPendingMatches } from '@/db/schema'
 import { typedApp } from './vote'
 
@@ -41,7 +41,7 @@ describe('voteMatch', () => {
 				param: { guildId: ctx.guildId, matchId },
 				json: { discordId: ctx.discordId, vote: 'BLUE' },
 			},
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
@@ -60,7 +60,7 @@ describe('voteMatch', () => {
 				param: { guildId: ctx.guildId, matchId },
 				json: { discordId: 'non-participant', vote: 'BLUE' },
 			},
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(403)
@@ -77,7 +77,7 @@ describe('voteMatch', () => {
 				param: { guildId: ctx.guildId, matchId: crypto.randomUUID() },
 				json: { discordId: ctx.discordId, vote: 'BLUE' },
 			},
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(404)
@@ -95,7 +95,7 @@ describe('voteMatch', () => {
 				param: { guildId: differentGuildId, matchId },
 				json: { discordId: ctx.discordId, vote: 'BLUE' },
 			},
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(404)
@@ -140,7 +140,7 @@ describe('voteMatch', () => {
 				param: { guildId: ctx.guildId, matchId: completedMatchId },
 				json: { discordId: ctx.discordId, vote: 'BLUE' },
 			},
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(400)
@@ -158,7 +158,7 @@ describe('voteMatch', () => {
 				param: { guildId: ctx.guildId, matchId },
 				json: { discordId: ctx.discordId, vote: 'BLUE' },
 			},
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		// Change to red
@@ -167,7 +167,7 @@ describe('voteMatch', () => {
 				param: { guildId: ctx.guildId, matchId },
 				json: { discordId: ctx.discordId, vote: 'RED' },
 			},
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
@@ -187,7 +187,7 @@ describe('voteMatch', () => {
 				param: { guildId: ctx.guildId, matchId },
 				json: { discordId: ctx.discordId, vote: 'BLUE' },
 			},
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		// Vote blue again
@@ -196,7 +196,7 @@ describe('voteMatch', () => {
 				param: { guildId: ctx.guildId, matchId },
 				json: { discordId: ctx.discordId, vote: 'BLUE' },
 			},
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)

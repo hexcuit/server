@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildMatches, guildMatchParticipants, guildPendingMatches, guildRatings, users } from '@/db/schema'
 import { typedApp } from './confirm'
 
@@ -44,7 +44,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
@@ -121,7 +121,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
@@ -166,7 +166,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
@@ -220,7 +220,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
@@ -239,7 +239,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId: nonExistentMatchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(404)
@@ -272,7 +272,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(400)
@@ -305,7 +305,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(400)
@@ -375,7 +375,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
@@ -412,7 +412,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(400)
@@ -451,7 +451,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
@@ -495,7 +495,7 @@ describe('confirmMatch', () => {
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
 				{ param: { guildId: ctx.guildId, matchId } },
-				{ headers: { 'x-api-key': env.API_KEY } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)

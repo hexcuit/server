@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
 import { guildPendingMatches } from '@/db/schema'
 import { typedApp } from './create'
 
@@ -35,7 +35,7 @@ describe('createMatch', () => {
 					teamAssignments,
 				},
 			},
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(201)

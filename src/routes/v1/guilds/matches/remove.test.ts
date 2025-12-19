@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildPendingMatches } from '@/db/schema'
 import { typedApp } from './remove'
 
@@ -39,7 +39,7 @@ describe('removeMatch', () => {
 	it('cancels a match and returns deleted: true', async () => {
 		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$delete(
 			{ param: { guildId: ctx.guildId, matchId } },
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
@@ -57,7 +57,7 @@ describe('removeMatch', () => {
 	it('returns 404 for non-existent match', async () => {
 		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$delete(
 			{ param: { guildId: ctx.guildId, matchId: crypto.randomUUID() } },
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(404)
@@ -73,7 +73,7 @@ describe('removeMatch', () => {
 
 		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$delete(
 			{ param: { guildId: otherGuildId, matchId } },
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(404)
@@ -90,7 +90,7 @@ describe('removeMatch', () => {
 
 		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$delete(
 			{ param: { guildId: ctx.guildId, matchId } },
-			{ headers: { 'x-api-key': env.API_KEY } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(400)

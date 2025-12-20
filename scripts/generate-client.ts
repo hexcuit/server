@@ -35,13 +35,20 @@ ${imports.join('\n')}
 const app = new OpenAPIHono()
 ${chains.join('\n\t')}
 
-export type AppType = typeof app
+type AppType = typeof app
 
 export const hcWithType = (...args: Parameters<typeof hc>): ReturnType<typeof hc<AppType>> =>
 	hc<AppType>(...args)
 `
 
 	writeFileSync('src/client.ts', clientContent)
+
+	// dist/client.js も生成（最小限のランタイムコード）
+	const distClientContent = `import { hc } from 'hono/client';
+export const hcWithType = (...args) => hc(...args);
+`
+	writeFileSync('dist/client.js', distClientContent)
+
 	console.log(`Generated src/client.ts with ${routeFiles.length} routes`)
 }
 

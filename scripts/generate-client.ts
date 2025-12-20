@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { glob } from 'glob'
 
@@ -44,6 +44,7 @@ export const hcWithType = (...args: Parameters<typeof hc>): ReturnType<typeof hc
 	writeFileSync('src/client.ts', clientContent)
 
 	// dist/client.js も生成（最小限のランタイムコード）
+	mkdirSync('dist', { recursive: true })
 	const distClientContent = `import { hc } from 'hono/client';
 export const hcWithType = (...args) => hc(...args);
 `

@@ -36,59 +36,47 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	await db.insert(users).values({ discordId }).onConflictDoNothing()
 
-	const existing = await db
+	const insertResult = await db
+		.insert(guildRatings)
+		.values({
+			guildId,
+			discordId,
+			rating: INITIAL_RATING,
+			wins: 0,
+			losses: 0,
+			placementGames: 0,
+		})
+		.onConflictDoNothing()
+
+	const created = (insertResult.meta?.changes ?? 0) > 0
+
+	const rating = await db
 		.select()
 		.from(guildRatings)
 		.where(and(eq(guildRatings.guildId, guildId), eq(guildRatings.discordId, discordId)))
 		.get()
 
-	if (existing) {
-		const rankDisplay = getRankDisplay(existing.rating)
-		return c.json(
-			{
-				created: false,
-				rating: {
-					discordId,
-					guildId,
-					rating: existing.rating,
-					wins: existing.wins,
-					losses: existing.losses,
-					placementGames: existing.placementGames,
-					isPlacement: isInPlacement(existing.placementGames),
-					rank: formatRankDisplay(rankDisplay),
-					rankDetail: rankDisplay,
-				},
-			},
-			200,
-		)
+	if (!rating) {
+		throw new Error('Rating should exist after insert')
 	}
 
-	await db.insert(guildRatings).values({
-		guildId,
-		discordId,
-		rating: INITIAL_RATING,
-		wins: 0,
-		losses: 0,
-		placementGames: 0,
-	})
-
-	const rankDisplay = getRankDisplay(INITIAL_RATING)
+	const rankDisplay = getRankDisplay(rating.rating)
 	return c.json(
 		{
-			created: true,
+			created,
 			rating: {
 				discordId,
 				guildId,
-				rating: INITIAL_RATING,
-				wins: 0,
-				losses: 0,
-				placementGames: 0,
-				isPlacement: true,
+				rating: rating.rating,
+				wins: rating.wins,
+				losses: rating.losses,
+				placementGames: rating.placementGames,
+				isPlacement: isInPlacement(rating.placementGames),
 				rank: formatRankDisplay(rankDisplay),
 				rankDetail: rankDisplay,
 			},
 		},
-		201,
+		created ? 201 : 200,
 	)
 })
 

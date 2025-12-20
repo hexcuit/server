@@ -29,12 +29,12 @@ const route = createRoute({
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
-	const { matchId } = c.req.valid('param')
+	const { guildId, matchId } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
 	const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
 
-	if (!match) {
+	if (!match || match.guildId !== guildId) {
 		return c.json({ message: 'Match not found' }, 404)
 	}
 

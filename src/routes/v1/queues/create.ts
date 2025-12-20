@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { queues, users } from '@/db/schema'
+import { ErrorResponseSchema } from '@/utils/schemas'
 import { CreateQueueBodySchema, CreateQueueResponseSchema } from './schemas'
 
 const route = createRoute({
@@ -27,6 +28,14 @@ const route = createRoute({
 				},
 			},
 		},
+		409: {
+			description: 'Queue already exists',
+			content: {
+				'application/json': {
+					schema: ErrorResponseSchema,
+				},
+			},
+		},
 	},
 })
 
@@ -38,17 +47,24 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
 
-	await db.insert(queues).values({
-		id: data.id,
-		guildId: data.guildId,
-		channelId: data.channelId,
-		messageId: data.messageId,
-		creatorId: data.creatorId,
-		type: data.type,
-		anonymous: data.anonymous,
-		startTime: data.startTime || null,
-		status: 'open',
-	})
+	const insertResult = await db
+		.insert(queues)
+		.values({
+			id: data.id,
+			guildId: data.guildId,
+			channelId: data.channelId,
+			messageId: data.messageId,
+			creatorId: data.creatorId,
+			type: data.type,
+			anonymous: data.anonymous,
+			startTime: data.startTime || null,
+			status: 'open',
+		})
+		.onConflictDoNothing()
+
+	if ((insertResult.meta?.changes ?? 0) === 0) {
+		return c.json({ message: 'Queue already exists' }, 409)
+	}
 
 	return c.json({ queue: { id: data.id } }, 201)
 })

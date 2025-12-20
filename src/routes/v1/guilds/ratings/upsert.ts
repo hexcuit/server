@@ -5,9 +5,9 @@ import { guildRatings, users } from '@/db/schema'
 import { formatRankDisplay, getRankDisplay, INITIAL_RATING, isInPlacement } from '@/utils/elo'
 import { GuildIdParamSchema, UpsertRatingBodySchema, UpsertRatingResponseSchema } from '../schemas'
 
-const upsertRatingRoute = createRoute({
+const route = createRoute({
 	method: 'put',
-	path: '/',
+	path: '/v1/guilds/{guildId}/ratings',
 	tags: ['Guild Ratings'],
 	summary: 'Initialize guild rating',
 	description: 'Initialize guild rating for first-time participation',
@@ -27,43 +27,18 @@ const upsertRatingRoute = createRoute({
 	},
 })
 
-export const upsertRatingRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
-	upsertRatingRoute,
-	async (c) => {
-		const { guildId } = c.req.valid('param')
-		const { discordId } = c.req.valid('json')
-		const db = drizzle(c.env.DB)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
-		await db.insert(users).values({ discordId }).onConflictDoNothing()
+export const typedApp = app.openapi(route, async (c) => {
+	const { guildId } = c.req.valid('param')
+	const { discordId } = c.req.valid('json')
+	const db = drizzle(c.env.DB)
 
-		const existing = await db
-			.select()
-			.from(guildRatings)
-			.where(and(eq(guildRatings.guildId, guildId), eq(guildRatings.discordId, discordId)))
-			.get()
+	await db.insert(users).values({ discordId }).onConflictDoNothing()
 
-		if (existing) {
-			const rankDisplay = getRankDisplay(existing.rating)
-			return c.json(
-				{
-					created: false,
-					rating: {
-						discordId,
-						guildId,
-						rating: existing.rating,
-						wins: existing.wins,
-						losses: existing.losses,
-						placementGames: existing.placementGames,
-						isPlacement: isInPlacement(existing.placementGames),
-						rank: formatRankDisplay(rankDisplay),
-						rankDetail: rankDisplay,
-					},
-				},
-				200,
-			)
-		}
-
-		await db.insert(guildRatings).values({
+	const insertResult = await db
+		.insert(guildRatings)
+		.values({
 			guildId,
 			discordId,
 			rating: INITIAL_RATING,
@@ -71,24 +46,38 @@ export const upsertRatingRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>(
 			losses: 0,
 			placementGames: 0,
 		})
+		.onConflictDoNothing()
 
-		const rankDisplay = getRankDisplay(INITIAL_RATING)
-		return c.json(
-			{
-				created: true,
-				rating: {
-					discordId,
-					guildId,
-					rating: INITIAL_RATING,
-					wins: 0,
-					losses: 0,
-					placementGames: 0,
-					isPlacement: true,
-					rank: formatRankDisplay(rankDisplay),
-					rankDetail: rankDisplay,
-				},
+	const created = (insertResult.meta?.changes ?? 0) > 0
+
+	const rating = await db
+		.select()
+		.from(guildRatings)
+		.where(and(eq(guildRatings.guildId, guildId), eq(guildRatings.discordId, discordId)))
+		.get()
+
+	if (!rating) {
+		throw new Error('Rating should exist after insert')
+	}
+
+	const rankDisplay = getRankDisplay(rating.rating)
+	return c.json(
+		{
+			created,
+			rating: {
+				discordId,
+				guildId,
+				rating: rating.rating,
+				wins: rating.wins,
+				losses: rating.losses,
+				placementGames: rating.placementGames,
+				isPlacement: isInPlacement(rating.placementGames),
+				rank: formatRankDisplay(rankDisplay),
+				rankDetail: rankDisplay,
 			},
-			201,
-		)
-	},
-)
+		},
+		created ? 201 : 200,
+	)
+})
+
+export default app

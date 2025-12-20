@@ -1,13 +1,16 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
-import { guildsRouter } from './guilds'
-import { queuesRouter } from './queues'
-import { ranksRouter } from './ranks'
+import guilds from './guilds'
+import queues from './queues'
+import ranks from './ranks'
 
-export const v1Router = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
-	.use(corsMiddleware)
-	.use(apiKeyMiddleware)
-	.route('/ranks', ranksRouter)
-	.route('/queues', queuesRouter)
-	.route('/guilds', guildsRouter)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+app.use(corsMiddleware)
+app.use(apiKeyMiddleware)
+app.route('/', ranks)
+app.route('/', queues)
+app.route('/', guilds)
+
+export default app

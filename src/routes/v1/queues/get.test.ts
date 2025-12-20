@@ -1,11 +1,13 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { queues } from '@/db/schema'
-import { app } from '@/index'
+import { typedApp } from '@/routes/v1/queues/get'
 
-describe('GET /v1/queues/{id}', () => {
+describe('getQueue', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 	let queueId: string
 
@@ -28,41 +30,28 @@ describe('GET /v1/queues/{id}', () => {
 	})
 
 	it('returns queue with participants', async () => {
-		const res = await app.request(
-			`/v1/queues/${queueId}`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
-		)
+		const res = await client.v1.queues[':id'].$get({ param: { id: queueId } }, authHeaders)
 
+		expect(res.ok).toBe(true)
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as {
-			queue: { id: string }
-			players: unknown[]
-			count: number
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.queue.id).toBe(queueId)
+			expect(data.players).toEqual([])
+			expect(data.count).toBe(0)
 		}
-		expect(data.queue.id).toBe(queueId)
-		expect(data.players).toEqual([])
-		expect(data.count).toBe(0)
 	})
 
 	it('returns 404 for non-existent queue', async () => {
-		const res = await app.request(
-			`/v1/queues/${crypto.randomUUID()}`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
-		)
+		const res = await client.v1.queues[':id'].$get({ param: { id: crypto.randomUUID() } }, authHeaders)
 
+		expect(res.ok).toBe(false)
 		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Queue not found')
+		}
 	})
 })

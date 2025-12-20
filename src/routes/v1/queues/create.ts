@@ -1,12 +1,12 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
-import { HTTPException } from 'hono/http-exception'
 import { queues, users } from '@/db/schema'
+import { ErrorResponseSchema } from '@/utils/schemas'
 import { CreateQueueBodySchema, CreateQueueResponseSchema } from './schemas'
 
-const createQueueRoute = createRoute({
+const route = createRoute({
 	method: 'post',
-	path: '/',
+	path: '/v1/queues',
 	tags: ['Queues'],
 	summary: 'Create queue',
 	description: 'Create a new queue',
@@ -29,38 +29,44 @@ const createQueueRoute = createRoute({
 			},
 		},
 		409: {
-			description: 'Queue with the specified ID already exists',
+			description: 'Queue already exists',
+			content: {
+				'application/json': {
+					schema: ErrorResponseSchema,
+				},
+			},
 		},
 	},
 })
 
-export const createQueueRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(
-	createQueueRoute,
-	async (c) => {
-		const data = c.req.valid('json')
-		const db = drizzle(c.env.DB)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
-		await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
+export const typedApp = app.openapi(route, async (c) => {
+	const data = c.req.valid('json')
+	const db = drizzle(c.env.DB)
 
-		try {
-			await db.insert(queues).values({
-				id: data.id,
-				guildId: data.guildId,
-				channelId: data.channelId,
-				messageId: data.messageId,
-				creatorId: data.creatorId,
-				type: data.type,
-				anonymous: data.anonymous,
-				startTime: data.startTime || null,
-				status: 'open',
-			})
-		} catch (error) {
-			if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
-				throw new HTTPException(409, { message: 'Queue with the specified ID already exists' })
-			}
-			throw error
-		}
+	await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
 
-		return c.json({ queue: { id: data.id } }, 201)
-	},
-)
+	const insertResult = await db
+		.insert(queues)
+		.values({
+			id: data.id,
+			guildId: data.guildId,
+			channelId: data.channelId,
+			messageId: data.messageId,
+			creatorId: data.creatorId,
+			type: data.type,
+			anonymous: data.anonymous,
+			startTime: data.startTime || null,
+			status: 'open',
+		})
+		.onConflictDoNothing()
+
+	if ((insertResult.meta?.changes ?? 0) === 0) {
+		return c.json({ message: 'Queue already exists' }, 409)
+	}
+
+	return c.json({ queue: { id: data.id } }, 201)
+})
+
+export default app

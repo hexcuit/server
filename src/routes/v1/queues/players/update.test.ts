@@ -1,11 +1,13 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { queuePlayers, queues } from '@/db/schema'
-import { app } from '@/index'
+import { typedApp } from '@/routes/v1/queues/players/update'
 
-describe('PATCH /v1/queues/{id}/players/{discordId}', () => {
+describe('updateQueuePlayer', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 	let queueId: string
 
@@ -35,47 +37,39 @@ describe('PATCH /v1/queues/{id}/players/{discordId}', () => {
 	})
 
 	it('updates role and returns 200', async () => {
-		const res = await app.request(
-			`/v1/queues/${queueId}/players/${ctx.discordId2}`,
+		const res = await client.v1.queues[':id'].players[':discordId'].$patch(
 			{
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-					'x-api-key': env.API_KEY,
-				},
-				body: JSON.stringify({
-					mainRole: 'MIDDLE',
-					subRole: 'JUNGLE',
-				}),
+				param: { id: queueId, discordId: ctx.discordId2 },
+				json: { mainRole: 'MIDDLE', subRole: 'JUNGLE' },
 			},
-			env,
+			authHeaders,
 		)
 
+		expect(res.ok).toBe(true)
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as {
-			player: { discordId: string; mainRole: string; subRole: string }
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.player.mainRole).toBe('MIDDLE')
+			expect(data.player.subRole).toBe('JUNGLE')
 		}
-		expect(data.player.mainRole).toBe('MIDDLE')
-		expect(data.player.subRole).toBe('JUNGLE')
 	})
 
 	it('returns 404 when not a player', async () => {
-		const res = await app.request(
-			`/v1/queues/${queueId}/players/non-player-${ctx.prefix}`,
+		const res = await client.v1.queues[':id'].players[':discordId'].$patch(
 			{
-				method: 'PATCH',
-				headers: {
-					'Content-Type': 'application/json',
-					'x-api-key': env.API_KEY,
-				},
-				body: JSON.stringify({
-					mainRole: 'MIDDLE',
-				}),
+				param: { id: queueId, discordId: `non-player-${ctx.prefix}` },
+				json: { mainRole: 'MIDDLE' },
 			},
-			env,
+			authHeaders,
 		)
 
+		expect(res.ok).toBe(false)
 		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Player not found')
+		}
 	})
 })

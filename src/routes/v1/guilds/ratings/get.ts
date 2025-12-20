@@ -5,9 +5,9 @@ import { guildRatings } from '@/db/schema'
 import { formatRankDisplay, getRankDisplay, isInPlacement } from '@/utils/elo'
 import { GetRatingsQuerySchema, GetRatingsResponseSchema, GuildIdParamSchema } from '../schemas'
 
-const getRatingsRoute = createRoute({
+const route = createRoute({
 	method: 'get',
-	path: '/',
+	path: '/v1/guilds/{guildId}/ratings',
 	tags: ['Guild Ratings'],
 	summary: 'Get guild ratings',
 	description: 'Get guild rating information for a list of Discord IDs',
@@ -23,7 +23,9 @@ const getRatingsRoute = createRoute({
 	},
 })
 
-export const getRatingsRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(getRatingsRoute, async (c) => {
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+export const typedApp = app.openapi(route, async (c) => {
 	const { guildId } = c.req.valid('param')
 	const { id: discordIds } = c.req.valid('query')
 	const db = drizzle(c.env.DB)
@@ -66,3 +68,5 @@ export const getRatingsRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().
 
 	return c.json({ ratings: result })
 })
+
+export default app

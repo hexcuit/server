@@ -1,11 +1,14 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { matchesRouter } from './matches'
-import { rankingsRouter } from './rankings'
-import { ratingsRouter } from './ratings'
-import { usersRouter } from './users'
+import matches from './matches'
+import rankings from './rankings'
+import ratings from './ratings'
+import users from './users'
 
-export const guildsRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
-	.route('/:guildId/ratings', ratingsRouter)
-	.route('/:guildId/rankings', rankingsRouter)
-	.route('/:guildId/matches', matchesRouter)
-	.route('/:guildId/users/:discordId/history', usersRouter)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+app.route('/', ratings)
+app.route('/', rankings)
+app.route('/', matches)
+app.route('/', users)
+
+export default app

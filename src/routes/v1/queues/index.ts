@@ -1,11 +1,14 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { createQueueRouter } from './create'
-import { deleteQueueRouter } from './delete'
-import { getQueueRouter } from './get'
-import { playersRouter } from './players'
+import create from './create'
+import get from './get'
+import players from './players'
+import remove from './remove'
 
-export const queuesRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
-	.route('/', createQueueRouter)
-	.route('/', getQueueRouter)
-	.route('/', deleteQueueRouter)
-	.route('/', playersRouter)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+app.route('/', create)
+app.route('/', get)
+app.route('/', remove)
+app.route('/', players)
+
+export default app

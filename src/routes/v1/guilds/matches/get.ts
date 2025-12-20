@@ -1,13 +1,13 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { HTTPException } from 'hono/http-exception'
 import { guildMatchVotes, guildPendingMatches } from '@/db/schema'
+import { ErrorResponseSchema } from '@/utils/schemas'
 import { calculateMajority, GetMatchResponseSchema, MatchIdParamSchema, parseTeamAssignments } from '../schemas'
 
-const getMatchRoute = createRoute({
+const route = createRoute({
 	method: 'get',
-	path: '/{matchId}',
+	path: '/v1/guilds/{guildId}/matches/{matchId}',
 	tags: ['Guild Matches'],
 	summary: 'Get match',
 	description: 'Get match details',
@@ -21,18 +21,21 @@ const getMatchRoute = createRoute({
 		},
 		404: {
 			description: 'Match not found',
+			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 	},
 })
 
-export const getMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(getMatchRoute, async (c) => {
-	const { matchId } = c.req.valid('param')
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+export const typedApp = app.openapi(route, async (c) => {
+	const { guildId, matchId } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
 	const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
 
-	if (!match) {
-		throw new HTTPException(404, { message: 'Match not found' })
+	if (!match || match.guildId !== guildId) {
+		return c.json({ message: 'Match not found' }, 404)
 	}
 
 	const votes = await db.select().from(guildMatchVotes).where(eq(guildMatchVotes.pendingMatchId, matchId))
@@ -40,20 +43,25 @@ export const getMatchRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().op
 	const teamAssignments = parseTeamAssignments(match.teamAssignments)
 
 	const totalParticipants = Object.keys(teamAssignments).length
-	return c.json({
-		match: {
-			id: match.id,
-			guildId: match.guildId,
-			channelId: match.channelId,
-			messageId: match.messageId,
-			status: match.status,
-			teamAssignments,
-			blueVotes: match.blueVotes,
-			redVotes: match.redVotes,
-			createdAt: match.createdAt,
+	return c.json(
+		{
+			match: {
+				id: match.id,
+				guildId: match.guildId,
+				channelId: match.channelId,
+				messageId: match.messageId,
+				status: match.status,
+				teamAssignments,
+				blueVotes: match.blueVotes,
+				redVotes: match.redVotes,
+				createdAt: match.createdAt,
+			},
+			votes: votes.map((v) => ({ discordId: v.discordId, vote: v.vote })),
+			totalParticipants,
+			votesRequired: calculateMajority(totalParticipants),
 		},
-		votes: votes.map((v) => ({ discordId: v.discordId, vote: v.vote })),
-		totalParticipants,
-		votesRequired: calculateMajority(totalParticipants),
-	})
+		200,
+	)
 })
+
+export default app

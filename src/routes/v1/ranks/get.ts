@@ -4,9 +4,9 @@ import { drizzle } from 'drizzle-orm/d1'
 import { lolRanks } from '@/db/schema'
 import { GetRanksQuerySchema, GetRanksResponseSchema } from './schemas'
 
-const getRanksRoute = createRoute({
+const route = createRoute({
 	method: 'get',
-	path: '/',
+	path: '/v1/ranks',
 	tags: ['LoL Ranks'],
 	summary: 'Get LoL ranks',
 	description: 'Get LoL rank information for a list of Discord IDs',
@@ -25,7 +25,9 @@ const getRanksRoute = createRoute({
 	},
 })
 
-export const getRanksRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(getRanksRoute, async (c) => {
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+export const typedApp = app.openapi(route, async (c) => {
 	const { id } = c.req.valid('query')
 
 	const db = drizzle(c.env.DB)
@@ -47,3 +49,5 @@ export const getRanksRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().op
 
 	return c.json({ ranks: result })
 })
+
+export default app

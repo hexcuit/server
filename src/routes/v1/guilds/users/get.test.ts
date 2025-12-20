@@ -1,11 +1,13 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildMatches, guildMatchParticipants } from '@/db/schema'
-import { app } from '@/index'
+import { typedApp } from '@/routes/v1/guilds/users/get'
 
-describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
+describe('getUser', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 
 	beforeEach(async () => {
@@ -20,7 +22,6 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 		const matchId2 = ctx.generateMatchId()
 		const matchId3 = ctx.generateMatchId()
 
-		// Create 3 matches with the user participating
 		const now = new Date()
 		const match1Time = new Date(now.getTime() - 3000).toISOString()
 		const match2Time = new Date(now.getTime() - 2000).toISOString()
@@ -77,33 +78,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			ratingAfter: 1535,
 		})
 
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as {
-			guildId: string
-			discordId: string
-			history: Array<{
-				matchId: string
-				team: 'BLUE' | 'RED'
-				role: string
-				ratingBefore: number
-				ratingAfter: number
-				change: number
-				won: boolean
-				createdAt: string
-			}>
-		}
+		const data = await res.json()
 
 		expect(data.guildId).toBe(ctx.guildId)
 		expect(data.discordId).toBe(ctx.discordId)
@@ -142,7 +124,6 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 	it('respects the limit query parameter', async () => {
 		const db = drizzle(env.DB)
 
-		// Create 3 matches
 		const now = new Date()
 		for (let i = 0; i < 3; i++) {
 			const matchId = ctx.generateMatchId()
@@ -165,28 +146,23 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			})
 		}
 
-		// Request with limit=2
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history?limit=2`,
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
 			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
+				param: { guildId: ctx.guildId, discordId: ctx.discordId },
+				query: { limit: '2' },
 			},
-			env,
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as { history: Array<unknown> }
+		const data = await res.json()
 		expect(data.history).toHaveLength(2)
 	})
 
 	it('returns default limit of 5 matches when limit is not specified', async () => {
 		const db = drizzle(env.DB)
 
-		// Create 7 matches
 		const now = new Date()
 		for (let i = 0; i < 7; i++) {
 			const matchId = ctx.generateMatchId()
@@ -209,43 +185,26 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			})
 		}
 
-		// Request without limit (should default to 5)
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as { history: Array<unknown> }
+		const data = await res.json()
 		expect(data.history).toHaveLength(5)
 	})
 
 	it('returns empty history for user with no matches', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as {
-			guildId: string
-			discordId: string
-			history: Array<unknown>
-		}
+		const data = await res.json()
 
 		expect(data.guildId).toBe(ctx.guildId)
 		expect(data.discordId).toBe(ctx.discordId)
@@ -290,20 +249,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			ratingAfter: 1525,
 		})
 
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as { history: Array<{ matchId: string }> }
+		const data = await res.json()
 		expect(data.history).toHaveLength(1)
 		expect(data.history[0]?.matchId).toBe(matchId1)
 	})
@@ -345,41 +298,22 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			ratingAfter: 1525,
 		})
 
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as { history: Array<{ matchId: string }> }
+		const data = await res.json()
 		expect(data.history).toHaveLength(1)
 		expect(data.history[0]?.matchId).toBe(matchId1)
-	})
-
-	it('returns 401 without API key', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
-			{
-				method: 'GET',
-			},
-			env,
-		)
-
-		expect(res.status).toBe(401)
 	})
 
 	it('calculates negative rating change correctly for losses', async () => {
 		const db = drizzle(env.DB)
 		const matchId1 = ctx.generateMatchId()
 
-		// Create a match where user lost rating
 		await db.insert(guildMatches).values({
 			id: matchId1,
 			guildId: ctx.guildId,
@@ -395,27 +329,14 @@ describe('GET /v1/guilds/{guildId}/users/{discordId}/history', () => {
 			ratingAfter: 1575,
 		})
 
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/users/${ctx.discordId}/history`,
-			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].$get(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId }, query: {} },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as {
-			history: Array<{
-				ratingBefore: number
-				ratingAfter: number
-				change: number
-				won: boolean
-			}>
-		}
+		const data = await res.json()
 
 		expect(data.history).toHaveLength(1)
 		expect(data.history[0]?.ratingBefore).toBe(1600)

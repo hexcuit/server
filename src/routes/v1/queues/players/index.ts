@@ -1,9 +1,12 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { createPlayerRouter } from './create'
-import { deletePlayerRouter } from './delete'
-import { updatePlayerRouter } from './update'
+import create from './create'
+import remove from './remove'
+import update from './update'
 
-export const playersRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
-	.route('/', createPlayerRouter)
-	.route('/', deletePlayerRouter)
-	.route('/', updatePlayerRouter)
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+app.route('/', create)
+app.route('/', remove)
+app.route('/', update)
+
+export default app

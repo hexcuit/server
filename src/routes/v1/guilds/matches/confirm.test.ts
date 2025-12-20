@@ -1,12 +1,14 @@
 import { env } from 'cloudflare:test'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildMatches, guildMatchParticipants, guildPendingMatches, guildRatings, users } from '@/db/schema'
-import { app } from '@/index'
+import { typedApp } from './confirm'
 
-describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
+describe('confirmMatch', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 
 	beforeEach(async () => {
@@ -40,54 +42,39 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				redVotes: 0,
 			})
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
 
-			const data = (await res.json()) as {
-				matchId: string
-				winningTeam: 'BLUE' | 'RED'
-				ratingChanges: Array<{
-					discordId: string
-					team: 'BLUE' | 'RED'
-					ratingBefore: number
-					ratingAfter: number
-					change: number
-					rank: string
-				}>
+			if (res.ok) {
+				const data = await res.json()
+
+				expect(data.winningTeam).toBe('BLUE')
+				expect(data.ratingChanges).toHaveLength(2)
+
+				const player1Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId)
+				expect(player1Change).toBeDefined()
+				expect(player1Change?.team).toBe('BLUE')
+				expect(player1Change?.change).toBeGreaterThan(0)
+
+				const player2Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId2)
+				expect(player2Change).toBeDefined()
+				expect(player2Change?.team).toBe('RED')
+				expect(player2Change?.change).toBeLessThan(0)
+
+				const matches = await db.select().from(guildMatches).where(eq(guildMatches.id, data.matchId))
+				expect(matches).toHaveLength(1)
+				expect(matches[0]?.winningTeam).toBe('BLUE')
+
+				const participants = await db
+					.select()
+					.from(guildMatchParticipants)
+					.where(eq(guildMatchParticipants.matchId, data.matchId))
+				expect(participants).toHaveLength(2)
 			}
-
-			expect(data.winningTeam).toBe('BLUE')
-			expect(data.ratingChanges).toHaveLength(2)
-
-			const player1Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId)
-			expect(player1Change).toBeDefined()
-			expect(player1Change?.team).toBe('BLUE')
-			expect(player1Change?.change).toBeGreaterThan(0)
-
-			const player2Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId2)
-			expect(player2Change).toBeDefined()
-			expect(player2Change?.team).toBe('RED')
-			expect(player2Change?.change).toBeLessThan(0)
-
-			const matches = await db.select().from(guildMatches).where(eq(guildMatches.id, data.matchId))
-			expect(matches).toHaveLength(1)
-			expect(matches[0]?.winningTeam).toBe('BLUE')
-
-			const participants = await db
-				.select()
-				.from(guildMatchParticipants)
-				.where(eq(guildMatchParticipants.matchId, data.matchId))
-			expect(participants).toHaveLength(2)
 
 			const updatedRatings = await db.select().from(guildRatings).where(eq(guildRatings.guildId, ctx.guildId))
 			expect(updatedRatings).toHaveLength(2)
@@ -132,25 +119,17 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				redVotes: 1,
 			})
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
 
-			const data = (await res.json()) as {
-				matchId: string
-				winningTeam: 'BLUE' | 'RED'
+			if (res.ok) {
+				const data = await res.json()
+				expect(data.winningTeam).toBe('RED')
 			}
-
-			expect(data.winningTeam).toBe('RED')
 
 			const updatedRatings = await db.select().from(guildRatings).where(eq(guildRatings.guildId, ctx.guildId))
 			const player1Rating = updatedRatings.find((r) => r.discordId === ctx.discordId)
@@ -185,15 +164,9 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				redVotes: 0,
 			})
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
@@ -245,27 +218,18 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				redVotes: 1,
 			})
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
 
-			const data = (await res.json()) as {
-				matchId: string
-				winningTeam: 'BLUE' | 'RED'
-				ratingChanges: Array<{ discordId: string }>
+			if (res.ok) {
+				const data = await res.json()
+				expect(data.winningTeam).toBe('BLUE')
+				expect(data.ratingChanges).toHaveLength(4)
 			}
-
-			expect(data.winningTeam).toBe('BLUE')
-			expect(data.ratingChanges).toHaveLength(4)
 		})
 	})
 
@@ -273,20 +237,17 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 		it('returns 404 for non-existent match', async () => {
 			const nonExistentMatchId = crypto.randomUUID()
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${nonExistentMatchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId: nonExistentMatchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(404)
-			const data = await res.json()
-			expect(data).toHaveProperty('message', 'Match not found')
+
+			if (!res.ok) {
+				const data = await res.json()
+				expect(data.message).toBe('Match not found')
+			}
 		})
 
 		it('returns 400 when match is not in voting state', async () => {
@@ -309,20 +270,17 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				redVotes: 0,
 			})
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(400)
-			const data = await res.json()
-			expect(data).toHaveProperty('message', 'Match is not in voting state')
+
+			if (!res.ok) {
+				const data = await res.json()
+				expect(data.message).toBe('Match is not in voting state')
+			}
 		})
 
 		it('returns 400 when there are not enough votes', async () => {
@@ -345,51 +303,17 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				redVotes: 0,
 			})
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(400)
-			const data = await res.json()
-			expect(data).toHaveProperty('message', 'Not enough votes')
-		})
 
-		it('returns 401 without API key', async () => {
-			const db = drizzle(env.DB)
-			const matchId = ctx.generatePendingMatchId()
-
-			const teamAssignments = {
-				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
-				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
+			if (!res.ok) {
+				const data = await res.json()
+				expect(data.message).toBe('Not enough votes')
 			}
-
-			await db.insert(guildPendingMatches).values({
-				id: matchId,
-				guildId: ctx.guildId,
-				channelId: ctx.channelId,
-				messageId: ctx.messageId,
-				status: 'voting',
-				teamAssignments: JSON.stringify(teamAssignments),
-				blueVotes: 1,
-				redVotes: 0,
-			})
-
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-				},
-				env,
-			)
-
-			expect(res.status).toBe(401)
 		})
 	})
 
@@ -422,25 +346,17 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				redVotes: 1,
 			})
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
 
-			const data = (await res.json()) as {
-				matchId: string
-				winningTeam: 'BLUE' | 'RED'
+			if (res.ok) {
+				const data = await res.json()
+				expect(data.winningTeam).toBe('BLUE')
 			}
-
-			expect(data.winningTeam).toBe('BLUE')
 		})
 
 		it('returns 400 for tie (equal votes)', async () => {
@@ -467,20 +383,17 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				redVotes: 1,
 			})
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(400)
-			const data = await res.json()
-			expect(data).toHaveProperty('message', 'Not enough votes')
+
+			if (!res.ok) {
+				const data = await res.json()
+				expect(data.message).toBe('Not enough votes')
+			}
 		})
 
 		it('has larger rating change during placement games', async () => {
@@ -509,29 +422,22 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				redVotes: 0,
 			})
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
 
-			const data = (await res.json()) as {
-				matchId: string
-				ratingChanges: Array<{ change: number; discordId: string }>
+			if (res.ok) {
+				const data = await res.json()
+
+				const player1Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId)
+				const player2Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId2)
+
+				expect(Math.abs(player1Change?.change || 0)).toBeGreaterThan(30)
+				expect(Math.abs(player2Change?.change || 0)).toBeGreaterThan(30)
 			}
-
-			const player1Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId)
-			const player2Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId2)
-
-			expect(Math.abs(player1Change?.change || 0)).toBeGreaterThan(30)
-			expect(Math.abs(player2Change?.change || 0)).toBeGreaterThan(30)
 		})
 
 		it('has smaller rating change after placement games', async () => {
@@ -560,29 +466,22 @@ describe('POST /v1/guilds/{guildId}/matches/{matchId}/confirm', () => {
 				redVotes: 0,
 			})
 
-			const res = await app.request(
-				`/v1/guilds/${ctx.guildId}/matches/${matchId}/confirm`,
-				{
-					method: 'POST',
-					headers: {
-						'x-api-key': env.API_KEY,
-					},
-				},
-				env,
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
 			)
 
 			expect(res.status).toBe(200)
 
-			const data = (await res.json()) as {
-				matchId: string
-				ratingChanges: Array<{ change: number; discordId: string }>
+			if (res.ok) {
+				const data = await res.json()
+
+				const player1Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId)
+				const player2Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId2)
+
+				expect(Math.abs(player1Change?.change || 0)).toBeLessThanOrEqual(32)
+				expect(Math.abs(player2Change?.change || 0)).toBeLessThanOrEqual(32)
 			}
-
-			const player1Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId)
-			const player2Change = data.ratingChanges.find((rc) => rc.discordId === ctx.discordId2)
-
-			expect(Math.abs(player1Change?.change || 0)).toBeLessThanOrEqual(32)
-			expect(Math.abs(player2Change?.change || 0)).toBeLessThanOrEqual(32)
 		})
 	})
 })

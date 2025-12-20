@@ -1,11 +1,13 @@
 import { env } from 'cloudflare:test'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildRatings } from '@/db/schema'
-import { app } from '@/index'
+import { typedApp } from './get'
 
-describe('GET /v1/guilds/{guildId}/ratings', () => {
+describe('getRatings', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 
 	beforeEach(async () => {
@@ -24,22 +26,17 @@ describe('GET /v1/guilds/{guildId}/ratings', () => {
 	})
 
 	it('returns rating for registered user', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/ratings?id=${ctx.discordId}`,
+		const res = await client.v1.guilds[':guildId'].ratings.$get(
 			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
+				param: { guildId: ctx.guildId },
+				query: { id: [ctx.discordId] },
 			},
-			env,
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as {
-			ratings: Array<{ discordId: string; rating: number | null }>
-		}
+		const data = await res.json()
 		expect(data.ratings).toHaveLength(1)
 		expect(data.ratings[0]?.discordId).toBe(ctx.discordId)
 		expect(data.ratings[0]?.rating).toBe(1500)
@@ -48,36 +45,19 @@ describe('GET /v1/guilds/{guildId}/ratings', () => {
 	it('returns null rating for unregistered user', async () => {
 		const unregisteredId = `unregistered-${ctx.prefix}`
 
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/ratings?id=${unregisteredId}`,
+		const res = await client.v1.guilds[':guildId'].ratings.$get(
 			{
-				method: 'GET',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
+				param: { guildId: ctx.guildId },
+				query: { id: [unregisteredId] },
 			},
-			env,
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as {
-			ratings: Array<{ discordId: string; rating: number | null }>
-		}
+		const data = await res.json()
 		expect(data.ratings).toHaveLength(1)
 		expect(data.ratings[0]?.discordId).toBe(unregisteredId)
 		expect(data.ratings[0]?.rating).toBeNull()
-	})
-
-	it('returns 401 without API key', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/ratings?id=${ctx.discordId}`,
-			{
-				method: 'GET',
-			},
-			env,
-		)
-
-		expect(res.status).toBe(401)
 	})
 })

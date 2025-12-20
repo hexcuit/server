@@ -1,5 +1,11 @@
+import { env } from 'cloudflare:test'
 import type { DrizzleD1Database } from 'drizzle-orm/d1'
 import { guildRatings, lolRanks, users } from '@/db/schema'
+
+/**
+ * Auth headers for API requests.
+ */
+export const authHeaders = { headers: { 'x-api-key': env.API_KEY } }
 
 /**
  * Test context that holds unique IDs for each test run.

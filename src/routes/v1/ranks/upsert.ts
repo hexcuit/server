@@ -3,9 +3,9 @@ import { drizzle } from 'drizzle-orm/d1'
 import { lolRanks, users } from '@/db/schema'
 import { RankPathParamsSchema, UpsertRankBodySchema, UpsertRankResponseSchema } from './schemas'
 
-const upsertRankRoute = createRoute({
+const route = createRoute({
 	method: 'put',
-	path: '/{discordId}',
+	path: '/v1/ranks/{discordId}',
 	tags: ['LoL Ranks'],
 	summary: 'Create or update LoL rank',
 	description: 'Create or update LoL rank information for a Discord ID.',
@@ -31,7 +31,9 @@ const upsertRankRoute = createRoute({
 	},
 })
 
-export const upsertRankRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().openapi(upsertRankRoute, async (c) => {
+const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
+
+export const typedApp = app.openapi(route, async (c) => {
 	const { discordId } = c.req.valid('param')
 	const { tier, division } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
@@ -44,3 +46,5 @@ export const upsertRankRouter = new OpenAPIHono<{ Bindings: Cloudflare.Env }>().
 
 	return c.json({ rank: { discordId, tier, division } }, 200)
 })
+
+export default app

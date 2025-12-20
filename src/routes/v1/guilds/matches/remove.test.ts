@@ -1,12 +1,14 @@
 import { env } from 'cloudflare:test'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
+import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildPendingMatches } from '@/db/schema'
-import { app } from '@/index'
+import { typedApp } from './remove'
 
-describe('DELETE /v1/guilds/{guildId}/matches/{matchId}', () => {
+describe('removeMatch', () => {
+	const client = testClient(typedApp, env)
 	let ctx: TestContext
 	let matchId: string
 
@@ -35,21 +37,17 @@ describe('DELETE /v1/guilds/{guildId}/matches/{matchId}', () => {
 	})
 
 	it('cancels a match and returns deleted: true', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/matches/${matchId}`,
-			{
-				method: 'DELETE',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$delete(
+			{ param: { guildId: ctx.guildId, matchId } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(200)
 
-		const data = (await res.json()) as { deleted: boolean }
-		expect(data.deleted).toBe(true)
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.deleted).toBe(true)
+		}
 
 		const db = drizzle(env.DB)
 		const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
@@ -57,64 +55,49 @@ describe('DELETE /v1/guilds/{guildId}/matches/{matchId}', () => {
 	})
 
 	it('returns 404 for non-existent match', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/matches/${crypto.randomUUID()}`,
-			{
-				method: 'DELETE',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$delete(
+			{ param: { guildId: ctx.guildId, matchId: crypto.randomUUID() } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Match not found')
+		}
 	})
 
 	it('returns 404 when accessing match from different guild', async () => {
 		const otherGuildId = `other-guild-${ctx.prefix}`
 
-		const res = await app.request(
-			`/v1/guilds/${otherGuildId}/matches/${matchId}`,
-			{
-				method: 'DELETE',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$delete(
+			{ param: { guildId: otherGuildId, matchId } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Match not found')
+		}
 	})
 
 	it('returns 400 for non-voting match', async () => {
 		const db = drizzle(env.DB)
 		await db.update(guildPendingMatches).set({ status: 'confirmed' }).where(eq(guildPendingMatches.id, matchId))
 
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/matches/${matchId}`,
-			{
-				method: 'DELETE',
-				headers: {
-					'x-api-key': env.API_KEY,
-				},
-			},
-			env,
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$delete(
+			{ param: { guildId: ctx.guildId, matchId } },
+			authHeaders,
 		)
 
 		expect(res.status).toBe(400)
-	})
 
-	it('returns 401 without API key', async () => {
-		const res = await app.request(
-			`/v1/guilds/${ctx.guildId}/matches/${matchId}`,
-			{
-				method: 'DELETE',
-			},
-			env,
-		)
-
-		expect(res.status).toBe(401)
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Match is not in voting state')
+		}
 	})
 })

@@ -1,7 +1,6 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { hc } from 'hono/client'
 import { guildRatings } from '@/db/schema'
 import { formatRankDisplay, getRankDisplay, isInPlacement } from '@/utils/elo'
 import { GetRatingsQuerySchema, GetRatingsResponseSchema, GuildIdParamSchema } from '../schemas'
@@ -71,5 +70,3 @@ export const typedApp = app.openapi(route, async (c) => {
 })
 
 export default app
-
-export const hcWithType = (...args: Parameters<typeof hc>) => hc<typeof typedApp>(...args)

@@ -1,7 +1,6 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { hc } from 'hono/client'
 import { queues } from '@/db/schema'
 import { QueuePathParamsSchema, RemoveQueueResponseSchema } from './schemas'
 
@@ -38,5 +37,3 @@ export const typedApp = app.openapi(route, async (c) => {
 })
 
 export default app
-
-export const hcWithType = (...args: Parameters<typeof hc>) => hc<typeof typedApp>(...args)

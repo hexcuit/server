@@ -42,7 +42,7 @@ export const typedApp = app.openapi(route, async (c) => {
 			rank || {
 				discordId,
 				tier: 'UNRANKED',
-				division: '',
+				division: null,
 			}
 		)
 	})

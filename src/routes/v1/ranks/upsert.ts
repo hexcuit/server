@@ -38,13 +38,18 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { tier, division } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	await db.insert(users).values({ discordId }).onConflictDoNothing()
-	await db.insert(lolRanks).values({ discordId, tier, division }).onConflictDoUpdate({
-		target: lolRanks.discordId,
-		set: { tier, division },
-	})
+	const normalizedDivision = division ?? null
 
-	return c.json({ rank: { discordId, tier, division } }, 200)
+	await db.insert(users).values({ discordId }).onConflictDoNothing()
+	await db
+		.insert(lolRanks)
+		.values({ discordId, tier, division: normalizedDivision })
+		.onConflictDoUpdate({
+			target: lolRanks.discordId,
+			set: { tier, division: normalizedDivision },
+		})
+
+	return c.json({ rank: { discordId, tier, division: normalizedDivision } }, 200)
 })
 
 export default app

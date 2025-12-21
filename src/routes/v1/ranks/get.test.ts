@@ -43,7 +43,7 @@ describe('getRanks', () => {
 		expect(data.ranks[0]).toEqual({
 			discordId: unrankedId,
 			tier: 'UNRANKED',
-			division: '',
+			division: null,
 		})
 	})
 

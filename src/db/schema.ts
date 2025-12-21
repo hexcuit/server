@@ -20,7 +20,7 @@ export const lolRanks = sqliteTable('lol_ranks', {
 			onUpdate: 'cascade',
 		}),
 	tier: text('tier', { enum: LOL_TIERS }).notNull(),
-	division: text('division', { enum: LOL_DIVISIONS }).notNull(),
+	division: text('division', { enum: LOL_DIVISIONS }),
 })
 
 export const riotAccounts = sqliteTable('riot_accounts', {

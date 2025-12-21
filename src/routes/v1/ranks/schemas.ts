@@ -27,7 +27,7 @@ export const RankItemSchema = z
 	.object({
 		discordId: z.string(),
 		tier: z.string(),
-		division: z.string(),
+		division: z.string().nullable(),
 	})
 	.openapi('RankItem')
 

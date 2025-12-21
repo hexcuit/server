@@ -18,11 +18,13 @@ async function main() {
 	const imports: string[] = []
 	const chains: string[] = []
 
+	console.log('Registered endpoints:')
 	routeFiles.forEach((file, index) => {
 		const relativePath = `./${path.relative('src', file).replace(/\\/g, '/').replace(/\.ts$/, '')}`
 		const varName = `app${index}`
 		imports.push(`import { typedApp as ${varName} } from '${relativePath}'`)
 		chains.push(`.route('/', ${varName})`)
+		console.log(`  ${index + 1}. ${relativePath}`)
 	})
 
 	const clientContent = `// This file is auto-generated. Do not edit manually.
@@ -35,7 +37,7 @@ ${imports.join('\n')}
 const app = new OpenAPIHono()
 ${chains.join('\n\t')}
 
-type AppType = typeof app
+export type AppType = typeof app
 
 export const hcWithType = (...args: Parameters<typeof hc>): ReturnType<typeof hc<AppType>> =>
 	hc<AppType>(...args)

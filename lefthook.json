@@ -10,8 +10,7 @@
 			},
 			"generate-client": {
 				"glob": "src/routes/**/*.ts",
-				"run": "bun run generate:client && git diff --exit-code src/client.ts",
-				"fail_text": "client.ts is out of sync. Run 'bun run generate:client' and commit the changes."
+				"run": "bun run generate:client && git add src/client.ts"
 			}
 		}
 	}

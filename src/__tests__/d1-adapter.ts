@@ -103,9 +103,9 @@ export class D1DatabaseAdapter {
 		const start = performance.now()
 		// Use Bun's native exec() which properly handles multi-statement SQL
 		// including semicolons inside strings, comments, and complex migrations
-		this.db.run(query)
+		const result = this.db.run(query)
 		return {
-			count: 1,
+			count: result.changes ?? 0,
 			duration: performance.now() - start,
 		}
 	}

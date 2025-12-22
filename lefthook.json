@@ -7,6 +7,11 @@
 				"glob": "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}",
 				"run": "bun biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}",
 				"stage_fixed": true
+			},
+			"generate-client": {
+				"glob": "src/routes/**/*.ts",
+				"run": "bun run generate:client && git diff --exit-code src/client.ts",
+				"fail_text": "client.ts is out of sync. Run 'bun run generate:client' and commit the changes."
 			}
 		}
 	}

@@ -28,6 +28,7 @@ describe('createQueue', () => {
 					creatorId: ctx.discordId,
 					type: 'normal',
 					anonymous: false,
+					capacity: 10,
 				},
 			},
 			authHeaders,
@@ -58,6 +59,7 @@ describe('createQueue', () => {
 			creatorId: ctx.discordId,
 			type: 'normal' as const,
 			anonymous: false,
+			capacity: 10,
 		}
 
 		const firstRes = await client.v1.queues.$post({ json: queueData }, authHeaders)

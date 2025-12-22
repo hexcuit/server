@@ -26,6 +26,7 @@ describe('createQueuePlayer', () => {
 			creatorId: ctx.discordId,
 			type: 'normal',
 			anonymous: false,
+			capacity: 10,
 			status: 'open',
 		})
 	})

@@ -25,6 +25,7 @@ describe('removeQueuePlayer', () => {
 			creatorId: ctx.discordId,
 			type: 'normal',
 			anonymous: false,
+			capacity: 10,
 			status: 'open',
 		})
 		await db.insert(queuePlayers).values({

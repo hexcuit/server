@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi'
-import { LOL_ROLES } from '@/constants'
+import { LOL_ROLES, QUEUE_STATUSES, QUEUE_TYPES } from '@/constants'
 
 // ========== Path Parameters ==========
 
@@ -18,8 +18,9 @@ export const CreateQueueBodySchema = z
 		channelId: z.string(),
 		messageId: z.string(),
 		creatorId: z.string(),
-		type: z.enum(['normal', 'ranked']).default('normal'),
+		type: z.enum(QUEUE_TYPES),
 		anonymous: z.boolean(),
+		capacity: z.number().int().positive(),
 		startTime: z.string().optional(),
 	})
 	.openapi('CreateQueueBody')
@@ -33,11 +34,11 @@ export const QueueSchema = z
 		channelId: z.string(),
 		messageId: z.string(),
 		creatorId: z.string(),
-		type: z.enum(['normal', 'ranked']),
+		type: z.enum(QUEUE_TYPES),
 		anonymous: z.boolean(),
 		capacity: z.number(),
 		startTime: z.string().nullable(),
-		status: z.string(),
+		status: z.enum(QUEUE_STATUSES),
 		createdAt: z.string(),
 		updatedAt: z.string(),
 	})

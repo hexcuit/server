@@ -57,6 +57,7 @@ export const typedApp = app.openapi(route, async (c) => {
 			creatorId: data.creatorId,
 			type: data.type,
 			anonymous: data.anonymous,
+			capacity: data.capacity,
 			startTime: data.startTime || null,
 			status: 'open',
 		})

@@ -65,4 +65,20 @@ describe('getMatch', () => {
 			expect(data.message).toBe('Match not found')
 		}
 	})
+
+	it('returns 404 when match belongs to different guild', async () => {
+		const otherGuildId = `other-guild-${ctx.prefix}`
+
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$get(
+			{ param: { guildId: otherGuildId, matchId } },
+			authHeaders,
+		)
+
+		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Match not found')
+		}
+	})
 })

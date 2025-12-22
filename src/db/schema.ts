@@ -1,15 +1,15 @@
-import { relations, sql } from 'drizzle-orm'
 import { integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
-import { createInsertSchema } from 'drizzle-zod'
-import { LOL_DIVISIONS, LOL_ROLES, LOL_TEAMS, LOL_TIERS } from '@/constants'
+import { LOL_DIVISIONS, LOL_ROLES, LOL_TEAMS, LOL_TIERS, QUEUE_STATUSES, QUEUE_TYPES } from '@/constants'
 
 export const users = sqliteTable('users', {
 	discordId: text('discord_id').primaryKey(),
-	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
+	createdAt: text('created_at')
+		.notNull()
+		.$defaultFn(() => new Date().toISOString()),
 	updatedAt: text('updated_at')
 		.notNull()
-		.default(sql`(current_timestamp)`)
-		.$onUpdateFn(() => sql`(current_timestamp)`),
+		.$defaultFn(() => new Date().toISOString())
+		.$onUpdateFn(() => new Date().toISOString()),
 })
 
 export const lolRanks = sqliteTable('lol_ranks', {
@@ -23,36 +23,6 @@ export const lolRanks = sqliteTable('lol_ranks', {
 	division: text('division', { enum: LOL_DIVISIONS }),
 })
 
-export const riotAccounts = sqliteTable('riot_accounts', {
-	puuid: text('puuid').primaryKey(),
-	discordId: text('discord_id')
-		.notNull()
-		.references(() => users.discordId, {
-			onDelete: 'cascade',
-			onUpdate: 'cascade',
-		})
-		.unique(),
-	name: text('name').notNull(),
-	tagLine: text('tagLine').notNull(),
-	region: text('region').notNull(),
-})
-
-export const riotAccountsRelations = relations(riotAccounts, ({ one }) => ({
-	user: one(users, {
-		fields: [riotAccounts.discordId],
-		references: [users.discordId],
-	}),
-}))
-
-export const usersRelations = relations(users, ({ one, many }) => ({
-	riotAccount: one(riotAccounts),
-	lolRanks: one(lolRanks),
-	queues: many(queues),
-	queuePlayers: many(queuePlayers),
-	guildRatings: many(guildRatings),
-	guildMatchParticipants: many(guildMatchParticipants),
-}))
-
 // Queue table
 export const queues = sqliteTable('queues', {
 	id: text('id').primaryKey(),
@@ -65,18 +35,18 @@ export const queues = sqliteTable('queues', {
 			onDelete: 'cascade',
 			onUpdate: 'cascade',
 		}),
-	type: text('type', { enum: ['normal', 'ranked'] })
-		.notNull()
-		.default('normal'),
-	anonymous: integer('anonymous', { mode: 'boolean' }).notNull().default(false),
-	capacity: integer('capacity').notNull().default(10),
+	type: text('type', { enum: QUEUE_TYPES }).notNull(),
+	anonymous: integer('anonymous', { mode: 'boolean' }).notNull(),
+	capacity: integer('capacity').notNull(),
 	startTime: text('start_time'),
-	status: text('status').notNull().default('open'),
-	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
+	status: text('status', { enum: QUEUE_STATUSES }).notNull(),
+	createdAt: text('created_at')
+		.notNull()
+		.$defaultFn(() => new Date().toISOString()),
 	updatedAt: text('updated_at')
 		.notNull()
-		.default(sql`(current_timestamp)`)
-		.$onUpdateFn(() => sql`(current_timestamp)`),
+		.$defaultFn(() => new Date().toISOString())
+		.$onUpdateFn(() => new Date().toISOString()),
 })
 
 // Queue players table
@@ -98,29 +68,12 @@ export const queuePlayers = sqliteTable(
 			}),
 		mainRole: text('main_role', { enum: LOL_ROLES }),
 		subRole: text('sub_role', { enum: LOL_ROLES }),
-		joinedAt: text('joined_at').notNull().default(sql`(current_timestamp)`),
+		joinedAt: text('joined_at')
+			.notNull()
+			.$defaultFn(() => new Date().toISOString()),
 	},
 	(table) => [unique().on(table.queueId, table.discordId)],
 )
-
-export const queuesRelations = relations(queues, ({ one, many }) => ({
-	creator: one(users, {
-		fields: [queues.creatorId],
-		references: [users.discordId],
-	}),
-	players: many(queuePlayers),
-}))
-
-export const queuePlayersRelations = relations(queuePlayers, ({ one }) => ({
-	queue: one(queues, {
-		fields: [queuePlayers.queueId],
-		references: [queues.id],
-	}),
-	user: one(users, {
-		fields: [queuePlayers.discordId],
-		references: [users.discordId],
-	}),
-}))
 
 // Guild ratings table
 export const guildRatings = sqliteTable(
@@ -134,14 +87,16 @@ export const guildRatings = sqliteTable(
 				onUpdate: 'cascade',
 			}),
 		rating: integer('rating').notNull(),
-		wins: integer('wins').notNull().default(0),
-		losses: integer('losses').notNull().default(0),
-		placementGames: integer('placement_games').notNull().default(0),
-		createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
+		wins: integer('wins').notNull(),
+		losses: integer('losses').notNull(),
+		placementGames: integer('placement_games').notNull(),
+		createdAt: text('created_at')
+			.notNull()
+			.$defaultFn(() => new Date().toISOString()),
 		updatedAt: text('updated_at')
 			.notNull()
-			.default(sql`(current_timestamp)`)
-			.$onUpdateFn(() => sql`(current_timestamp)`),
+			.$defaultFn(() => new Date().toISOString())
+			.$onUpdateFn(() => new Date().toISOString()),
 	},
 	(table) => [primaryKey({ columns: [table.guildId, table.discordId] })],
 )
@@ -155,7 +110,9 @@ export const guildMatches = sqliteTable('guild_matches', {
 		onUpdate: 'cascade',
 	}),
 	winningTeam: text('winning_team', { enum: LOL_TEAMS }).notNull(),
-	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
+	createdAt: text('created_at')
+		.notNull()
+		.$defaultFn(() => new Date().toISOString()),
 })
 
 // Match participants table
@@ -179,45 +136,19 @@ export const guildMatchParticipants = sqliteTable('guild_match_participants', {
 	ratingAfter: integer('rating_after').notNull(),
 })
 
-export const guildRatingsRelations = relations(guildRatings, ({ one }) => ({
-	user: one(users, {
-		fields: [guildRatings.discordId],
-		references: [users.discordId],
-	}),
-}))
-
-export const guildMatchesRelations = relations(guildMatches, ({ one, many }) => ({
-	queue: one(queues, {
-		fields: [guildMatches.queueId],
-		references: [queues.id],
-	}),
-	participants: many(guildMatchParticipants),
-}))
-
-export const guildMatchParticipantsRelations = relations(guildMatchParticipants, ({ one }) => ({
-	match: one(guildMatches, {
-		fields: [guildMatchParticipants.matchId],
-		references: [guildMatches.id],
-	}),
-	user: one(users, {
-		fields: [guildMatchParticipants.discordId],
-		references: [users.discordId],
-	}),
-}))
-
 // Pending matches table
 export const guildPendingMatches = sqliteTable('guild_pending_matches', {
 	id: text('id').primaryKey(),
 	guildId: text('guild_id').notNull(),
 	channelId: text('channel_id').notNull(),
 	messageId: text('message_id').notNull(),
-	status: text('status', { enum: ['voting', 'confirmed', 'cancelled'] })
-		.notNull()
-		.default('voting'),
+	status: text('status', { enum: ['voting', 'confirmed', 'cancelled'] }).notNull(),
 	teamAssignments: text('team_assignments').notNull(), // JSON: { discordId: { team, role, rating } }
-	blueVotes: integer('blue_votes').notNull().default(0),
-	redVotes: integer('red_votes').notNull().default(0),
-	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
+	blueVotes: integer('blue_votes').notNull(),
+	redVotes: integer('red_votes').notNull(),
+	createdAt: text('created_at')
+		.notNull()
+		.$defaultFn(() => new Date().toISOString()),
 })
 
 // Match votes table
@@ -240,30 +171,3 @@ export const guildMatchVotes = sqliteTable(
 	},
 	(table) => [primaryKey({ columns: [table.pendingMatchId, table.discordId] })],
 )
-
-export const guildPendingMatchesRelations = relations(guildPendingMatches, ({ many }) => ({
-	votes: many(guildMatchVotes),
-}))
-
-export const guildMatchVotesRelations = relations(guildMatchVotes, ({ one }) => ({
-	pendingMatch: one(guildPendingMatches, {
-		fields: [guildMatchVotes.pendingMatchId],
-		references: [guildPendingMatches.id],
-	}),
-	user: one(users, {
-		fields: [guildMatchVotes.discordId],
-		references: [users.discordId],
-	}),
-}))
-
-export const userZodSchema = createInsertSchema(users)
-
-export const queueZodSchema = createInsertSchema(queues)
-
-export const queuePlayerZodSchema = createInsertSchema(queuePlayers)
-
-export const guildRatingZodSchema = createInsertSchema(guildRatings)
-
-export const guildMatchZodSchema = createInsertSchema(guildMatches)
-
-export const guildMatchParticipantZodSchema = createInsertSchema(guildMatchParticipants)

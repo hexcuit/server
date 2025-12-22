@@ -34,7 +34,11 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
 
-	if (!match || match.guildId !== guildId) {
+	if (!match) {
+		return c.json({ message: 'Match not found' }, 404)
+	}
+
+	if (match.guildId !== guildId) {
 		return c.json({ message: 'Match not found' }, 404)
 	}
 

@@ -101,14 +101,11 @@ export class D1DatabaseAdapter {
 
 	async exec(query: string): Promise<D1ExecResult> {
 		const start = performance.now()
-		const statements = query.split(';').filter((s) => s.trim())
-		for (const stmt of statements) {
-			if (stmt.trim()) {
-				this.db.run(stmt)
-			}
-		}
+		// Use Bun's native exec() which properly handles multi-statement SQL
+		// including semicolons inside strings, comments, and complex migrations
+		this.db.run(query)
 		return {
-			count: statements.length,
+			count: 1,
 			duration: performance.now() - start,
 		}
 	}

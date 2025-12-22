@@ -53,7 +53,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 	guildMatchParticipants: many(guildMatchParticipants),
 }))
 
-// キューチE�Eブル
+// Queue table
 export const queues = sqliteTable('queues', {
 	id: text('id').primaryKey(),
 	guildId: text('guild_id').notNull(),
@@ -79,7 +79,7 @@ export const queues = sqliteTable('queues', {
 		.$onUpdateFn(() => sql`(current_timestamp)`),
 })
 
-// キュープレイヤーチE�Eブル
+// Queue players table
 export const queuePlayers = sqliteTable(
 	'queue_players',
 	{
@@ -122,7 +122,7 @@ export const queuePlayersRelations = relations(queuePlayers, ({ one }) => ({
 	}),
 }))
 
-// サーバ�E冁E��ーチE��ングチE�Eブル
+// Guild ratings table
 export const guildRatings = sqliteTable(
 	'guild_ratings',
 	{
@@ -146,7 +146,7 @@ export const guildRatings = sqliteTable(
 	(table) => [primaryKey({ columns: [table.guildId, table.discordId] })],
 )
 
-// 試合履歴チE�Eブル
+// Match history table
 export const guildMatches = sqliteTable('guild_matches', {
 	id: text('id').primaryKey(),
 	guildId: text('guild_id').notNull(),
@@ -158,7 +158,7 @@ export const guildMatches = sqliteTable('guild_matches', {
 	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
 })
 
-// 試合参加老E��ーブル
+// Match participants table
 export const guildMatchParticipants = sqliteTable('guild_match_participants', {
 	id: text('id').primaryKey(),
 	matchId: text('match_id')
@@ -205,7 +205,7 @@ export const guildMatchParticipantsRelations = relations(guildMatchParticipants,
 	}),
 }))
 
-// 投票中の試合テーブル
+// Pending matches table
 export const guildPendingMatches = sqliteTable('guild_pending_matches', {
 	id: text('id').primaryKey(),
 	guildId: text('guild_id').notNull(),
@@ -220,7 +220,7 @@ export const guildPendingMatches = sqliteTable('guild_pending_matches', {
 	createdAt: text('created_at').notNull().default(sql`(current_timestamp)`),
 })
 
-// 試合投票チE�Eブル
+// Match votes table
 export const guildMatchVotes = sqliteTable(
 	'guild_match_votes',
 	{

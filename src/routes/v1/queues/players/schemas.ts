@@ -22,13 +22,6 @@ export const JoinQueueBodySchema = z
 	})
 	.openapi('JoinQueueBody')
 
-export const UpdateRoleBodySchema = z
-	.object({
-		mainRole: RoleSchema.optional(),
-		subRole: RoleSchema.optional(),
-	})
-	.openapi('UpdateRoleBody')
-
 // ========== Response Schemas ==========
 
 export const PlayerSchema = z
@@ -52,9 +45,3 @@ export const LeaveResponseSchema = z
 		count: z.number(),
 	})
 	.openapi('LeaveResponse')
-
-export const UpdateRoleResponseSchema = z
-	.object({
-		player: PlayerSchema,
-	})
-	.openapi('UpdateRoleResponse')

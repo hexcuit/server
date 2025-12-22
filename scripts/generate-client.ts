@@ -5,7 +5,7 @@ import { Glob } from 'bun'
 async function main() {
 	// typedApp をエクスポートしているファイルを探す（index.ts, test.ts, schemas.ts を除く）
 	const glob = new Glob('src/routes/**/!(*index|*test|*schemas).ts')
-	const files = Array.from(glob.scanSync({ dot: false }))
+	const files = Array.from(glob.scanSync({ dot: false })).sort()
 
 	// typedApp をエクスポートしているファイルのみフィルタ
 	const routeFiles = files.filter((file) => {

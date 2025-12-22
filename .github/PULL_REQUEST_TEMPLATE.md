@@ -28,7 +28,11 @@
 
 <!-- How did you verify that your implementation is correct? -->
 
+- [ ] Lint & Format check passed: `bun run check`
 - [ ] Type check passed: `bun run typecheck`
+- [ ] Generated client is up to date: `bun run generate:client`
+- [ ] Tests passed: `bun test`
+- [ ] Changeset created: `bun changeset` (if this PR includes user-facing changes)
 - [ ] Manual testing completed: <!-- describe your testing -->
 
 ## Related Issues

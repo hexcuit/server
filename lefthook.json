@@ -7,6 +7,10 @@
 				"glob": "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}",
 				"run": "bun biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}",
 				"stage_fixed": true
+			},
+			"generate-client": {
+				"glob": "src/routes/**/*.ts",
+				"run": "bun run generate:client && git add src/client.ts"
 			}
 		}
 	}

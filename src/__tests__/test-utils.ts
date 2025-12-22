@@ -1,6 +1,6 @@
-import { env } from 'cloudflare:test'
 import type { DrizzleD1Database } from 'drizzle-orm/d1'
 import { guildRatings, lolRanks, users } from '@/db/schema'
+import { env } from './setup'
 
 /**
  * Auth headers for API requests.

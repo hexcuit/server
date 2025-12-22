@@ -1,12 +1,10 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { glob } from 'glob'
 
 async function main() {
 	// typedApp をエクスポートしているファイルを探す（index.ts, test.ts, schemas.ts を除く）
-	const files = await glob('src/routes/**/!(*index|*test|*schemas).ts', {
-		posix: true,
-	})
+	const glob = new Bun.Glob('src/routes/**/!(*index|*test|*schemas).ts')
+	const files = Array.from(glob.scanSync({ dot: false }))
 
 	// typedApp をエクスポートしているファイルのみフィルタ
 	const routeFiles = files.filter((file) => {

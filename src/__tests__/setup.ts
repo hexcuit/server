@@ -20,7 +20,7 @@ const migrationFiles = readdirSync(drizzleDir)
 
 for (const file of migrationFiles) {
 	const sql = readFileSync(path.join(drizzleDir, file), 'utf-8')
-	db.exec(sql)
+	db.run(sql)
 }
 
 // Export test environment

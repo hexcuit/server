@@ -1,6 +1,6 @@
-import { env } from 'cloudflare:test'
+import { describe, expect, it } from 'bun:test'
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { describe, expect, it } from 'vitest'
+import { env } from '@/__tests__/setup'
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 
 describe('apiKeyMiddleware', () => {

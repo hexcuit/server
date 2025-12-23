@@ -49,7 +49,6 @@ export const typedApp = app.openapi(route, async (c) => {
 			type: data.type,
 			anonymous: data.anonymous,
 			capacity: data.capacity,
-			startTime: data.startTime || null,
 			status: 'open',
 		})
 		.returning({ id: queues.id })) as [{ id: string }]

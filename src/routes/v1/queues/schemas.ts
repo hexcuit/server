@@ -20,7 +20,6 @@ export const CreateQueueBodySchema = z
 		type: z.enum(QUEUE_TYPES),
 		anonymous: z.boolean(),
 		capacity: z.number().int().positive(),
-		startTime: z.string().optional(),
 	})
 	.openapi('CreateQueueBody')
 
@@ -36,7 +35,6 @@ export const QueueSchema = z
 		type: z.enum(QUEUE_TYPES),
 		anonymous: z.boolean(),
 		capacity: z.number(),
-		startTime: z.string().nullable(),
 		status: z.enum(QUEUE_STATUSES),
 		createdAt: z.string(),
 		updatedAt: z.string(),

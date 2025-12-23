@@ -56,7 +56,6 @@ export const queues = sqliteTable('queues', {
 	type: text('type', { enum: QUEUE_TYPES }).notNull(),
 	anonymous: integer('anonymous', { mode: 'boolean' }).notNull(),
 	capacity: integer('capacity').notNull(),
-	startTime: text('start_time'),
 	status: text('status', { enum: QUEUE_STATUSES }).notNull(),
 	createdAt: text('created_at')
 		.notNull()

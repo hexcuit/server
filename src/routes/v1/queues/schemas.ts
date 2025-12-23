@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi'
-import { LOL_ROLES, QUEUE_STATUSES, QUEUE_TYPES } from '@/constants'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
+import { queuePlayers, queues } from '@/db/schema'
 
 // ========== Path Parameters ==========
 
@@ -11,63 +12,17 @@ export const QueuePathParamsSchema = z
 
 // ========== Request Schemas ==========
 
-export const CreateQueueBodySchema = z
-	.object({
-		guildId: z.string(),
-		channelId: z.string(),
-		messageId: z.string(),
-		creatorId: z.string(),
-		type: z.enum(QUEUE_TYPES),
-		anonymous: z.boolean(),
-		capacity: z.number().int().positive(),
-	})
-	.openapi('CreateQueueBody')
+export const QueueInsertSchema = createInsertSchema(queues, {
+	capacity: z.number().int().positive(),
+}).omit({
+	id: true,
+	status: true,
+	createdAt: true,
+	updatedAt: true,
+})
 
 // ========== Response Schemas ==========
 
-export const QueueSchema = z
-	.object({
-		id: z.string(),
-		guildId: z.string(),
-		channelId: z.string(),
-		messageId: z.string(),
-		creatorId: z.string(),
-		type: z.enum(QUEUE_TYPES),
-		anonymous: z.boolean(),
-		capacity: z.number(),
-		status: z.enum(QUEUE_STATUSES),
-		createdAt: z.string(),
-		updatedAt: z.string(),
-	})
-	.openapi('Queue')
+export const QueueSelectSchema = createSelectSchema(queues)
 
-export const CreateQueueResponseSchema = z
-	.object({
-		queue: z.object({
-			id: z.string(),
-		}),
-	})
-	.openapi('CreateQueueResponse')
-
-export const GetQueueResponseSchema = z
-	.object({
-		queue: QueueSchema,
-		players: z.array(
-			z.object({
-				id: z.string(),
-				queueId: z.string(),
-				discordId: z.string(),
-				mainRole: z.enum(LOL_ROLES).nullable(),
-				subRole: z.enum(LOL_ROLES).nullable(),
-				joinedAt: z.string(),
-			}),
-		),
-		count: z.number(),
-	})
-	.openapi('GetQueueResponse')
-
-export const RemoveQueueResponseSchema = z
-	.object({
-		removed: z.boolean(),
-	})
-	.openapi('RemoveQueueResponse')
+export const QueuePlayerSelectSchema = createSelectSchema(queuePlayers)

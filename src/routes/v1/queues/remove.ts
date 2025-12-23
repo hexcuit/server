@@ -1,8 +1,14 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { queues } from '@/db/schema'
-import { QueuePathParamsSchema, RemoveQueueResponseSchema } from './schemas'
+import { QueuePathParamsSchema } from './schemas'
+
+const ResponseSchema = z
+	.object({
+		removed: z.boolean(),
+	})
+	.openapi('RemoveQueueResponse')
 
 const route = createRoute({
 	method: 'delete',
@@ -18,7 +24,7 @@ const route = createRoute({
 			description: 'Queue deleted successfully',
 			content: {
 				'application/json': {
-					schema: RemoveQueueResponseSchema,
+					schema: ResponseSchema,
 				},
 			},
 		},

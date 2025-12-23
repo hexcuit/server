@@ -1,7 +1,15 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { guilds, queues, users } from '@/db/schema'
-import { CreateQueueBodySchema, CreateQueueResponseSchema } from './schemas'
+import { QueueInsertSchema, QueueSelectSchema } from './schemas'
+
+const ResponseSchema = z
+	.object({
+		queue: QueueSelectSchema,
+	})
+	.openapi('CreateQueueResponse')
+
+const BodySchema = QueueInsertSchema.openapi('CreateQueueBody')
 
 const route = createRoute({
 	method: 'post',
@@ -13,7 +21,7 @@ const route = createRoute({
 		body: {
 			content: {
 				'application/json': {
-					schema: CreateQueueBodySchema,
+					schema: BodySchema,
 				},
 			},
 		},
@@ -23,7 +31,7 @@ const route = createRoute({
 			description: 'Queue created successfully',
 			content: {
 				'application/json': {
-					schema: CreateQueueResponseSchema,
+					schema: ResponseSchema,
 				},
 			},
 		},
@@ -39,7 +47,7 @@ export const typedApp = app.openapi(route, async (c) => {
 	await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
 	await db.insert(guilds).values({ guildId: data.guildId }).onConflictDoNothing()
 
-	const [{ id }] = (await db
+	const [queue] = (await db
 		.insert(queues)
 		.values({
 			guildId: data.guildId,
@@ -51,9 +59,9 @@ export const typedApp = app.openapi(route, async (c) => {
 			capacity: data.capacity,
 			status: 'open',
 		})
-		.returning({ id: queues.id })) as [{ id: string }]
+		.returning()) as [typeof queues.$inferSelect]
 
-	return c.json({ queue: { id } }, 201)
+	return c.json({ queue }, 201)
 })
 
 export default app

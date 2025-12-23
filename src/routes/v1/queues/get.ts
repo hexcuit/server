@@ -1,9 +1,17 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { queuePlayers, queues } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
-import { GetQueueResponseSchema, QueuePathParamsSchema } from './schemas'
+import { QueuePathParamsSchema, QueuePlayerSelectSchema, QueueSelectSchema } from './schemas'
+
+const ResponseSchema = z
+	.object({
+		queue: QueueSelectSchema,
+		players: z.array(QueuePlayerSelectSchema),
+		count: z.number(),
+	})
+	.openapi('GetQueueResponse')
 
 const route = createRoute({
 	method: 'get',
@@ -19,7 +27,7 @@ const route = createRoute({
 			description: 'Queue retrieved successfully',
 			content: {
 				'application/json': {
-					schema: GetQueueResponseSchema,
+					schema: ResponseSchema,
 				},
 			},
 		},

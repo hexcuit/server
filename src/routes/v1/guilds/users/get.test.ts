@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { guildMatches, guildMatchParticipants } from '@/db/schema'
+import { guildMatches, guildMatchParticipants, guilds } from '@/db/schema'
 import { typedApp } from '@/routes/v1/guilds/users/get'
 
 describe('getUser', () => {
@@ -234,6 +234,7 @@ describe('getUser', () => {
 		})
 
 		// Create match in other guild
+		await db.insert(guilds).values({ guildId: otherGuildId }).onConflictDoNothing()
 		await db.insert(guildMatches).values({
 			id: matchId2,
 			guildId: otherGuildId,

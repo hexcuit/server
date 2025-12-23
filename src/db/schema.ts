@@ -12,6 +12,17 @@ export const users = sqliteTable('users', {
 		.$onUpdateFn(() => new Date().toISOString()),
 })
 
+export const guilds = sqliteTable('guilds', {
+	guildId: text('guild_id').primaryKey(),
+	createdAt: text('created_at')
+		.notNull()
+		.$defaultFn(() => new Date().toISOString()),
+	updatedAt: text('updated_at')
+		.notNull()
+		.$defaultFn(() => new Date().toISOString())
+		.$onUpdateFn(() => new Date().toISOString()),
+})
+
 export const lolRanks = sqliteTable('lol_ranks', {
 	discordId: text('discord_id')
 		.primaryKey()
@@ -25,8 +36,15 @@ export const lolRanks = sqliteTable('lol_ranks', {
 
 // Queue table
 export const queues = sqliteTable('queues', {
-	id: text('id').primaryKey(),
-	guildId: text('guild_id').notNull(),
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	guildId: text('guild_id')
+		.notNull()
+		.references(() => guilds.guildId, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade',
+		}),
 	channelId: text('channel_id').notNull(),
 	messageId: text('message_id').notNull(),
 	creatorId: text('creator_id')
@@ -53,7 +71,9 @@ export const queues = sqliteTable('queues', {
 export const queuePlayers = sqliteTable(
 	'queue_players',
 	{
-		id: text('id').primaryKey(),
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
 		queueId: text('queue_id')
 			.notNull()
 			.references(() => queues.id, {
@@ -79,7 +99,12 @@ export const queuePlayers = sqliteTable(
 export const guildRatings = sqliteTable(
 	'guild_ratings',
 	{
-		guildId: text('guild_id').notNull(),
+		guildId: text('guild_id')
+			.notNull()
+			.references(() => guilds.guildId, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
 		discordId: text('discord_id')
 			.notNull()
 			.references(() => users.discordId, {
@@ -103,8 +128,15 @@ export const guildRatings = sqliteTable(
 
 // Match history table
 export const guildMatches = sqliteTable('guild_matches', {
-	id: text('id').primaryKey(),
-	guildId: text('guild_id').notNull(),
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	guildId: text('guild_id')
+		.notNull()
+		.references(() => guilds.guildId, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade',
+		}),
 	queueId: text('queue_id').references(() => queues.id, {
 		onDelete: 'set null',
 		onUpdate: 'cascade',
@@ -117,7 +149,9 @@ export const guildMatches = sqliteTable('guild_matches', {
 
 // Match participants table
 export const guildMatchParticipants = sqliteTable('guild_match_participants', {
-	id: text('id').primaryKey(),
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
 	matchId: text('match_id')
 		.notNull()
 		.references(() => guildMatches.id, {
@@ -138,8 +172,15 @@ export const guildMatchParticipants = sqliteTable('guild_match_participants', {
 
 // Pending matches table
 export const guildPendingMatches = sqliteTable('guild_pending_matches', {
-	id: text('id').primaryKey(),
-	guildId: text('guild_id').notNull(),
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	guildId: text('guild_id')
+		.notNull()
+		.references(() => guilds.guildId, {
+			onDelete: 'cascade',
+			onUpdate: 'cascade',
+		}),
 	channelId: text('channel_id').notNull(),
 	messageId: text('message_id').notNull(),
 	status: text('status', { enum: ['voting', 'confirmed', 'cancelled'] }).notNull(),

@@ -13,7 +13,6 @@ export const QueuePathParamsSchema = z
 
 export const CreateQueueBodySchema = z
 	.object({
-		id: z.uuid(),
 		guildId: z.string(),
 		channelId: z.string(),
 		messageId: z.string(),

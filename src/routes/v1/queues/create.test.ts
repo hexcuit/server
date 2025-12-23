@@ -16,12 +16,9 @@ describe('createQueue', () => {
 	})
 
 	it('creates a new queue and returns 201', async () => {
-		const queueId = ctx.generateQueueId()
-
 		const res = await client.v1.queues.$post(
 			{
 				json: {
-					id: queueId,
 					guildId: ctx.guildId,
 					channelId: ctx.channelId,
 					messageId: ctx.messageId,
@@ -35,42 +32,17 @@ describe('createQueue', () => {
 		)
 
 		expect(res.status).toBe(201)
+		expect(res.ok).toBe(true)
 
-		if (res.ok) {
-			const data = await res.json()
-			expect(data.queue.id).toBe(queueId)
-		}
+		const data = await res.json()
+		expect(data.queue.id).toBeDefined()
+		expect(typeof data.queue.id).toBe('string')
 
 		const db = drizzle(env.DB)
-		const saved = await db.select().from(queues).where(eq(queues.id, queueId)).get()
+		const saved = await db.select().from(queues).where(eq(queues.id, data.queue.id)).get()
 
 		expect(saved).toBeDefined()
 		expect(saved?.guildId).toBe(ctx.guildId)
 		expect(saved?.status).toBe('open')
-	})
-
-	it('returns 409 when queue already exists', async () => {
-		const queueId = ctx.generateQueueId()
-		const queueData = {
-			id: queueId,
-			guildId: ctx.guildId,
-			channelId: ctx.channelId,
-			messageId: ctx.messageId,
-			creatorId: ctx.discordId,
-			type: 'normal' as const,
-			anonymous: false,
-			capacity: 10,
-		}
-
-		const firstRes = await client.v1.queues.$post({ json: queueData }, authHeaders)
-		expect(firstRes.status).toBe(201)
-
-		const secondRes = await client.v1.queues.$post({ json: queueData }, authHeaders)
-		expect(secondRes.status).toBe(409)
-
-		if (!secondRes.ok) {
-			const data = await secondRes.json()
-			expect(data.message).toBe('Queue already exists')
-		}
 	})
 })

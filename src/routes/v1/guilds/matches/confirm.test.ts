@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { guildMatches, guildMatchParticipants, guildPendingMatches, guildRatings, users } from '@/db/schema'
+import { guildMatches, guildMatchParticipants, guildPendingMatches, guildRatings, guilds, users } from '@/db/schema'
 import { typedApp } from './confirm'
 
 describe('confirmMatch', () => {
@@ -259,6 +259,7 @@ describe('confirmMatch', () => {
 				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 			}
 
+			await db.insert(guilds).values({ guildId: ctx.guildId }).onConflictDoNothing()
 			await db.insert(guildPendingMatches).values({
 				id: matchId,
 				guildId: ctx.guildId,
@@ -292,6 +293,7 @@ describe('confirmMatch', () => {
 				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
 			}
 
+			await db.insert(guilds).values({ guildId: ctx.guildId }).onConflictDoNothing()
 			await db.insert(guildPendingMatches).values({
 				id: matchId,
 				guildId: ctx.guildId,
@@ -372,6 +374,7 @@ describe('confirmMatch', () => {
 				[player4]: { team: 'RED', role: 'MIDDLE', rating: 1500 },
 			}
 
+			await db.insert(guilds).values({ guildId: ctx.guildId }).onConflictDoNothing()
 			await db.insert(guildPendingMatches).values({
 				id: matchId,
 				guildId: ctx.guildId,

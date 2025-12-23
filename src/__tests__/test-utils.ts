@@ -1,4 +1,6 @@
 import type { DrizzleD1Database } from 'drizzle-orm/d1'
+import { drizzle } from 'drizzle-orm/d1'
+import type { LOL_DIVISIONS, LOL_TIERS } from '@/constants'
 import { guilds, guildUserStats, lolRanks, users } from '@/db/schema'
 import { env } from './setup'
 
@@ -89,4 +91,20 @@ export async function setupTestUsers(
 			division: 'III',
 		})
 	}
+}
+
+/**
+ * Seeds a LoL rank for testing. Creates user if not exists.
+ */
+export async function seedLolRank(
+	discordId: string,
+	rank: { tier: (typeof LOL_TIERS)[number]; division?: (typeof LOL_DIVISIONS)[number] | null },
+): Promise<void> {
+	const db = drizzle(env.DB)
+	await db.insert(users).values({ discordId }).onConflictDoNothing()
+	await db.insert(lolRanks).values({
+		discordId,
+		tier: rank.tier,
+		division: rank.division ?? null,
+	})
 }

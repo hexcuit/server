@@ -4,13 +4,13 @@ import { guildQueues, guilds, users } from '@/db/schema'
 import { GuildIdParamSchema } from '../schemas'
 import { QueueInsertSchema, QueueSelectSchema } from './schemas'
 
+const BodySchema = QueueInsertSchema.openapi('CreateQueueBody')
+
 const ResponseSchema = z
 	.object({
 		queue: QueueSelectSchema,
 	})
 	.openapi('CreateQueueResponse')
-
-const BodySchema = QueueInsertSchema.openapi('CreateQueueBody')
 
 const route = createRoute({
 	method: 'post',

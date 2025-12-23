@@ -3,11 +3,9 @@ import { LOL_ROLES, LOL_TEAMS } from '@/constants'
 
 // ========== Path Parameters ==========
 
-export const GuildIdParamSchema = z
-	.object({
-		guildId: z.string().openapi({ description: 'Guild ID' }),
-	})
-	.openapi('GuildIdParam')
+export const GuildParamSchema = z.object({
+	guildId: z.string().openapi({ description: 'Guild ID' }),
+})
 
 export const MatchIdParamSchema = z
 	.object({

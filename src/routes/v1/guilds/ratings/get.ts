@@ -3,7 +3,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { guildUserStats } from '@/db/schema'
 import { formatRankDisplay, getRankDisplay, isInPlacement } from '@/utils/elo'
-import { GetRatingsQuerySchema, GetRatingsResponseSchema, GuildIdParamSchema } from '../schemas'
+import { GetRatingsQuerySchema, GetRatingsResponseSchema, GuildParamSchema } from '../schemas'
 
 const route = createRoute({
 	method: 'get',
@@ -12,7 +12,7 @@ const route = createRoute({
 	summary: 'Get guild ratings',
 	description: 'Get guild rating information for a list of Discord IDs',
 	request: {
-		params: GuildIdParamSchema,
+		params: GuildParamSchema,
 		query: GetRatingsQuerySchema,
 	},
 	responses: {

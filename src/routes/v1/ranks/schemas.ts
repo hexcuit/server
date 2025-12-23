@@ -13,3 +13,7 @@ export const LoLRankInsertSchema = createInsertSchema(lolRanks, {
 export const LoLRankSelectSchema = createSelectSchema(lolRanks, {
 	discordId: z.string().min(1),
 })
+
+// ========== Params Schemas ==========
+
+export const LoLRankParamsSchema = LoLRankInsertSchema.pick({ discordId: true })

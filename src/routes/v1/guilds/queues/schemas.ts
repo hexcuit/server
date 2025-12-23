@@ -14,13 +14,7 @@ export const QueuePathParamsSchema = z
 // ========== Request Schemas ==========
 
 export const QueueInsertSchema = createInsertSchema(guildQueues, {
-	capacity: z.number().int().positive(),
-}).omit({
-	id: true,
-	guildId: true,
-	status: true,
-	createdAt: true,
-	updatedAt: true,
+	capacity: z.number().int().min(1).max(50),
 })
 
 // ========== Response Schemas ==========

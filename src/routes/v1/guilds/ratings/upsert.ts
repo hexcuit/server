@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { guilds, guildUserStats, users } from '@/db/schema'
 import { formatRankDisplay, getRankDisplay, INITIAL_RATING, isInPlacement } from '@/utils/elo'
-import { GuildIdParamSchema, UpsertRatingBodySchema, UpsertRatingResponseSchema } from '../schemas'
+import { GuildParamSchema, UpsertRatingBodySchema, UpsertRatingResponseSchema } from '../schemas'
 
 const route = createRoute({
 	method: 'put',
@@ -12,7 +12,7 @@ const route = createRoute({
 	summary: 'Initialize guild rating',
 	description: 'Initialize guild rating for first-time participation',
 	request: {
-		params: GuildIdParamSchema,
+		params: GuildParamSchema,
 		body: { content: { 'application/json': { schema: UpsertRatingBodySchema } } },
 	},
 	responses: {

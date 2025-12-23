@@ -1,9 +1,9 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { lolRanks, users } from '@/db/schema'
-import { LoLRankInsertSchema, LoLRankSelectSchema } from './schemas'
+import { LoLRankInsertSchema, LoLRankParamsSchema, LoLRankSelectSchema } from './schemas'
 
-const ParamsSchema = LoLRankInsertSchema.pick({ discordId: true }).openapi('UpsertRankPathParams')
+const ParamsSchema = LoLRankParamsSchema.openapi('UpsertRankParams')
 
 const BodySchema = LoLRankInsertSchema.omit({ discordId: true, createdAt: true, updatedAt: true }).openapi(
 	'UpsertRankBody',

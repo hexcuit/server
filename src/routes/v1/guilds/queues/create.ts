@@ -1,10 +1,18 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { guildQueues, guilds, users } from '@/db/schema'
-import { GuildIdParamSchema } from '../schemas'
+import { GuildParamSchema } from '../schemas'
 import { QueueInsertSchema, QueueSelectSchema } from './schemas'
 
-const BodySchema = QueueInsertSchema.openapi('CreateQueueBody')
+const ParamsSchema = GuildParamSchema.openapi('CreateQueueParams')
+
+const BodySchema = QueueInsertSchema.omit({
+	id: true,
+	guildId: true,
+	status: true,
+	createdAt: true,
+	updatedAt: true,
+}).openapi('CreateQueueBody')
 
 const ResponseSchema = z
 	.object({
@@ -19,7 +27,7 @@ const route = createRoute({
 	summary: 'Create queue',
 	description: 'Create a new queue',
 	request: {
-		params: GuildIdParamSchema,
+		params: ParamsSchema,
 		body: {
 			content: {
 				'application/json': {

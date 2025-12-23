@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { queuePlayers, queues } from '@/db/schema'
+import { guildQueuePlayers, guildQueues } from '@/db/schema'
 import { typedApp } from './create'
 
 describe('createQueuePlayer', () => {
@@ -18,7 +18,7 @@ describe('createQueuePlayer', () => {
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
 
-		await db.insert(queues).values({
+		await db.insert(guildQueues).values({
 			id: queueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
@@ -103,7 +103,7 @@ describe('createQueuePlayer', () => {
 
 	it('returns 400 when queue is not open', async () => {
 		const db = drizzle(env.DB)
-		await db.update(queues).set({ status: 'full' }).where(eq(queues.id, queueId))
+		await db.update(guildQueues).set({ status: 'full' }).where(eq(guildQueues.id, queueId))
 
 		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
 			{
@@ -126,7 +126,7 @@ describe('createQueuePlayer', () => {
 		const db = drizzle(env.DB)
 		const smallQueueId = ctx.generateQueueId()
 
-		await db.insert(queues).values({
+		await db.insert(guildQueues).values({
 			id: smallQueueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
@@ -138,7 +138,7 @@ describe('createQueuePlayer', () => {
 			capacity: 1,
 		})
 
-		await db.insert(queuePlayers).values({
+		await db.insert(guildQueuePlayers).values({
 			id: crypto.randomUUID(),
 			queueId: smallQueueId,
 			discordId: ctx.discordId,
@@ -165,7 +165,7 @@ describe('createQueuePlayer', () => {
 		const db = drizzle(env.DB)
 		const smallQueueId = ctx.generateQueueId()
 
-		await db.insert(queues).values({
+		await db.insert(guildQueues).values({
 			id: smallQueueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
@@ -194,7 +194,7 @@ describe('createQueuePlayer', () => {
 			expect(data.count).toBe(1)
 		}
 
-		const queue = await db.select().from(queues).where(eq(queues.id, smallQueueId)).get()
+		const queue = await db.select().from(guildQueues).where(eq(guildQueues.id, smallQueueId)).get()
 		expect(queue?.status).toBe('full')
 	})
 })

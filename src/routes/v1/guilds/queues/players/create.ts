@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, count, eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { queuePlayers, queues, users } from '@/db/schema'
+import { guildQueuePlayers, guildQueues, users } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 import { QueuePathParamsSchema } from '../schemas'
 import { JoinQueueBodySchema, JoinResponseSchema } from './schemas'
@@ -59,8 +59,8 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	const queue = await db
 		.select()
-		.from(queues)
-		.where(and(eq(queues.id, id), eq(queues.guildId, guildId)))
+		.from(guildQueues)
+		.where(and(eq(guildQueues.id, id), eq(guildQueues.guildId, guildId)))
 		.get()
 
 	if (!queue) {
@@ -76,8 +76,8 @@ export const typedApp = app.openapi(route, async (c) => {
 	// Fast-path check (non-atomic, but avoids unnecessary work in common case)
 	const existing = await db
 		.select()
-		.from(queuePlayers)
-		.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
+		.from(guildQueuePlayers)
+		.where(and(eq(guildQueuePlayers.queueId, id), eq(guildQueuePlayers.discordId, discordId)))
 		.get()
 
 	if (existing) {
@@ -114,8 +114,8 @@ export const typedApp = app.openapi(route, async (c) => {
 		// Re-check to provide accurate error message
 		const existsNow = await db
 			.select()
-			.from(queuePlayers)
-			.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
+			.from(guildQueuePlayers)
+			.where(and(eq(guildQueuePlayers.queueId, id), eq(guildQueuePlayers.discordId, discordId)))
 			.get()
 
 		if (existsNow) {
@@ -125,13 +125,17 @@ export const typedApp = app.openapi(route, async (c) => {
 	}
 
 	// Get updated count after successful insertion
-	const playerCount = await db.select({ count: count() }).from(queuePlayers).where(eq(queuePlayers.queueId, id)).get()
+	const playerCount = await db
+		.select({ count: count() })
+		.from(guildQueuePlayers)
+		.where(eq(guildQueuePlayers.queueId, id))
+		.get()
 
 	const newCount = playerCount?.count || 1
 	const isFull = newCount >= capacity
 
 	if (isFull) {
-		await db.update(queues).set({ status: 'full' }).where(eq(queues.id, id))
+		await db.update(guildQueues).set({ status: 'full' }).where(eq(guildQueues.id, id))
 	}
 
 	return c.json(

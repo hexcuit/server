@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { queuePlayers, queues } from '@/db/schema'
+import { guildQueuePlayers, guildQueues } from '@/db/schema'
 import { typedApp } from './remove'
 
 describe('removeQueuePlayer', () => {
@@ -17,7 +17,7 @@ describe('removeQueuePlayer', () => {
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
 
-		await db.insert(queues).values({
+		await db.insert(guildQueues).values({
 			id: queueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
@@ -28,7 +28,7 @@ describe('removeQueuePlayer', () => {
 			capacity: 10,
 			status: 'open',
 		})
-		await db.insert(queuePlayers).values({
+		await db.insert(guildQueuePlayers).values({
 			id: crypto.randomUUID(),
 			queueId: queueId,
 			discordId: ctx.discordId2,

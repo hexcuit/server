@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { guildPendingMatches, guildRatings } from '@/db/schema'
+import { guildPendingMatches, guildUserStats } from '@/db/schema'
 import {
 	calculateNewRating,
 	calculateTeamAverageRating,
@@ -78,8 +78,8 @@ export const typedApp = app.openapi(route, async (c) => {
 	const participantDiscordIds = participants.map(([discordId]) => discordId)
 	const currentRatings = await db
 		.select()
-		.from(guildRatings)
-		.where(and(eq(guildRatings.guildId, match.guildId), inArray(guildRatings.discordId, participantDiscordIds)))
+		.from(guildUserStats)
+		.where(and(eq(guildUserStats.guildId, match.guildId), inArray(guildUserStats.discordId, participantDiscordIds)))
 
 	const ratingsMap = new Map(currentRatings.map((r) => [r.discordId, r]))
 

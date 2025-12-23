@@ -1,26 +1,31 @@
 import { Database } from 'bun:sqlite'
-import { readdirSync, readFileSync } from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 // Ensure @hono/zod-openapi extends Zod before any schemas are loaded
 import '@hono/zod-openapi'
+import { generateSQLiteDrizzleJson, generateSQLiteMigration } from 'drizzle-kit/api'
+import * as schema from '@/db/schema'
 import { D1DatabaseAdapter } from './d1-adapter'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // Create in-memory SQLite database
 const db = new Database(':memory:')
 const d1 = new D1DatabaseAdapter(db)
 
-// Apply migrations
-const drizzleDir = path.resolve(__dirname, '../../drizzle')
-const migrationFiles = readdirSync(drizzleDir)
-	.filter((f) => f.endsWith('.sql'))
-	.sort()
+// Generate and apply schema from Drizzle schema definitions
+const emptySnapshot = {
+	id: '0000',
+	prevId: '',
+	version: '6',
+	dialect: 'sqlite',
+	tables: {},
+	views: {},
+	enums: {},
+	_meta: { tables: {}, columns: {} },
+} as const
 
-for (const file of migrationFiles) {
-	const sql = readFileSync(path.join(drizzleDir, file), 'utf-8')
-	db.run(sql)
+const currentSnapshot = await generateSQLiteDrizzleJson(schema)
+const statements = await generateSQLiteMigration(emptySnapshot, currentSnapshot as typeof emptySnapshot)
+
+for (const statement of statements) {
+	db.run(statement)
 }
 
 // Export test environment

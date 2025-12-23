@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { guildRatings } from '@/db/schema'
+import { guildUserStats } from '@/db/schema'
 import { PLACEMENT_GAMES } from '@/utils/elo'
 import { typedApp } from './get'
 
@@ -16,7 +16,7 @@ describe('getRankings', () => {
 		const db = drizzle(env.DB)
 
 		await setupTestUsers(db, ctx)
-		await db.insert(guildRatings).values({
+		await db.insert(guildUserStats).values({
 			guildId: ctx.guildId,
 			discordId: ctx.discordId,
 			rating: 1600,
@@ -24,7 +24,7 @@ describe('getRankings', () => {
 			losses: 5,
 			placementGames: PLACEMENT_GAMES,
 		})
-		await db.insert(guildRatings).values({
+		await db.insert(guildUserStats).values({
 			guildId: ctx.guildId,
 			discordId: ctx.discordId2,
 			rating: 1500,

@@ -19,7 +19,7 @@ export const GetRanksQuerySchema = z
 	.openapi('GetRanksQuery')
 
 // Exclude discordId as it comes from path params
-export const UpsertRankBodySchema = createInsertSchema(lolRanks).omit({ discordId: true }).openapi('UpsertRankBody')
+export const LoLRankInsertSchema = createInsertSchema(lolRanks).omit({ discordId: true })
 
 // ========== Response Schemas ==========
 

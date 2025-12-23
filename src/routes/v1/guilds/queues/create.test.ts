@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
-import { queues } from '@/db/schema'
+import { guildQueues } from '@/db/schema'
 import { typedApp } from './create'
 
 describe('createQueue', () => {
@@ -39,7 +39,7 @@ describe('createQueue', () => {
 		expect(typeof data.queue.id).toBe('string')
 
 		const db = drizzle(env.DB)
-		const saved = await db.select().from(queues).where(eq(queues.id, data.queue.id)).get()
+		const saved = await db.select().from(guildQueues).where(eq(guildQueues.id, data.queue.id)).get()
 
 		expect(saved).toBeDefined()
 		expect(saved?.guildId).toBe(ctx.guildId)

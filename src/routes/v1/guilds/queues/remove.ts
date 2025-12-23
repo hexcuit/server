@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { queues } from '@/db/schema'
+import { guildQueues } from '@/db/schema'
 import { QueuePathParamsSchema } from './schemas'
 
 const ResponseSchema = z
@@ -37,7 +37,7 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, id } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
-	await db.delete(queues).where(and(eq(queues.id, id), eq(queues.guildId, guildId)))
+	await db.delete(guildQueues).where(and(eq(guildQueues.id, id), eq(guildQueues.guildId, guildId)))
 
 	return c.json({ removed: true })
 })

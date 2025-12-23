@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { queues } from '@/db/schema'
+import { guildQueues } from '@/db/schema'
 import { typedApp } from './remove'
 
 describe('removeQueue', () => {
@@ -18,7 +18,7 @@ describe('removeQueue', () => {
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
 
-		await db.insert(queues).values({
+		await db.insert(guildQueues).values({
 			id: queueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
@@ -43,7 +43,7 @@ describe('removeQueue', () => {
 		expect(data.removed).toBe(true)
 
 		const db = drizzle(env.DB)
-		const deleted = await db.select().from(queues).where(eq(queues.id, queueId)).get()
+		const deleted = await db.select().from(guildQueues).where(eq(guildQueues.id, queueId)).get()
 		expect(deleted).toBeUndefined()
 	})
 })

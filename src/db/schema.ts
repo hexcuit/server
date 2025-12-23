@@ -1,26 +1,25 @@
-import { integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+import { sql } from 'drizzle-orm'
+import { customType, index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 import { LOL_DIVISIONS, LOL_ROLES, LOL_TEAMS, LOL_TIERS, QUEUE_STATUSES, QUEUE_TYPES } from '@/constants'
+
+const isoDateTime = customType<{
+	data: Date
+	driverData: string
+}>({
+	dataType: () => 'text',
+
+	toDriver: (value): string => value.toISOString(),
+
+	fromDriver: (value): Date => new Date(value),
+})
 
 export const users = sqliteTable('users', {
 	discordId: text('discord_id').primaryKey(),
-	createdAt: text('created_at')
+	createdAt: isoDateTime('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+	updatedAt: isoDateTime('updated_at')
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
-		.notNull()
-		.$defaultFn(() => new Date().toISOString())
-		.$onUpdateFn(() => new Date().toISOString()),
-})
-
-export const guilds = sqliteTable('guilds', {
-	guildId: text('guild_id').primaryKey(),
-	createdAt: text('created_at')
-		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
-		.notNull()
-		.$defaultFn(() => new Date().toISOString())
-		.$onUpdateFn(() => new Date().toISOString()),
+		.default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
+		.$onUpdate(() => sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 })
 
 export const lolRanks = sqliteTable('lol_ranks', {
@@ -32,50 +31,61 @@ export const lolRanks = sqliteTable('lol_ranks', {
 		}),
 	tier: text('tier', { enum: LOL_TIERS }).notNull(),
 	division: text('division', { enum: LOL_DIVISIONS }),
+	createdAt: isoDateTime('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+	updatedAt: isoDateTime('updated_at')
+		.notNull()
+		.default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
+		.$onUpdate(() => sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 })
 
-// Queue table
-export const queues = sqliteTable('queues', {
-	id: text('id')
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	guildId: text('guild_id')
+export const guilds = sqliteTable('guilds', {
+	guildId: text('guild_id').primaryKey(),
+	createdAt: isoDateTime('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+	updatedAt: isoDateTime('updated_at')
 		.notNull()
-		.references(() => guilds.guildId, {
-			onDelete: 'cascade',
-			onUpdate: 'cascade',
-		}),
-	channelId: text('channel_id').notNull(),
-	messageId: text('message_id').notNull(),
-	creatorId: text('creator_id')
-		.notNull()
-		.references(() => users.discordId, {
-			onDelete: 'cascade',
-			onUpdate: 'cascade',
-		}),
-	type: text('type', { enum: QUEUE_TYPES }).notNull(),
-	anonymous: integer('anonymous', { mode: 'boolean' }).notNull(),
-	capacity: integer('capacity').notNull(),
-	status: text('status', { enum: QUEUE_STATUSES }).notNull(),
-	createdAt: text('created_at')
-		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-	updatedAt: text('updated_at')
-		.notNull()
-		.$defaultFn(() => new Date().toISOString())
-		.$onUpdateFn(() => new Date().toISOString()),
+		.default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
+		.$onUpdate(() => sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 })
 
-// Queue players table
-export const queuePlayers = sqliteTable(
-	'queue_players',
+export const guildQueues = sqliteTable(
+	'guild_queues',
 	{
 		id: text('id')
 			.primaryKey()
 			.$defaultFn(() => crypto.randomUUID()),
+		guildId: text('guild_id')
+			.notNull()
+			.references(() => guilds.guildId, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
+		channelId: text('channel_id').notNull(),
+		messageId: text('message_id').notNull(),
+		creatorId: text('creator_id')
+			.notNull()
+			.references(() => users.discordId, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
+		type: text('type', { enum: QUEUE_TYPES }).notNull(),
+		anonymous: integer('anonymous', { mode: 'boolean' }).notNull(),
+		capacity: integer('capacity').notNull(),
+		status: text('status', { enum: QUEUE_STATUSES }).notNull(),
+		createdAt: isoDateTime('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+		updatedAt: isoDateTime('updated_at')
+			.notNull()
+			.default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
+			.$onUpdate(() => sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+	},
+	(table) => [index('guild_queues_guild_status_idx').on(table.guildId, table.status)],
+)
+
+export const guildQueuePlayers = sqliteTable(
+	'guild_queue_players',
+	{
 		queueId: text('queue_id')
 			.notNull()
-			.references(() => queues.id, {
+			.references(() => guildQueues.id, {
 				onDelete: 'cascade',
 				onUpdate: 'cascade',
 			}),
@@ -87,16 +97,13 @@ export const queuePlayers = sqliteTable(
 			}),
 		mainRole: text('main_role', { enum: LOL_ROLES }),
 		subRole: text('sub_role', { enum: LOL_ROLES }),
-		joinedAt: text('joined_at')
-			.notNull()
-			.$defaultFn(() => new Date().toISOString()),
+		joinedAt: isoDateTime('joined_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 	},
-	(table) => [unique().on(table.queueId, table.discordId)],
+	(table) => [primaryKey({ columns: [table.queueId, table.discordId] })],
 )
 
-// Guild ratings table
-export const guildRatings = sqliteTable(
-	'guild_ratings',
+export const guildUserStats = sqliteTable(
+	'guild_user_stats',
 	{
 		guildId: text('guild_id')
 			.notNull()
@@ -114,62 +121,63 @@ export const guildRatings = sqliteTable(
 		wins: integer('wins').notNull(),
 		losses: integer('losses').notNull(),
 		placementGames: integer('placement_games').notNull(),
-		createdAt: text('created_at')
+		createdAt: isoDateTime('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+		updatedAt: isoDateTime('updated_at')
 			.notNull()
-			.$defaultFn(() => new Date().toISOString()),
-		updatedAt: text('updated_at')
-			.notNull()
-			.$defaultFn(() => new Date().toISOString())
-			.$onUpdateFn(() => new Date().toISOString()),
+			.default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
+			.$onUpdate(() => sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 	},
-	(table) => [primaryKey({ columns: [table.guildId, table.discordId] })],
+	(table) => [
+		primaryKey({ columns: [table.guildId, table.discordId] }),
+		index('guild_user_stats_rating_idx').on(table.guildId, table.rating),
+	],
 )
 
-// Match history table
-export const guildMatches = sqliteTable('guild_matches', {
-	id: text('id')
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	guildId: text('guild_id')
-		.notNull()
-		.references(() => guilds.guildId, {
-			onDelete: 'cascade',
+export const guildMatches = sqliteTable(
+	'guild_matches',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		guildId: text('guild_id')
+			.notNull()
+			.references(() => guilds.guildId, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
+		queueId: text('queue_id').references(() => guildQueues.id, {
+			onDelete: 'set null',
 			onUpdate: 'cascade',
 		}),
-	queueId: text('queue_id').references(() => queues.id, {
-		onDelete: 'set null',
-		onUpdate: 'cascade',
-	}),
-	winningTeam: text('winning_team', { enum: LOL_TEAMS }).notNull(),
-	createdAt: text('created_at')
-		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
-})
+		winningTeam: text('winning_team', { enum: LOL_TEAMS }).notNull(),
+		createdAt: isoDateTime('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+	},
+	(table) => [index('guild_matches_guild_created_idx').on(table.guildId, table.createdAt)],
+)
 
-// Match participants table
-export const guildMatchParticipants = sqliteTable('guild_match_participants', {
-	id: text('id')
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	matchId: text('match_id')
-		.notNull()
-		.references(() => guildMatches.id, {
-			onDelete: 'cascade',
-			onUpdate: 'cascade',
-		}),
-	discordId: text('discord_id')
-		.notNull()
-		.references(() => users.discordId, {
-			onDelete: 'cascade',
-			onUpdate: 'cascade',
-		}),
-	team: text('team', { enum: LOL_TEAMS }).notNull(),
-	role: text('role', { enum: LOL_ROLES }).notNull(),
-	ratingBefore: integer('rating_before').notNull(),
-	ratingAfter: integer('rating_after').notNull(),
-})
+export const guildMatchPlayers = sqliteTable(
+	'guild_match_players',
+	{
+		matchId: text('match_id')
+			.notNull()
+			.references(() => guildMatches.id, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
+		discordId: text('discord_id')
+			.notNull()
+			.references(() => users.discordId, {
+				onDelete: 'cascade',
+				onUpdate: 'cascade',
+			}),
+		team: text('team', { enum: LOL_TEAMS }).notNull(),
+		role: text('role', { enum: LOL_ROLES }).notNull(),
+		ratingBefore: integer('rating_before').notNull(),
+		ratingAfter: integer('rating_after').notNull(),
+	},
+	(table) => [primaryKey({ columns: [table.matchId, table.discordId] })],
+)
 
-// Pending matches table
 export const guildPendingMatches = sqliteTable('guild_pending_matches', {
 	id: text('id')
 		.primaryKey()
@@ -182,16 +190,17 @@ export const guildPendingMatches = sqliteTable('guild_pending_matches', {
 		}),
 	channelId: text('channel_id').notNull(),
 	messageId: text('message_id').notNull(),
-	status: text('status', { enum: ['voting', 'confirmed', 'cancelled'] }).notNull(),
+	status: text('status', { enum: ['voting', 'confirmed'] }).notNull(),
 	teamAssignments: text('team_assignments').notNull(), // JSON: { discordId: { team, role, rating } }
 	blueVotes: integer('blue_votes').notNull(),
 	redVotes: integer('red_votes').notNull(),
-	createdAt: text('created_at')
+	createdAt: isoDateTime('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+	updatedAt: isoDateTime('updated_at')
 		.notNull()
-		.$defaultFn(() => new Date().toISOString()),
+		.default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
+		.$onUpdate(() => sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 })
 
-// Match votes table
 export const guildMatchVotes = sqliteTable(
 	'guild_match_votes',
 	{

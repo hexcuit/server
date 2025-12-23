@@ -4,7 +4,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { guildMatches, guildMatchParticipants, guildPendingMatches, guildRatings, guilds, users } from '@/db/schema'
+import { guildMatches, guildMatchPlayers, guildPendingMatches, guilds, guildUserStats, users } from '@/db/schema'
 import { typedApp } from './confirm'
 
 describe('confirmMatch', () => {
@@ -21,7 +21,7 @@ describe('confirmMatch', () => {
 			const matchId = ctx.generatePendingMatchId()
 
 			await setupTestUsers(db, ctx)
-			await db.insert(guildRatings).values([
+			await db.insert(guildUserStats).values([
 				{ guildId: ctx.guildId, discordId: ctx.discordId, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
 				{ guildId: ctx.guildId, discordId: ctx.discordId2, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
 			])
@@ -71,12 +71,12 @@ describe('confirmMatch', () => {
 
 				const participants = await db
 					.select()
-					.from(guildMatchParticipants)
-					.where(eq(guildMatchParticipants.matchId, data.matchId))
+					.from(guildMatchPlayers)
+					.where(eq(guildMatchPlayers.matchId, data.matchId))
 				expect(participants).toHaveLength(2)
 			}
 
-			const updatedRatings = await db.select().from(guildRatings).where(eq(guildRatings.guildId, ctx.guildId))
+			const updatedRatings = await db.select().from(guildUserStats).where(eq(guildUserStats.guildId, ctx.guildId))
 			expect(updatedRatings).toHaveLength(2)
 
 			const player1Rating = updatedRatings.find((r) => r.discordId === ctx.discordId)
@@ -98,7 +98,7 @@ describe('confirmMatch', () => {
 			const matchId = ctx.generatePendingMatchId()
 
 			await setupTestUsers(db, ctx)
-			await db.insert(guildRatings).values([
+			await db.insert(guildUserStats).values([
 				{ guildId: ctx.guildId, discordId: ctx.discordId, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
 				{ guildId: ctx.guildId, discordId: ctx.discordId2, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
 			])
@@ -131,7 +131,7 @@ describe('confirmMatch', () => {
 				expect(data.winningTeam).toBe('RED')
 			}
 
-			const updatedRatings = await db.select().from(guildRatings).where(eq(guildRatings.guildId, ctx.guildId))
+			const updatedRatings = await db.select().from(guildUserStats).where(eq(guildUserStats.guildId, ctx.guildId))
 			const player1Rating = updatedRatings.find((r) => r.discordId === ctx.discordId)
 			const player2Rating = updatedRatings.find((r) => r.discordId === ctx.discordId2)
 
@@ -171,7 +171,7 @@ describe('confirmMatch', () => {
 
 			expect(res.status).toBe(200)
 
-			const ratings = await db.select().from(guildRatings).where(eq(guildRatings.guildId, ctx.guildId))
+			const ratings = await db.select().from(guildUserStats).where(eq(guildUserStats.guildId, ctx.guildId))
 			expect(ratings).toHaveLength(2)
 
 			const player1Rating = ratings.find((r) => r.discordId === ctx.discordId)
@@ -195,7 +195,7 @@ describe('confirmMatch', () => {
 
 			await setupTestUsers(db, ctx)
 			await db.insert(users).values([{ discordId: player3 }, { discordId: player4 }])
-			await db.insert(guildRatings).values([
+			await db.insert(guildUserStats).values([
 				{ guildId: ctx.guildId, discordId: player3, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
 				{ guildId: ctx.guildId, discordId: player4, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
 			])
@@ -328,7 +328,7 @@ describe('confirmMatch', () => {
 			await setupTestUsers(db, ctx)
 			await db.insert(users).values({ discordId: player3 })
 			await db
-				.insert(guildRatings)
+				.insert(guildUserStats)
 				.values([{ guildId: ctx.guildId, discordId: player3, rating: 1500, wins: 0, losses: 0, placementGames: 0 }])
 
 			const teamAssignments = {
@@ -404,7 +404,7 @@ describe('confirmMatch', () => {
 			const matchId = ctx.generatePendingMatchId()
 
 			await setupTestUsers(db, ctx)
-			await db.insert(guildRatings).values([
+			await db.insert(guildUserStats).values([
 				{ guildId: ctx.guildId, discordId: ctx.discordId, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
 				{ guildId: ctx.guildId, discordId: ctx.discordId2, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
 			])
@@ -448,7 +448,7 @@ describe('confirmMatch', () => {
 			const matchId = ctx.generatePendingMatchId()
 
 			await setupTestUsers(db, ctx)
-			await db.insert(guildRatings).values([
+			await db.insert(guildUserStats).values([
 				{ guildId: ctx.guildId, discordId: ctx.discordId, rating: 1500, wins: 5, losses: 5, placementGames: 10 },
 				{ guildId: ctx.guildId, discordId: ctx.discordId2, rating: 1500, wins: 5, losses: 5, placementGames: 10 },
 			])

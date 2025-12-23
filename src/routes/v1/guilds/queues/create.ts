@@ -1,6 +1,6 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
-import { guilds, queues, users } from '@/db/schema'
+import { guildQueues, guilds, users } from '@/db/schema'
 import { GuildIdParamSchema } from '../schemas'
 import { QueueInsertSchema, QueueSelectSchema } from './schemas'
 
@@ -51,7 +51,7 @@ export const typedApp = app.openapi(route, async (c) => {
 	await db.insert(guilds).values({ guildId }).onConflictDoNothing()
 
 	const [queue] = (await db
-		.insert(queues)
+		.insert(guildQueues)
 		.values({
 			guildId,
 			channelId: data.channelId,
@@ -62,7 +62,7 @@ export const typedApp = app.openapi(route, async (c) => {
 			capacity: data.capacity,
 			status: 'open',
 		})
-		.returning()) as [typeof queues.$inferSelect]
+		.returning()) as [typeof guildQueues.$inferSelect]
 
 	return c.json({ queue }, 201)
 })

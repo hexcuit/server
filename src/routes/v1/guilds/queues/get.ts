@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { queuePlayers, queues } from '@/db/schema'
+import { guildQueuePlayers, guildQueues } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 import { QueuePathParamsSchema, QueuePlayerSelectSchema, QueueSelectSchema } from './schemas'
 
@@ -50,15 +50,15 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	const queue = await db
 		.select()
-		.from(queues)
-		.where(and(eq(queues.id, id), eq(queues.guildId, guildId)))
+		.from(guildQueues)
+		.where(and(eq(guildQueues.id, id), eq(guildQueues.guildId, guildId)))
 		.get()
 
 	if (!queue) {
 		return c.json({ message: 'Queue not found' }, 404)
 	}
 
-	const players = await db.select().from(queuePlayers).where(eq(queuePlayers.queueId, id))
+	const players = await db.select().from(guildQueuePlayers).where(eq(guildQueuePlayers.queueId, id))
 
 	return c.json(
 		{

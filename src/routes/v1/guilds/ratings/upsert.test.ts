@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { guildRatings } from '@/db/schema'
+import { guildUserStats } from '@/db/schema'
 import { typedApp } from './upsert'
 
 describe('upsertRating', () => {
@@ -36,7 +36,7 @@ describe('upsertRating', () => {
 	it('returns existing rating with 200', async () => {
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
-		await db.insert(guildRatings).values({
+		await db.insert(guildUserStats).values({
 			guildId: ctx.guildId,
 			discordId: ctx.discordId,
 			rating: 1500,

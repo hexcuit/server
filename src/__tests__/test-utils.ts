@@ -1,5 +1,5 @@
 import type { DrizzleD1Database } from 'drizzle-orm/d1'
-import { guildRatings, guilds, lolRanks, users } from '@/db/schema'
+import { guilds, guildUserStats, lolRanks, users } from '@/db/schema'
 import { env } from './setup'
 
 /**
@@ -72,7 +72,7 @@ export async function setupTestUsers(
 	await db.insert(guilds).values({ guildId: ctx.guildId })
 
 	if (options?.withRatings) {
-		await db.insert(guildRatings).values({
+		await db.insert(guildUserStats).values({
 			guildId: ctx.guildId,
 			discordId: ctx.discordId,
 			rating: 1500,

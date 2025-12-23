@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { queuePlayers, queues } from '@/db/schema'
+import { guildQueuePlayers, guildQueues } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 import { LeaveResponseSchema, PlayerPathParamsSchema } from './schemas'
 
@@ -43,8 +43,8 @@ export const typedApp = app.openapi(route, async (c) => {
 	// Verify queue belongs to guild
 	const queue = await db
 		.select()
-		.from(queues)
-		.where(and(eq(queues.id, id), eq(queues.guildId, guildId)))
+		.from(guildQueues)
+		.where(and(eq(guildQueues.id, id), eq(guildQueues.guildId, guildId)))
 		.get()
 
 	if (!queue) {
@@ -53,21 +53,23 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	const existing = await db
 		.select()
-		.from(queuePlayers)
-		.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
+		.from(guildQueuePlayers)
+		.where(and(eq(guildQueuePlayers.queueId, id), eq(guildQueuePlayers.discordId, discordId)))
 		.get()
 
 	if (!existing) {
 		return c.json({ message: 'Player not found' }, 404)
 	}
 
-	await db.delete(queuePlayers).where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
+	await db
+		.delete(guildQueuePlayers)
+		.where(and(eq(guildQueuePlayers.queueId, id), eq(guildQueuePlayers.discordId, discordId)))
 
 	if (queue.status === 'full') {
-		await db.update(queues).set({ status: 'open' }).where(eq(queues.id, id))
+		await db.update(guildQueues).set({ status: 'open' }).where(eq(guildQueues.id, id))
 	}
 
-	const players = await db.select().from(queuePlayers).where(eq(queuePlayers.queueId, id))
+	const players = await db.select().from(guildQueuePlayers).where(eq(guildQueuePlayers.queueId, id))
 
 	return c.json({ count: players.length }, 200)
 })

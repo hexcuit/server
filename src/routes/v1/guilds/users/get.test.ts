@@ -4,7 +4,7 @@ import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { guildMatches, guildMatchParticipants, guilds } from '@/db/schema'
-import { typedApp } from '@/routes/v1/guilds/users/get'
+import { typedApp } from './get'
 
 describe('getUser', () => {
 	const client = testClient(typedApp, env)

@@ -1,13 +1,12 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { queues } from '@/db/schema'
-import { typedApp } from '@/routes/v1/queues/remove'
+import { typedApp } from './get'
 
-describe('removeQueue', () => {
+describe('getQueue', () => {
 	const client = testClient(typedApp, env)
 	let ctx: TestContext
 	let queueId: string
@@ -31,16 +30,35 @@ describe('removeQueue', () => {
 		})
 	})
 
-	it('deletes queue and returns 200', async () => {
-		const res = await client.v1.queues[':id'].$delete({ param: { id: queueId } }, authHeaders)
+	it('returns queue with participants', async () => {
+		const res = await client.v1.guilds[':guildId'].queues[':id'].$get(
+			{ param: { guildId: ctx.guildId, id: queueId } },
+			authHeaders,
+		)
 
+		expect(res.ok).toBe(true)
 		expect(res.status).toBe(200)
 
-		const data = await res.json()
-		expect(data.removed).toBe(true)
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.queue.id).toBe(queueId)
+			expect(data.players).toEqual([])
+			expect(data.count).toBe(0)
+		}
+	})
 
-		const db = drizzle(env.DB)
-		const deleted = await db.select().from(queues).where(eq(queues.id, queueId)).get()
-		expect(deleted).toBeUndefined()
+	it('returns 404 for non-existent queue', async () => {
+		const res = await client.v1.guilds[':guildId'].queues[':id'].$get(
+			{ param: { guildId: ctx.guildId, id: crypto.randomUUID() } },
+			authHeaders,
+		)
+
+		expect(res.ok).toBe(false)
+		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Queue not found')
+		}
 	})
 })

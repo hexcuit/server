@@ -5,7 +5,7 @@ import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
 import { queues } from '@/db/schema'
-import { typedApp } from '@/routes/v1/queues/create'
+import { typedApp } from './create'
 
 describe('createQueue', () => {
 	const client = testClient(typedApp, env)
@@ -16,10 +16,10 @@ describe('createQueue', () => {
 	})
 
 	it('creates a new queue and returns 201', async () => {
-		const res = await client.v1.queues.$post(
+		const res = await client.v1.guilds[':guildId'].queues.$post(
 			{
+				param: { guildId: ctx.guildId },
 				json: {
-					guildId: ctx.guildId,
 					channelId: ctx.channelId,
 					messageId: ctx.messageId,
 					creatorId: ctx.discordId,

@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { guilds, queues, users } from '@/db/schema'
+import { GuildIdParamSchema } from '../schemas'
 import { QueueInsertSchema, QueueSelectSchema } from './schemas'
 
 const ResponseSchema = z
@@ -13,11 +14,12 @@ const BodySchema = QueueInsertSchema.openapi('CreateQueueBody')
 
 const route = createRoute({
 	method: 'post',
-	path: '/v1/queues',
-	tags: ['Queues'],
+	path: '/v1/guilds/{guildId}/queues',
+	tags: ['Guild Queues'],
 	summary: 'Create queue',
 	description: 'Create a new queue',
 	request: {
+		params: GuildIdParamSchema,
 		body: {
 			content: {
 				'application/json': {
@@ -41,16 +43,17 @@ const route = createRoute({
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
+	const { guildId } = c.req.valid('param')
 	const data = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
 	await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
-	await db.insert(guilds).values({ guildId: data.guildId }).onConflictDoNothing()
+	await db.insert(guilds).values({ guildId }).onConflictDoNothing()
 
 	const [queue] = (await db
 		.insert(queues)
 		.values({
-			guildId: data.guildId,
+			guildId,
 			channelId: data.channelId,
 			messageId: data.messageId,
 			creatorId: data.creatorId,

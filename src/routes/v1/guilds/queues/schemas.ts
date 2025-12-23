@@ -6,6 +6,7 @@ import { queuePlayers, queues } from '@/db/schema'
 
 export const QueuePathParamsSchema = z
 	.object({
+		guildId: z.string(),
 		id: z.uuid(),
 	})
 	.openapi('QueuePathParams')
@@ -16,6 +17,7 @@ export const QueueInsertSchema = createInsertSchema(queues, {
 	capacity: z.number().int().positive(),
 }).omit({
 	id: true,
+	guildId: true,
 	status: true,
 	createdAt: true,
 	updatedAt: true,

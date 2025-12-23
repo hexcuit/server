@@ -4,7 +4,7 @@ import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
 import { queuePlayers, queues } from '@/db/schema'
-import { typedApp } from '@/routes/v1/queues/players/remove'
+import { typedApp } from './remove'
 
 describe('removeQueuePlayer', () => {
 	const client = testClient(typedApp, env)
@@ -38,8 +38,8 @@ describe('removeQueuePlayer', () => {
 	})
 
 	it('leaves queue and returns 200', async () => {
-		const res = await client.v1.queues[':id'].players[':discordId'].$delete(
-			{ param: { id: queueId, discordId: ctx.discordId2 } },
+		const res = await client.v1.guilds[':guildId'].queues[':id'].players[':discordId'].$delete(
+			{ param: { guildId: ctx.guildId, id: queueId, discordId: ctx.discordId2 } },
 			authHeaders,
 		)
 
@@ -53,8 +53,8 @@ describe('removeQueuePlayer', () => {
 	})
 
 	it('returns 404 when not a player', async () => {
-		const res = await client.v1.queues[':id'].players[':discordId'].$delete(
-			{ param: { id: queueId, discordId: `non-player-${ctx.prefix}` } },
+		const res = await client.v1.guilds[':guildId'].queues[':id'].players[':discordId'].$delete(
+			{ param: { guildId: ctx.guildId, id: queueId, discordId: `non-player-${ctx.prefix}` } },
 			authHeaders,
 		)
 

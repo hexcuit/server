@@ -171,6 +171,23 @@ describe('resetUserStats', () => {
 		expect(res.status).toBe(404)
 	})
 
+	it('succeeds when user has no match history', async () => {
+		// User has stats but no match history
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.$delete(
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId } },
+			authHeaders,
+		)
+
+		expect(res.status).toBe(200)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.deleted).toBe(true)
+			expect(data.deletedCounts.userStats).toBe(1)
+			expect(data.deletedCounts.matchPlayers).toBe(0)
+		}
+	})
+
 	it('only deletes match players from specified guild', async () => {
 		const db = drizzle(env.DB)
 		const otherGuildId = `other-guild-${ctx.prefix}`

@@ -4,7 +4,14 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { guildMatches, guildMatchPlayers, guildMatchVotes, guildPendingMatches, guildUserStats } from '@/db/schema'
+import {
+	guildMatches,
+	guildMatchPlayers,
+	guildMatchVotes,
+	guildPendingMatches,
+	guilds,
+	guildUserStats,
+} from '@/db/schema'
 import { typedApp } from './reset'
 
 describe('resetGuildStats', () => {
@@ -137,6 +144,7 @@ describe('resetGuildStats', () => {
 		const otherGuildId = `other-guild-${ctx.prefix}`
 
 		// Setup other guild with stats
+		await db.insert(guilds).values({ guildId: otherGuildId })
 		await db.insert(guildUserStats).values({
 			guildId: otherGuildId,
 			discordId: ctx.discordId,

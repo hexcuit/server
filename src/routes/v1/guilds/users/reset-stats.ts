@@ -39,6 +39,14 @@ const route = createRoute({
 				},
 			},
 		},
+		500: {
+			description: 'Internal server error',
+			content: {
+				'application/json': {
+					schema: ErrorResponseSchema,
+				},
+			},
+		},
 	},
 })
 
@@ -64,32 +72,47 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	const matchIds = matches.map((m) => m.id)
 
-	// 3. Delete match players for this user (only for matches in this guild)
-	let matchPlayersDeleted = 0
-	if (matchIds.length > 0) {
-		const matchPlayersResult = await db
-			.delete(guildMatchPlayers)
-			.where(and(eq(guildMatchPlayers.discordId, discordId), inArray(guildMatchPlayers.matchId, matchIds)))
-			.run()
-		matchPlayersDeleted = matchPlayersResult.meta.changes
-	}
+	// 3. Delete match players and user stats in a single transaction
+	try {
+		const deleteUserStats = db
+			.delete(guildUserStats)
+			.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, discordId)))
 
-	// 4. Delete user stats
-	const userStatsResult = await db
-		.delete(guildUserStats)
-		.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, discordId)))
-		.run()
+		if (matchIds.length > 0) {
+			const deleteMatchPlayers = db
+				.delete(guildMatchPlayers)
+				.where(and(eq(guildMatchPlayers.discordId, discordId), inArray(guildMatchPlayers.matchId, matchIds)))
 
-	return c.json(
-		{
-			deleted: true,
-			deletedCounts: {
-				userStats: userStatsResult.meta.changes,
-				matchPlayers: matchPlayersDeleted,
+			const [matchPlayersResult, userStatsResult] = await db.batch([deleteMatchPlayers, deleteUserStats])
+
+			return c.json(
+				{
+					deleted: true,
+					deletedCounts: {
+						userStats: userStatsResult.meta.changes,
+						matchPlayers: matchPlayersResult.meta.changes,
+					},
+				},
+				200,
+			)
+		}
+
+		const [userStatsResult] = await db.batch([deleteUserStats])
+
+		return c.json(
+			{
+				deleted: true,
+				deletedCounts: {
+					userStats: userStatsResult.meta.changes,
+					matchPlayers: 0,
+				},
 			},
-		},
-		200,
-	)
+			200,
+		)
+	} catch (error) {
+		console.error('Failed to reset user stats:', error)
+		return c.json({ message: 'Failed to reset user stats' }, 500)
+	}
 })
 
 export default app

@@ -214,6 +214,36 @@ export const DeleteMatchResponseSchema = z
 	})
 	.openapi('DeleteMatchResponse')
 
+export const DeletedCountsSchema = z
+	.object({
+		userStats: z.number(),
+		matches: z.number(),
+		matchPlayers: z.number(),
+		pendingMatches: z.number(),
+	})
+	.openapi('DeletedCounts')
+
+export const ResetGuildStatsResponseSchema = z
+	.object({
+		deleted: z.boolean(),
+		deletedCounts: DeletedCountsSchema,
+	})
+	.openapi('ResetGuildStatsResponse')
+
+export const UserDeletedCountsSchema = z
+	.object({
+		userStats: z.number(),
+		matchPlayers: z.number(),
+	})
+	.openapi('UserDeletedCounts')
+
+export const ResetUserStatsResponseSchema = z
+	.object({
+		deleted: z.boolean(),
+		deletedCounts: UserDeletedCountsSchema,
+	})
+	.openapi('ResetUserStatsResponse')
+
 export const MatchHistoryItemSchema = z
 	.object({
 		matchId: z.string(),

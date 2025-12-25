@@ -1,10 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
-import get from './get'
-import resetStats from './reset-stats'
+import reset from './reset'
 
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
-app.route('/', get)
-app.route('/', resetStats)
+app.route('/', reset)
 
 export default app

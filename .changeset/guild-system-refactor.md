@@ -1,5 +1,5 @@
 ---
-"@hexcuit/server": major
+"@hexcuit/server": minor
 ---
 
 **BREAKING CHANGE**: Guild-based architecture refactor with route reorganization and schema improvements

@@ -1,15 +1,15 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, count, eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { queuePlayers, queues, users } from '@/db/schema'
+import { guildQueuePlayers, guildQueues, users } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 import { QueuePathParamsSchema } from '../schemas'
 import { JoinQueueBodySchema, JoinResponseSchema } from './schemas'
 
 const route = createRoute({
 	method: 'post',
-	path: '/v1/queues/{id}/players',
-	tags: ['Queues'],
+	path: '/v1/guilds/{guildId}/queues/{id}/players',
+	tags: ['Guild Queues'],
 	summary: 'Join queue',
 	description: 'Join a queue as a player',
 	request: {
@@ -53,11 +53,15 @@ const route = createRoute({
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
-	const { id } = c.req.valid('param')
+	const { guildId, id } = c.req.valid('param')
 	const { discordId, mainRole, subRole } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	const queue = await db.select().from(queues).where(eq(queues.id, id)).get()
+	const queue = await db
+		.select()
+		.from(guildQueues)
+		.where(and(eq(guildQueues.id, id), eq(guildQueues.guildId, guildId)))
+		.get()
 
 	if (!queue) {
 		return c.json({ message: 'Queue not found' }, 404)
@@ -72,8 +76,8 @@ export const typedApp = app.openapi(route, async (c) => {
 	// Fast-path check (non-atomic, but avoids unnecessary work in common case)
 	const existing = await db
 		.select()
-		.from(queuePlayers)
-		.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
+		.from(guildQueuePlayers)
+		.where(and(eq(guildQueuePlayers.queueId, id), eq(guildQueuePlayers.discordId, discordId)))
 		.get()
 
 	if (existing) {
@@ -85,15 +89,15 @@ export const typedApp = app.openapi(route, async (c) => {
 	// Use conditional INSERT to atomically check capacity and prevent duplicates
 	// NOT EXISTS ensures no duplicate even under concurrent requests
 	// DB unique constraint (queue_id, discord_id) is the ultimate safety net
-	const playerId = crypto.randomUUID()
+	const joinedAt = new Date().toISOString()
 	let insertResult: { meta: { changes: number } }
 	try {
 		insertResult = await db.run(sql`
-			INSERT INTO queue_players (id, queue_id, discord_id, main_role, sub_role)
-			SELECT ${playerId}, ${id}, ${discordId}, ${mainRole || null}, ${subRole || null}
-			WHERE (SELECT COUNT(*) FROM queue_players WHERE queue_id = ${id}) < ${capacity}
+			INSERT INTO guild_queue_players (queue_id, discord_id, main_role, sub_role, joined_at)
+			SELECT ${id}, ${discordId}, ${mainRole || null}, ${subRole || null}, ${joinedAt}
+			WHERE (SELECT COUNT(*) FROM guild_queue_players WHERE queue_id = ${id}) < ${capacity}
 				AND NOT EXISTS (
-					SELECT 1 FROM queue_players WHERE queue_id = ${id} AND discord_id = ${discordId}
+					SELECT 1 FROM guild_queue_players WHERE queue_id = ${id} AND discord_id = ${discordId}
 				)
 		`)
 	} catch (e) {
@@ -109,8 +113,8 @@ export const typedApp = app.openapi(route, async (c) => {
 		// Re-check to provide accurate error message
 		const existsNow = await db
 			.select()
-			.from(queuePlayers)
-			.where(and(eq(queuePlayers.queueId, id), eq(queuePlayers.discordId, discordId)))
+			.from(guildQueuePlayers)
+			.where(and(eq(guildQueuePlayers.queueId, id), eq(guildQueuePlayers.discordId, discordId)))
 			.get()
 
 		if (existsNow) {
@@ -120,13 +124,17 @@ export const typedApp = app.openapi(route, async (c) => {
 	}
 
 	// Get updated count after successful insertion
-	const playerCount = await db.select({ count: count() }).from(queuePlayers).where(eq(queuePlayers.queueId, id)).get()
+	const playerCount = await db
+		.select({ count: count() })
+		.from(guildQueuePlayers)
+		.where(eq(guildQueuePlayers.queueId, id))
+		.get()
 
 	const newCount = playerCount?.count || 1
 	const isFull = newCount >= capacity
 
 	if (isFull) {
-		await db.update(queues).set({ status: 'full' }).where(eq(queues.id, id))
+		await db.update(guildQueues).set({ status: 'full' }).where(eq(guildQueues.id, id))
 	}
 
 	return c.json(

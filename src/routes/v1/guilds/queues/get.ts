@@ -1,14 +1,22 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { queuePlayers, queues } from '@/db/schema'
+import { guildQueuePlayers, guildQueues } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
-import { GetQueueResponseSchema, QueuePathParamsSchema } from './schemas'
+import { QueuePathParamsSchema, QueuePlayerSelectSchema, QueueSelectSchema } from './schemas'
+
+const ResponseSchema = z
+	.object({
+		queue: QueueSelectSchema,
+		players: z.array(QueuePlayerSelectSchema),
+		count: z.number(),
+	})
+	.openapi('GetQueueResponse')
 
 const route = createRoute({
 	method: 'get',
-	path: '/v1/queues/{id}',
-	tags: ['Queues'],
+	path: '/v1/guilds/{guildId}/queues/{id}',
+	tags: ['Guild Queues'],
 	summary: 'Get queue',
 	description: 'Get queue details with participants',
 	request: {
@@ -19,7 +27,7 @@ const route = createRoute({
 			description: 'Queue retrieved successfully',
 			content: {
 				'application/json': {
-					schema: GetQueueResponseSchema,
+					schema: ResponseSchema,
 				},
 			},
 		},
@@ -37,16 +45,20 @@ const route = createRoute({
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
-	const { id } = c.req.valid('param')
+	const { guildId, id } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
-	const queue = await db.select().from(queues).where(eq(queues.id, id)).get()
+	const queue = await db
+		.select()
+		.from(guildQueues)
+		.where(and(eq(guildQueues.id, id), eq(guildQueues.guildId, guildId)))
+		.get()
 
 	if (!queue) {
 		return c.json({ message: 'Queue not found' }, 404)
 	}
 
-	const players = await db.select().from(queuePlayers).where(eq(queuePlayers.queueId, id))
+	const players = await db.select().from(guildQueuePlayers).where(eq(guildQueuePlayers.queueId, id))
 
 	return c.json(
 		{

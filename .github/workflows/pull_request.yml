@@ -37,6 +37,11 @@ jobs:
           bun run generate:client
           git diff --exit-code src/client.ts
 
+      - name: Check drizzle migrations are up to date
+        run: |
+          bun run generate
+          git diff --exit-code drizzle/
+
       - name: Run Tests
         run: bun test --coverage --coverage-reporter=lcov
 

@@ -13,86 +13,86 @@ import {
 } from './elo'
 
 describe('Elo Rating Utilities', () => {
-	describe('定数', () => {
-		it('初期レートは1200 (Gold IV 0LP)', () => {
+	describe('Constants', () => {
+		it('initial rating is 1200 (Gold IV 0LP)', () => {
 			expect(INITIAL_RATING).toBe(1200)
 		})
 
-		it('通常K-Factorは32', () => {
+		it('normal K-Factor is 32', () => {
 			expect(K_FACTOR_NORMAL).toBe(32)
 		})
 
-		it('プレイスメントK-Factorは64', () => {
+		it('placement K-Factor is 64', () => {
 			expect(K_FACTOR_PLACEMENT).toBe(64)
 		})
 
-		it('プレイスメント試合数は5', () => {
+		it('placement games count is 5', () => {
 			expect(PLACEMENT_GAMES).toBe(5)
 		})
 	})
 
 	describe('calculateExpectedScore', () => {
-		it('同じレーティングの場合、期待勝率は0.5', () => {
+		it('returns 0.5 when ratings are equal', () => {
 			expect(calculateExpectedScore(1200, 1200)).toBeCloseTo(0.5, 5)
 		})
 
-		it('自分が400高い場合、期待勝率は約0.909', () => {
+		it('returns ~0.909 when 400 points higher', () => {
 			expect(calculateExpectedScore(1600, 1200)).toBeCloseTo(0.909, 2)
 		})
 
-		it('自分が400低い場合、期待勝率は約0.091', () => {
+		it('returns ~0.091 when 400 points lower', () => {
 			expect(calculateExpectedScore(800, 1200)).toBeCloseTo(0.091, 2)
 		})
 	})
 
 	describe('calculateNewRating', () => {
-		it('同レート同士で勝利 → +16', () => {
+		it('gains +16 when winning against equal rating', () => {
 			expect(calculateNewRating(1200, 1200, true, false)).toBe(1216)
 		})
 
-		it('同レート同士で敗北 → -16', () => {
+		it('loses -16 when losing against equal rating', () => {
 			expect(calculateNewRating(1200, 1200, false, false)).toBe(1184)
 		})
 
-		it('プレイスメント中は変動が大きい (+32/-32)', () => {
+		it('has larger changes during placement (+32/-32)', () => {
 			expect(calculateNewRating(1200, 1200, true, true)).toBe(1232)
 			expect(calculateNewRating(1200, 1200, false, true)).toBe(1168)
 		})
 
-		it('高レート vs 低レート: 勝っても小さい上昇、負けると大きい下降', () => {
+		it('high vs low rating: small gain on win, large loss on defeat', () => {
 			expect(calculateNewRating(1600, 1200, true, false)).toBe(1603)
 			expect(calculateNewRating(1600, 1200, false, false)).toBe(1571)
 		})
 
-		it('低レート vs 高レート: 勝つと大きい上昇、負けても小さい下降', () => {
+		it('low vs high rating: large gain on win, small loss on defeat', () => {
 			expect(calculateNewRating(800, 1200, true, false)).toBe(829)
 			expect(calculateNewRating(800, 1200, false, false)).toBe(797)
 		})
 
-		it('レーティングは0未満にならない', () => {
+		it('rating cannot go below 0', () => {
 			expect(calculateNewRating(10, 10, false, false)).toBe(0)
 		})
 	})
 
 	describe('calculateTeamAverageRating', () => {
-		it('空配列はINITIAL_RATINGを返す', () => {
+		it('returns INITIAL_RATING for empty array', () => {
 			expect(calculateTeamAverageRating([])).toBe(INITIAL_RATING)
 		})
 
-		it('複数人の平均を計算（四捨五入）', () => {
+		it('calculates average with rounding', () => {
 			expect(calculateTeamAverageRating([1100, 1200, 1300])).toBe(1200)
 			expect(calculateTeamAverageRating([1201, 1202])).toBe(1202)
 		})
 	})
 
 	describe('getRankDisplay', () => {
-		describe('エラーケース', () => {
-			it('負のレーティングはエラー', () => {
+		describe('Error cases', () => {
+			it('throws for negative rating', () => {
 				expect(() => getRankDisplay(-1)).toThrow('Invalid rating: -1')
 			})
 		})
 
-		describe('ティア境界', () => {
+		describe('Tier boundaries', () => {
 			it('0 → IRON IV 0LP', () => {
 				expect(getRankDisplay(0)).toEqual({ tier: 'IRON', division: 'IV', lp: 0 })
 			})
@@ -109,7 +109,7 @@ describe('Elo Rating Utilities', () => {
 				expect(getRankDisplay(1199)).toEqual({ tier: 'SILVER', division: 'I', lp: 99 })
 			})
 
-			it('1200 → GOLD IV 0LP (初期レート)', () => {
+			it('1200 → GOLD IV 0LP (initial rating)', () => {
 				expect(getRankDisplay(1200)).toEqual({ tier: 'GOLD', division: 'IV', lp: 0 })
 			})
 
@@ -122,7 +122,7 @@ describe('Elo Rating Utilities', () => {
 			})
 		})
 
-		describe('Division境界 (GOLDで代表)', () => {
+		describe('Division boundaries (using GOLD)', () => {
 			it('1299 → GOLD IV 99LP', () => {
 				expect(getRankDisplay(1299)).toEqual({ tier: 'GOLD', division: 'IV', lp: 99 })
 			})
@@ -144,7 +144,7 @@ describe('Elo Rating Utilities', () => {
 			})
 		})
 
-		describe('MASTER以上 (ディビジョンなし)', () => {
+		describe('MASTER and above (no division)', () => {
 			it('MASTER: LP = rating - 2800', () => {
 				expect(getRankDisplay(3000)).toEqual({ tier: 'MASTER', division: null, lp: 200 })
 			})
@@ -157,29 +157,29 @@ describe('Elo Rating Utilities', () => {
 				expect(getRankDisplay(3600)).toEqual({ tier: 'CHALLENGER', division: null, lp: 0 })
 			})
 
-			it('CHALLENGER: LP上限なし', () => {
+			it('CHALLENGER: no LP cap', () => {
 				expect(getRankDisplay(4000)).toEqual({ tier: 'CHALLENGER', division: null, lp: 400 })
 			})
 		})
 	})
 
 	describe('formatRankDisplay', () => {
-		it('ディビジョンあり', () => {
+		it('formats with division', () => {
 			expect(formatRankDisplay({ tier: 'GOLD', division: 'IV', lp: 0 })).toBe('GOLD IV 0LP')
 		})
 
-		it('ディビジョンなし', () => {
+		it('formats without division', () => {
 			expect(formatRankDisplay({ tier: 'MASTER', division: null, lp: 120 })).toBe('MASTER 120LP')
 		})
 	})
 
 	describe('isInPlacement', () => {
-		it('5試合未満はプレイスメント中', () => {
+		it('returns true for less than 5 games', () => {
 			expect(isInPlacement(0)).toBe(true)
 			expect(isInPlacement(4)).toBe(true)
 		})
 
-		it('5試合以上はプレイスメント完了', () => {
+		it('returns false for 5 or more games', () => {
 			expect(isInPlacement(5)).toBe(false)
 			expect(isInPlacement(10)).toBe(false)
 		})

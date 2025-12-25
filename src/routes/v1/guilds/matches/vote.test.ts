@@ -32,6 +32,7 @@ describe('voteMatch', () => {
 			teamAssignments: JSON.stringify(teamAssignments),
 			blueVotes: 0,
 			redVotes: 0,
+			drawVotes: 0,
 		})
 	})
 
@@ -124,6 +125,7 @@ describe('voteMatch', () => {
 			teamAssignments: JSON.stringify(teamAssignments),
 			blueVotes: 0,
 			redVotes: 0,
+			drawVotes: 0,
 		})
 
 		const res = await client.v1.guilds[':guildId'].matches[':matchId'].votes.$post(
@@ -197,6 +199,87 @@ describe('voteMatch', () => {
 			expect(data.changed).toBe(false)
 			expect(data.blueVotes).toBe(1)
 			expect(data.redVotes).toBe(0)
+			expect(data.drawVotes).toBe(0)
+		}
+	})
+
+	it('registers a draw vote', async () => {
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].votes.$post(
+			{
+				param: { guildId: ctx.guildId, matchId },
+				json: { discordId: ctx.discordId, vote: 'DRAW' },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(200)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.changed).toBe(true)
+			expect(data.blueVotes).toBe(0)
+			expect(data.redVotes).toBe(0)
+			expect(data.drawVotes).toBe(1)
+		}
+	})
+
+	it('changes vote from blue to draw', async () => {
+		// First vote blue
+		await client.v1.guilds[':guildId'].matches[':matchId'].votes.$post(
+			{
+				param: { guildId: ctx.guildId, matchId },
+				json: { discordId: ctx.discordId, vote: 'BLUE' },
+			},
+			authHeaders,
+		)
+
+		// Change to draw
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].votes.$post(
+			{
+				param: { guildId: ctx.guildId, matchId },
+				json: { discordId: ctx.discordId, vote: 'DRAW' },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(200)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.changed).toBe(true)
+			expect(data.blueVotes).toBe(0)
+			expect(data.redVotes).toBe(0)
+			expect(data.drawVotes).toBe(1)
+		}
+	})
+
+	it('changes vote from draw to red', async () => {
+		// First vote draw
+		await client.v1.guilds[':guildId'].matches[':matchId'].votes.$post(
+			{
+				param: { guildId: ctx.guildId, matchId },
+				json: { discordId: ctx.discordId, vote: 'DRAW' },
+			},
+			authHeaders,
+		)
+
+		// Change to red
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].votes.$post(
+			{
+				param: { guildId: ctx.guildId, matchId },
+				json: { discordId: ctx.discordId, vote: 'RED' },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(200)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.changed).toBe(true)
+			expect(data.blueVotes).toBe(0)
+			expect(data.redVotes).toBe(1)
+			expect(data.drawVotes).toBe(0)
 		}
 	})
 })

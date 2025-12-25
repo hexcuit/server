@@ -5,6 +5,7 @@ import { LOL_ROLES } from '@/constants'
 
 export const PlayerPathParamsSchema = z
 	.object({
+		guildId: z.string(),
 		id: z.uuid(),
 		discordId: z.string().min(1),
 	})

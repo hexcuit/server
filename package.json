@@ -52,7 +52,7 @@
 		"lefthook": "2.0.12",
 		"tsup": "8.5.1",
 		"typescript": "5.9.3",
-		"wrangler": "4.56.0",
+		"wrangler": "4.54.0",
 		"zod": "4.2.1"
 	}
 }

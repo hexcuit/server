@@ -3,8 +3,8 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { queuePlayers, queues } from '@/db/schema'
-import { typedApp } from '@/routes/v1/queues/players/remove'
+import { guildQueuePlayers, guildQueues } from '@/db/schema'
+import { typedApp } from './remove'
 
 describe('removeQueuePlayer', () => {
 	const client = testClient(typedApp, env)
@@ -17,7 +17,7 @@ describe('removeQueuePlayer', () => {
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
 
-		await db.insert(queues).values({
+		await db.insert(guildQueues).values({
 			id: queueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
@@ -25,10 +25,10 @@ describe('removeQueuePlayer', () => {
 			creatorId: ctx.discordId,
 			type: 'normal',
 			anonymous: false,
+			capacity: 10,
 			status: 'open',
 		})
-		await db.insert(queuePlayers).values({
-			id: crypto.randomUUID(),
+		await db.insert(guildQueuePlayers).values({
 			queueId: queueId,
 			discordId: ctx.discordId2,
 			mainRole: 'BOTTOM',
@@ -37,8 +37,8 @@ describe('removeQueuePlayer', () => {
 	})
 
 	it('leaves queue and returns 200', async () => {
-		const res = await client.v1.queues[':id'].players[':discordId'].$delete(
-			{ param: { id: queueId, discordId: ctx.discordId2 } },
+		const res = await client.v1.guilds[':guildId'].queues[':id'].players[':discordId'].$delete(
+			{ param: { guildId: ctx.guildId, id: queueId, discordId: ctx.discordId2 } },
 			authHeaders,
 		)
 
@@ -52,8 +52,8 @@ describe('removeQueuePlayer', () => {
 	})
 
 	it('returns 404 when not a player', async () => {
-		const res = await client.v1.queues[':id'].players[':discordId'].$delete(
-			{ param: { id: queueId, discordId: `non-player-${ctx.prefix}` } },
+		const res = await client.v1.guilds[':guildId'].queues[':id'].players[':discordId'].$delete(
+			{ param: { guildId: ctx.guildId, id: queueId, discordId: `non-player-${ctx.prefix}` } },
 			authHeaders,
 		)
 

@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
-import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
-import { lolRanks, users } from '@/db/schema'
+import { authHeaders, createTestContext, seedLolRank, type TestContext } from '@/__tests__/test-utils'
 import { typedApp } from './upsert'
 
 describe('upsertRank', () => {
@@ -15,7 +12,7 @@ describe('upsertRank', () => {
 		ctx = createTestContext()
 	})
 
-	it('creates a new rank', async () => {
+	it('creates a new rank with division', async () => {
 		const res = await client.v1.ranks[':discordId'].$put(
 			{
 				param: { discordId: ctx.discordId },
@@ -27,30 +24,32 @@ describe('upsertRank', () => {
 		expect(res.status).toBe(200)
 
 		const data = await res.json()
-		expect(data).toHaveProperty('rank')
-		expect(data.rank).toEqual({
-			discordId: ctx.discordId,
-			tier: 'GOLD',
-			division: 'II',
-		})
+		expect(data.rank.discordId).toBe(ctx.discordId)
+		expect(data.rank.tier).toBe('GOLD')
+		expect(data.rank.division).toBe('II')
+		expect(data.rank.createdAt).toBeDefined()
+		expect(data.rank.updatedAt).toBeDefined()
+	})
 
-		const db = drizzle(env.DB)
-		const saved = await db.select().from(lolRanks).where(eq(lolRanks.discordId, ctx.discordId)).get()
+	it('creates a new rank without division (MASTER+)', async () => {
+		const res = await client.v1.ranks[':discordId'].$put(
+			{
+				param: { discordId: ctx.discordId },
+				json: { tier: 'MASTER' },
+			},
+			authHeaders,
+		)
 
-		expect(saved).toBeDefined()
-		expect(saved?.tier).toBe('GOLD')
-		expect(saved?.division).toBe('II')
+		expect(res.status).toBe(200)
+
+		const data = await res.json()
+		expect(data.rank.discordId).toBe(ctx.discordId)
+		expect(data.rank.tier).toBe('MASTER')
+		expect(data.rank.division).toBeNull()
 	})
 
 	it('updates an existing rank', async () => {
-		const db = drizzle(env.DB)
-
-		await db.insert(users).values({ discordId: ctx.discordId })
-		await db.insert(lolRanks).values({
-			discordId: ctx.discordId,
-			tier: 'SILVER',
-			division: 'I',
-		})
+		await seedLolRank(ctx.discordId, { tier: 'SILVER', division: 'I' })
 
 		const res = await client.v1.ranks[':discordId'].$put(
 			{
@@ -63,14 +62,26 @@ describe('upsertRank', () => {
 		expect(res.status).toBe(200)
 
 		const data = await res.json()
-		expect(data.rank).toEqual({
-			discordId: ctx.discordId,
-			tier: 'PLATINUM',
-			division: 'IV',
-		})
+		expect(data.rank.discordId).toBe(ctx.discordId)
+		expect(data.rank.tier).toBe('PLATINUM')
+		expect(data.rank.division).toBe('IV')
+	})
 
-		const updated = await db.select().from(lolRanks).where(eq(lolRanks.discordId, ctx.discordId)).get()
-		expect(updated?.tier).toBe('PLATINUM')
-		expect(updated?.division).toBe('IV')
+	it('updates division to null when promoting to MASTER+', async () => {
+		await seedLolRank(ctx.discordId, { tier: 'DIAMOND', division: 'I' })
+
+		const res = await client.v1.ranks[':discordId'].$put(
+			{
+				param: { discordId: ctx.discordId },
+				json: { tier: 'GRANDMASTER' },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(200)
+
+		const data = await res.json()
+		expect(data.rank.tier).toBe('GRANDMASTER')
+		expect(data.rank.division).toBeNull()
 	})
 })

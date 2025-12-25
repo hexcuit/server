@@ -1,9 +1,9 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { guildRatings, users } from '@/db/schema'
+import { guilds, guildUserStats, users } from '@/db/schema'
 import { formatRankDisplay, getRankDisplay, INITIAL_RATING, isInPlacement } from '@/utils/elo'
-import { GuildIdParamSchema, UpsertRatingBodySchema, UpsertRatingResponseSchema } from '../schemas'
+import { GuildParamSchema, UpsertRatingBodySchema, UpsertRatingResponseSchema } from '../schemas'
 
 const route = createRoute({
 	method: 'put',
@@ -12,7 +12,7 @@ const route = createRoute({
 	summary: 'Initialize guild rating',
 	description: 'Initialize guild rating for first-time participation',
 	request: {
-		params: GuildIdParamSchema,
+		params: GuildParamSchema,
 		body: { content: { 'application/json': { schema: UpsertRatingBodySchema } } },
 	},
 	responses: {
@@ -34,10 +34,13 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { discordId } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	await db.insert(users).values({ discordId }).onConflictDoNothing()
+	await db.batch([
+		db.insert(users).values({ discordId }).onConflictDoNothing(),
+		db.insert(guilds).values({ guildId }).onConflictDoNothing(),
+	])
 
 	const insertResult = await db
-		.insert(guildRatings)
+		.insert(guildUserStats)
 		.values({
 			guildId,
 			discordId,
@@ -52,8 +55,8 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	const rating = await db
 		.select()
-		.from(guildRatings)
-		.where(and(eq(guildRatings.guildId, guildId), eq(guildRatings.discordId, discordId)))
+		.from(guildUserStats)
+		.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, discordId)))
 		.get()
 
 	if (!rating) {

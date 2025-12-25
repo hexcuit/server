@@ -1,7 +1,15 @@
-import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { lolRanks, users } from '@/db/schema'
-import { RankPathParamsSchema, UpsertRankBodySchema, UpsertRankResponseSchema } from './schemas'
+import { LoLRankInsertSchema, LoLRankParamsSchema, LoLRankSelectSchema } from './schemas'
+
+const ParamsSchema = LoLRankParamsSchema.openapi('UpsertRankParams')
+
+const BodySchema = LoLRankInsertSchema.omit({ discordId: true, createdAt: true, updatedAt: true }).openapi(
+	'UpsertRankBody',
+)
+
+const ResponseSchema = z.object({ rank: LoLRankSelectSchema }).openapi('UpsertRankResponse')
 
 const route = createRoute({
 	method: 'put',
@@ -10,21 +18,21 @@ const route = createRoute({
 	summary: 'Create or update LoL rank',
 	description: 'Create or update LoL rank information for a Discord ID.',
 	request: {
-		params: RankPathParamsSchema,
+		params: ParamsSchema,
 		body: {
 			content: {
 				'application/json': {
-					schema: UpsertRankBodySchema,
+					schema: BodySchema,
 				},
 			},
 		},
 	},
 	responses: {
 		200: {
-			description: 'Rank upserted successfully',
+			description: 'Rank upsert successfully',
 			content: {
 				'application/json': {
-					schema: UpsertRankResponseSchema,
+					schema: ResponseSchema,
 				},
 			},
 		},
@@ -41,15 +49,17 @@ export const typedApp = app.openapi(route, async (c) => {
 	const normalizedDivision = division ?? null
 
 	await db.insert(users).values({ discordId }).onConflictDoNothing()
-	await db
+
+	const [rank] = (await db
 		.insert(lolRanks)
 		.values({ discordId, tier, division: normalizedDivision })
 		.onConflictDoUpdate({
 			target: lolRanks.discordId,
 			set: { tier, division: normalizedDivision },
 		})
+		.returning()) as [typeof lolRanks.$inferSelect]
 
-	return c.json({ rank: { discordId, tier, division: normalizedDivision } }, 200)
+	return c.json({ rank }, 200)
 })
 
 export default app

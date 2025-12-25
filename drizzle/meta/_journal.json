@@ -92,6 +92,55 @@
 			"when": 1766299083190,
 			"tag": "0012_huge_typhoid_mary",
 			"breakpoints": true
+		},
+		{
+			"idx": 13,
+			"version": "6",
+			"when": 1766390970888,
+			"tag": "0013_legal_ted_forrester",
+			"breakpoints": true
+		},
+		{
+			"idx": 14,
+			"version": "6",
+			"when": 1766391368253,
+			"tag": "0014_friendly_sheva_callister",
+			"breakpoints": true
+		},
+		{
+			"idx": 15,
+			"version": "6",
+			"when": 1766393204318,
+			"tag": "0015_easy_professor_monster",
+			"breakpoints": true
+		},
+		{
+			"idx": 16,
+			"version": "6",
+			"when": 1766451697828,
+			"tag": "0016_dear_fixer",
+			"breakpoints": true
+		},
+		{
+			"idx": 17,
+			"version": "6",
+			"when": 1766453384210,
+			"tag": "0017_condemned_thunderbolt_ross",
+			"breakpoints": true
+		},
+		{
+			"idx": 18,
+			"version": "6",
+			"when": 1766622210947,
+			"tag": "0018_hot_revanche",
+			"breakpoints": true
+		},
+		{
+			"idx": 19,
+			"version": "6",
+			"when": 1766625073413,
+			"tag": "0019_yummy_paper_doll",
+			"breakpoints": true
 		}
 	]
 }

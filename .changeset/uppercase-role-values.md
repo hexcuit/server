@@ -1,5 +1,5 @@
 ---
-"@hexcuit/server": major
+"@hexcuit/server": minor
 ---
 
 **BREAKING CHANGE**: LoLロール値を大文字に変更し、名称を統一

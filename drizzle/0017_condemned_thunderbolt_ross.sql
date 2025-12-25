@@ -1,0 +1,1 @@
+ALTER TABLE `queues` DROP COLUMN `start_time`;

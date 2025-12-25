@@ -4,8 +4,8 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { queuePlayers, queues } from '@/db/schema'
-import { typedApp } from '@/routes/v1/queues/players/create'
+import { guildQueuePlayers, guildQueues } from '@/db/schema'
+import { typedApp } from './create'
 
 describe('createQueuePlayer', () => {
 	const client = testClient(typedApp, env)
@@ -18,7 +18,7 @@ describe('createQueuePlayer', () => {
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
 
-		await db.insert(queues).values({
+		await db.insert(guildQueues).values({
 			id: queueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
@@ -26,14 +26,15 @@ describe('createQueuePlayer', () => {
 			creatorId: ctx.discordId,
 			type: 'normal',
 			anonymous: false,
+			capacity: 10,
 			status: 'open',
 		})
 	})
 
 	it('joins queue and returns 201', async () => {
-		const res = await client.v1.queues[':id'].players.$post(
+		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
 			{
-				param: { id: queueId },
+				param: { guildId: ctx.guildId, id: queueId },
 				json: {
 					discordId: ctx.discordId2,
 					mainRole: 'MIDDLE',
@@ -57,9 +58,9 @@ describe('createQueuePlayer', () => {
 	})
 
 	it('returns 404 for non-existent queue', async () => {
-		const res = await client.v1.queues[':id'].players.$post(
+		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
 			{
-				param: { id: crypto.randomUUID() },
+				param: { guildId: ctx.guildId, id: crypto.randomUUID() },
 				json: { discordId: ctx.discordId2 },
 			},
 			authHeaders,
@@ -75,17 +76,17 @@ describe('createQueuePlayer', () => {
 	})
 
 	it('returns 400 when already joined', async () => {
-		await client.v1.queues[':id'].players.$post(
+		await client.v1.guilds[':guildId'].queues[':id'].players.$post(
 			{
-				param: { id: queueId },
+				param: { guildId: ctx.guildId, id: queueId },
 				json: { discordId: ctx.discordId2 },
 			},
 			authHeaders,
 		)
 
-		const res = await client.v1.queues[':id'].players.$post(
+		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
 			{
-				param: { id: queueId },
+				param: { guildId: ctx.guildId, id: queueId },
 				json: { discordId: ctx.discordId2 },
 			},
 			authHeaders,
@@ -102,11 +103,11 @@ describe('createQueuePlayer', () => {
 
 	it('returns 400 when queue is not open', async () => {
 		const db = drizzle(env.DB)
-		await db.update(queues).set({ status: 'full' }).where(eq(queues.id, queueId))
+		await db.update(guildQueues).set({ status: 'full' }).where(eq(guildQueues.id, queueId))
 
-		const res = await client.v1.queues[':id'].players.$post(
+		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
 			{
-				param: { id: queueId },
+				param: { guildId: ctx.guildId, id: queueId },
 				json: { discordId: ctx.discordId2 },
 			},
 			authHeaders,
@@ -125,7 +126,7 @@ describe('createQueuePlayer', () => {
 		const db = drizzle(env.DB)
 		const smallQueueId = ctx.generateQueueId()
 
-		await db.insert(queues).values({
+		await db.insert(guildQueues).values({
 			id: smallQueueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
@@ -137,15 +138,14 @@ describe('createQueuePlayer', () => {
 			capacity: 1,
 		})
 
-		await db.insert(queuePlayers).values({
-			id: crypto.randomUUID(),
+		await db.insert(guildQueuePlayers).values({
 			queueId: smallQueueId,
 			discordId: ctx.discordId,
 		})
 
-		const res = await client.v1.queues[':id'].players.$post(
+		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
 			{
-				param: { id: smallQueueId },
+				param: { guildId: ctx.guildId, id: smallQueueId },
 				json: { discordId: ctx.discordId2 },
 			},
 			authHeaders,
@@ -164,7 +164,7 @@ describe('createQueuePlayer', () => {
 		const db = drizzle(env.DB)
 		const smallQueueId = ctx.generateQueueId()
 
-		await db.insert(queues).values({
+		await db.insert(guildQueues).values({
 			id: smallQueueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
@@ -176,9 +176,9 @@ describe('createQueuePlayer', () => {
 			capacity: 1,
 		})
 
-		const res = await client.v1.queues[':id'].players.$post(
+		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
 			{
-				param: { id: smallQueueId },
+				param: { guildId: ctx.guildId, id: smallQueueId },
 				json: { discordId: ctx.discordId2 },
 			},
 			authHeaders,
@@ -193,7 +193,7 @@ describe('createQueuePlayer', () => {
 			expect(data.count).toBe(1)
 		}
 
-		const queue = await db.select().from(queues).where(eq(queues.id, smallQueueId)).get()
+		const queue = await db.select().from(guildQueues).where(eq(guildQueues.id, smallQueueId)).get()
 		expect(queue?.status).toBe('full')
 	})
 })

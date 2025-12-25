@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
-import { guildPendingMatches, users } from '@/db/schema'
-import { CreateMatchBodySchema, CreateMatchResponseSchema, GuildIdParamSchema } from '../schemas'
+import { guildPendingMatches, guilds, users } from '@/db/schema'
+import { CreateMatchBodySchema, CreateMatchResponseSchema, GuildParamSchema } from '../schemas'
 
 const route = createRoute({
 	method: 'post',
@@ -10,7 +10,7 @@ const route = createRoute({
 	summary: 'Create match',
 	description: 'Create a match to start voting',
 	request: {
-		params: GuildIdParamSchema,
+		params: GuildParamSchema,
 		body: { content: { 'application/json': { schema: CreateMatchBodySchema } } },
 	},
 	responses: {
@@ -32,6 +32,7 @@ export const typedApp = app.openapi(route, async (c) => {
 	for (const discordId of discordIds) {
 		await db.insert(users).values({ discordId }).onConflictDoNothing()
 	}
+	await db.insert(guilds).values({ guildId }).onConflictDoNothing()
 
 	await db.insert(guildPendingMatches).values({
 		id,
@@ -42,6 +43,7 @@ export const typedApp = app.openapi(route, async (c) => {
 		teamAssignments: JSON.stringify(teamAssignments),
 		blueVotes: 0,
 		redVotes: 0,
+		drawVotes: 0,
 	})
 
 	return c.json({ matchId: id }, 201)

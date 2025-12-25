@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, desc, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { guildMatches, guildMatchParticipants } from '@/db/schema'
+import { guildMatches, guildMatchPlayers } from '@/db/schema'
 import { GetHistoryQuerySchema, GetMatchHistoryResponseSchema, UserHistoryParamSchema } from '../schemas'
 
 const route = createRoute({
@@ -31,17 +31,17 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	const participations = await db
 		.select({
-			matchId: guildMatchParticipants.matchId,
-			team: guildMatchParticipants.team,
-			role: guildMatchParticipants.role,
-			ratingBefore: guildMatchParticipants.ratingBefore,
-			ratingAfter: guildMatchParticipants.ratingAfter,
+			matchId: guildMatchPlayers.matchId,
+			team: guildMatchPlayers.team,
+			role: guildMatchPlayers.role,
+			ratingBefore: guildMatchPlayers.ratingBefore,
+			ratingAfter: guildMatchPlayers.ratingAfter,
 			winningTeam: guildMatches.winningTeam,
 			createdAt: guildMatches.createdAt,
 		})
-		.from(guildMatchParticipants)
-		.innerJoin(guildMatches, eq(guildMatchParticipants.matchId, guildMatches.id))
-		.where(and(eq(guildMatches.guildId, guildId), eq(guildMatchParticipants.discordId, discordId)))
+		.from(guildMatchPlayers)
+		.innerJoin(guildMatches, eq(guildMatchPlayers.matchId, guildMatches.id))
+		.where(and(eq(guildMatches.guildId, guildId), eq(guildMatchPlayers.discordId, discordId)))
 		.orderBy(desc(guildMatches.createdAt))
 		.limit(limit)
 

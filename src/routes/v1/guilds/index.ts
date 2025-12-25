@@ -1,5 +1,6 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
 import matches from './matches'
+import queues from './queues'
 import rankings from './rankings'
 import ratings from './ratings'
 import users from './users'
@@ -10,5 +11,6 @@ app.route('/', ratings)
 app.route('/', rankings)
 app.route('/', matches)
 app.route('/', users)
+app.route('/', queues)
 
 export default app

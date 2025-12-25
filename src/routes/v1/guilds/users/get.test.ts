@@ -3,8 +3,8 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { guildMatches, guildMatchParticipants } from '@/db/schema'
-import { typedApp } from '@/routes/v1/guilds/users/get'
+import { guildMatches, guildMatchPlayers, guilds } from '@/db/schema'
+import { typedApp } from './get'
 
 describe('getUser', () => {
 	const client = testClient(typedApp, env)
@@ -23,9 +23,9 @@ describe('getUser', () => {
 		const matchId3 = ctx.generateMatchId()
 
 		const now = new Date()
-		const match1Time = new Date(now.getTime() - 3000).toISOString()
-		const match2Time = new Date(now.getTime() - 2000).toISOString()
-		const match3Time = new Date(now.getTime() - 1000).toISOString()
+		const match1Time = new Date(now.getTime() - 3000)
+		const match2Time = new Date(now.getTime() - 2000)
+		const match3Time = new Date(now.getTime() - 1000)
 
 		// Match 1: User on blue team (won)
 		await db.insert(guildMatches).values({
@@ -34,8 +34,7 @@ describe('getUser', () => {
 			winningTeam: 'BLUE',
 			createdAt: match1Time,
 		})
-		await db.insert(guildMatchParticipants).values({
-			id: crypto.randomUUID(),
+		await db.insert(guildMatchPlayers).values({
 			matchId: matchId1,
 			discordId: ctx.discordId,
 			team: 'BLUE',
@@ -51,8 +50,7 @@ describe('getUser', () => {
 			winningTeam: 'BLUE',
 			createdAt: match2Time,
 		})
-		await db.insert(guildMatchParticipants).values({
-			id: crypto.randomUUID(),
+		await db.insert(guildMatchPlayers).values({
 			matchId: matchId2,
 			discordId: ctx.discordId,
 			team: 'RED',
@@ -68,8 +66,7 @@ describe('getUser', () => {
 			winningTeam: 'BLUE',
 			createdAt: match3Time,
 		})
-		await db.insert(guildMatchParticipants).values({
-			id: crypto.randomUUID(),
+		await db.insert(guildMatchPlayers).values({
 			matchId: matchId3,
 			discordId: ctx.discordId,
 			team: 'BLUE',
@@ -127,7 +124,7 @@ describe('getUser', () => {
 		const now = new Date()
 		for (let i = 0; i < 3; i++) {
 			const matchId = ctx.generateMatchId()
-			const matchTime = new Date(now.getTime() - (3 - i) * 1000).toISOString()
+			const matchTime = new Date(now.getTime() - (3 - i) * 1000)
 
 			await db.insert(guildMatches).values({
 				id: matchId,
@@ -135,8 +132,7 @@ describe('getUser', () => {
 				winningTeam: 'BLUE',
 				createdAt: matchTime,
 			})
-			await db.insert(guildMatchParticipants).values({
-				id: crypto.randomUUID(),
+			await db.insert(guildMatchPlayers).values({
 				matchId,
 				discordId: ctx.discordId,
 				team: 'BLUE',
@@ -166,7 +162,7 @@ describe('getUser', () => {
 		const now = new Date()
 		for (let i = 0; i < 7; i++) {
 			const matchId = ctx.generateMatchId()
-			const matchTime = new Date(now.getTime() - (7 - i) * 1000).toISOString()
+			const matchTime = new Date(now.getTime() - (7 - i) * 1000)
 
 			await db.insert(guildMatches).values({
 				id: matchId,
@@ -174,8 +170,7 @@ describe('getUser', () => {
 				winningTeam: 'BLUE',
 				createdAt: matchTime,
 			})
-			await db.insert(guildMatchParticipants).values({
-				id: crypto.randomUUID(),
+			await db.insert(guildMatchPlayers).values({
 				matchId,
 				discordId: ctx.discordId,
 				team: 'BLUE',
@@ -223,8 +218,7 @@ describe('getUser', () => {
 			guildId: ctx.guildId,
 			winningTeam: 'BLUE',
 		})
-		await db.insert(guildMatchParticipants).values({
-			id: crypto.randomUUID(),
+		await db.insert(guildMatchPlayers).values({
 			matchId: matchId1,
 			discordId: ctx.discordId,
 			team: 'BLUE',
@@ -234,13 +228,13 @@ describe('getUser', () => {
 		})
 
 		// Create match in other guild
+		await db.insert(guilds).values({ guildId: otherGuildId }).onConflictDoNothing()
 		await db.insert(guildMatches).values({
 			id: matchId2,
 			guildId: otherGuildId,
 			winningTeam: 'BLUE',
 		})
-		await db.insert(guildMatchParticipants).values({
-			id: crypto.randomUUID(),
+		await db.insert(guildMatchPlayers).values({
 			matchId: matchId2,
 			discordId: ctx.discordId,
 			team: 'BLUE',
@@ -272,8 +266,7 @@ describe('getUser', () => {
 			guildId: ctx.guildId,
 			winningTeam: 'BLUE',
 		})
-		await db.insert(guildMatchParticipants).values({
-			id: crypto.randomUUID(),
+		await db.insert(guildMatchPlayers).values({
 			matchId: matchId1,
 			discordId: ctx.discordId,
 			team: 'BLUE',
@@ -288,8 +281,7 @@ describe('getUser', () => {
 			guildId: ctx.guildId,
 			winningTeam: 'BLUE',
 		})
-		await db.insert(guildMatchParticipants).values({
-			id: crypto.randomUUID(),
+		await db.insert(guildMatchPlayers).values({
 			matchId: matchId2,
 			discordId: ctx.discordId2,
 			team: 'BLUE',
@@ -319,8 +311,7 @@ describe('getUser', () => {
 			guildId: ctx.guildId,
 			winningTeam: 'BLUE',
 		})
-		await db.insert(guildMatchParticipants).values({
-			id: crypto.randomUUID(),
+		await db.insert(guildMatchPlayers).values({
 			matchId: matchId1,
 			discordId: ctx.discordId,
 			team: 'RED',

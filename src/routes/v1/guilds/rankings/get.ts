@@ -1,9 +1,9 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, desc, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { guildRatings } from '@/db/schema'
+import { guildUserStats } from '@/db/schema'
 import { formatRankDisplay, getRankDisplay, PLACEMENT_GAMES } from '@/utils/elo'
-import { GetRankingQuerySchema, GetRankingResponseSchema, GuildIdParamSchema } from '../schemas'
+import { GetRankingQuerySchema, GetRankingResponseSchema, GuildParamSchema } from '../schemas'
 
 const route = createRoute({
 	method: 'get',
@@ -12,7 +12,7 @@ const route = createRoute({
 	summary: 'Get guild rankings',
 	description: 'Get guild rating rankings',
 	request: {
-		params: GuildIdParamSchema,
+		params: GuildParamSchema,
 		query: GetRankingQuerySchema,
 	},
 	responses: {
@@ -32,9 +32,9 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	const rankings = await db
 		.select()
-		.from(guildRatings)
-		.where(and(eq(guildRatings.guildId, guildId), eq(guildRatings.placementGames, PLACEMENT_GAMES)))
-		.orderBy(desc(guildRatings.rating))
+		.from(guildUserStats)
+		.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.placementGames, PLACEMENT_GAMES)))
+		.orderBy(desc(guildUserStats.rating))
 		.limit(limit)
 
 	const result = rankings.map((r, index) => {

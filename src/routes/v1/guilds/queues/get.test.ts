@@ -3,8 +3,8 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { queues } from '@/db/schema'
-import { typedApp } from '@/routes/v1/queues/get'
+import { guildQueues } from '@/db/schema'
+import { typedApp } from './get'
 
 describe('getQueue', () => {
 	const client = testClient(typedApp, env)
@@ -17,7 +17,7 @@ describe('getQueue', () => {
 		const db = drizzle(env.DB)
 		await setupTestUsers(db, ctx)
 
-		await db.insert(queues).values({
+		await db.insert(guildQueues).values({
 			id: queueId,
 			guildId: ctx.guildId,
 			channelId: ctx.channelId,
@@ -25,12 +25,16 @@ describe('getQueue', () => {
 			creatorId: ctx.discordId,
 			type: 'normal',
 			anonymous: false,
+			capacity: 10,
 			status: 'open',
 		})
 	})
 
 	it('returns queue with participants', async () => {
-		const res = await client.v1.queues[':id'].$get({ param: { id: queueId } }, authHeaders)
+		const res = await client.v1.guilds[':guildId'].queues[':id'].$get(
+			{ param: { guildId: ctx.guildId, id: queueId } },
+			authHeaders,
+		)
 
 		expect(res.ok).toBe(true)
 		expect(res.status).toBe(200)
@@ -44,7 +48,10 @@ describe('getQueue', () => {
 	})
 
 	it('returns 404 for non-existent queue', async () => {
-		const res = await client.v1.queues[':id'].$get({ param: { id: crypto.randomUUID() } }, authHeaders)
+		const res = await client.v1.guilds[':guildId'].queues[':id'].$get(
+			{ param: { guildId: ctx.guildId, id: crypto.randomUUID() } },
+			authHeaders,
+		)
 
 		expect(res.ok).toBe(false)
 		expect(res.status).toBe(404)

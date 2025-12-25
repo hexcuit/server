@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { guildQueues } from '@/db/schema'
+import { ErrorResponseSchema } from '@/utils/schemas'
 import { QueuePathParamsSchema } from './schemas'
 
 const ResponseSchema = z
@@ -28,6 +29,14 @@ const route = createRoute({
 				},
 			},
 		},
+		404: {
+			description: 'Queue not found',
+			content: {
+				'application/json': {
+					schema: ErrorResponseSchema,
+				},
+			},
+		},
 	},
 })
 
@@ -37,9 +46,16 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, id } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
-	await db.delete(guildQueues).where(and(eq(guildQueues.id, id), eq(guildQueues.guildId, guildId)))
+	const result = await db
+		.delete(guildQueues)
+		.where(and(eq(guildQueues.id, id), eq(guildQueues.guildId, guildId)))
+		.run()
 
-	return c.json({ removed: true })
+	if (result.meta.changes === 0) {
+		return c.json({ message: 'Queue not found' }, 404)
+	}
+
+	return c.json({ removed: true }, 200)
 })
 
 export default app

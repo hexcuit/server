@@ -39,11 +39,43 @@ describe('removeQueue', () => {
 
 		expect(res.status).toBe(200)
 
-		const data = await res.json()
-		expect(data.removed).toBe(true)
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.removed).toBe(true)
+		}
 
 		const db = drizzle(env.DB)
 		const deleted = await db.select().from(guildQueues).where(eq(guildQueues.id, queueId)).get()
 		expect(deleted).toBeUndefined()
+	})
+
+	it('returns 404 when queue does not exist', async () => {
+		const nonExistentId = ctx.generateQueueId()
+		const res = await client.v1.guilds[':guildId'].queues[':id'].$delete(
+			{ param: { guildId: ctx.guildId, id: nonExistentId } },
+			authHeaders,
+		)
+
+		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Queue not found')
+		}
+	})
+
+	it('returns 404 when guildId does not match', async () => {
+		const otherGuildId = 'other-guild-id'
+		const res = await client.v1.guilds[':guildId'].queues[':id'].$delete(
+			{ param: { guildId: otherGuildId, id: queueId } },
+			authHeaders,
+		)
+
+		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Queue not found')
+		}
 	})
 })

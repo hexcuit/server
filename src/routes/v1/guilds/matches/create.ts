@@ -43,6 +43,7 @@ export const typedApp = app.openapi(route, async (c) => {
 		teamAssignments: JSON.stringify(teamAssignments),
 		blueVotes: 0,
 		redVotes: 0,
+		drawVotes: 0,
 	})
 
 	return c.json({ matchId: id }, 201)

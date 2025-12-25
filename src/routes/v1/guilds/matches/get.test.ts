@@ -32,6 +32,7 @@ describe('getMatch', () => {
 			teamAssignments: JSON.stringify(teamAssignments),
 			blueVotes: 0,
 			redVotes: 0,
+			drawVotes: 0,
 		})
 	})
 
@@ -48,7 +49,7 @@ describe('getMatch', () => {
 			expect(data.match.id).toBe(matchId)
 			expect(data.match.status).toBe('voting')
 			expect(data.totalParticipants).toBe(2)
-			expect(data.votesRequired).toBe(1)
+			expect(data.votesRequired).toBe(2)
 		}
 	})
 

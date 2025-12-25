@@ -89,16 +89,15 @@ export const typedApp = app.openapi(route, async (c) => {
 	// Use conditional INSERT to atomically check capacity and prevent duplicates
 	// NOT EXISTS ensures no duplicate even under concurrent requests
 	// DB unique constraint (queue_id, discord_id) is the ultimate safety net
-	const playerId = crypto.randomUUID()
 	const joinedAt = new Date().toISOString()
 	let insertResult: { meta: { changes: number } }
 	try {
 		insertResult = await db.run(sql`
-			INSERT INTO queue_players (id, queue_id, discord_id, main_role, sub_role, joined_at)
-			SELECT ${playerId}, ${id}, ${discordId}, ${mainRole || null}, ${subRole || null}, ${joinedAt}
-			WHERE (SELECT COUNT(*) FROM queue_players WHERE queue_id = ${id}) < ${capacity}
+			INSERT INTO guild_queue_players (queue_id, discord_id, main_role, sub_role, joined_at)
+			SELECT ${id}, ${discordId}, ${mainRole || null}, ${subRole || null}, ${joinedAt}
+			WHERE (SELECT COUNT(*) FROM guild_queue_players WHERE queue_id = ${id}) < ${capacity}
 				AND NOT EXISTS (
-					SELECT 1 FROM queue_players WHERE queue_id = ${id} AND discord_id = ${discordId}
+					SELECT 1 FROM guild_queue_players WHERE queue_id = ${id} AND discord_id = ${discordId}
 				)
 		`)
 	} catch (e) {

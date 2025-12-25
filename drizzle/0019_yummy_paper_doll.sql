@@ -1,0 +1,1 @@
+ALTER TABLE `guild_pending_matches` ADD `draw_votes` integer NOT NULL;

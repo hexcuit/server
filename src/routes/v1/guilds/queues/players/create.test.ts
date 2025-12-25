@@ -139,7 +139,6 @@ describe('createQueuePlayer', () => {
 		})
 
 		await db.insert(guildQueuePlayers).values({
-			id: crypto.randomUUID(),
 			queueId: smallQueueId,
 			discordId: ctx.discordId,
 		})

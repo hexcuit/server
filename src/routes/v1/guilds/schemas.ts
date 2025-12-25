@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi'
-import { LOL_ROLES, LOL_TEAMS } from '@/constants'
+import { LOL_ROLES, LOL_TEAMS, MATCH_RESULTS, VOTE_OPTIONS } from '@/constants'
 
 // ========== Path Parameters ==========
 
@@ -80,7 +80,7 @@ export const CreateMatchBodySchema = z
 export const VoteBodySchema = z
 	.object({
 		discordId: z.string(),
-		vote: z.enum(LOL_TEAMS),
+		vote: z.enum(VOTE_OPTIONS),
 	})
 	.openapi('VoteBody')
 
@@ -150,7 +150,7 @@ export const CreateMatchResponseSchema = z
 export const VoteItemSchema = z
 	.object({
 		discordId: z.string(),
-		vote: z.enum(LOL_TEAMS),
+		vote: z.enum(VOTE_OPTIONS),
 	})
 	.openapi('VoteItem')
 
@@ -164,6 +164,7 @@ export const MatchDetailSchema = z
 		teamAssignments: z.record(z.string(), TeamAssignmentSchema),
 		blueVotes: z.number(),
 		redVotes: z.number(),
+		drawVotes: z.number(),
 		createdAt: z.string(),
 	})
 	.openapi('MatchDetail')
@@ -182,6 +183,7 @@ export const VoteResponseSchema = z
 		changed: z.boolean(),
 		blueVotes: z.number(),
 		redVotes: z.number(),
+		drawVotes: z.number(),
 		totalParticipants: z.number(),
 		votesRequired: z.number(),
 	})
@@ -201,7 +203,7 @@ export const RatingChangeSchema = z
 export const ConfirmMatchResponseSchema = z
 	.object({
 		matchId: z.string(),
-		winningTeam: z.enum(LOL_TEAMS),
+		winningTeam: z.enum(MATCH_RESULTS),
 		ratingChanges: z.array(RatingChangeSchema),
 	})
 	.openapi('ConfirmMatchResponse')
@@ -239,4 +241,4 @@ export const parseTeamAssignments = (json: string): TeamAssignments => {
 	return TeamAssignmentsSchema.parse(JSON.parse(json))
 }
 
-export const calculateMajority = (totalParticipants: number) => Math.ceil(totalParticipants / 2)
+export const calculateMajority = (totalParticipants: number) => Math.floor(totalParticipants / 2) + 1

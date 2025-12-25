@@ -38,8 +38,9 @@ describe('confirmMatch', () => {
 				messageId: ctx.messageId,
 				status: 'voting',
 				teamAssignments: JSON.stringify(teamAssignments),
-				blueVotes: 1,
+				blueVotes: 2,
 				redVotes: 0,
+				drawVotes: 0,
 			})
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
@@ -116,7 +117,8 @@ describe('confirmMatch', () => {
 				status: 'voting',
 				teamAssignments: JSON.stringify(teamAssignments),
 				blueVotes: 0,
-				redVotes: 1,
+				redVotes: 2,
+				drawVotes: 0,
 			})
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
@@ -160,8 +162,9 @@ describe('confirmMatch', () => {
 				messageId: ctx.messageId,
 				status: 'voting',
 				teamAssignments: JSON.stringify(teamAssignments),
-				blueVotes: 1,
+				blueVotes: 2,
 				redVotes: 0,
+				drawVotes: 0,
 			})
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
@@ -216,6 +219,7 @@ describe('confirmMatch', () => {
 				teamAssignments: JSON.stringify(teamAssignments),
 				blueVotes: 3,
 				redVotes: 1,
+				drawVotes: 0,
 			})
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
@@ -269,6 +273,7 @@ describe('confirmMatch', () => {
 				teamAssignments: JSON.stringify(teamAssignments),
 				blueVotes: 1,
 				redVotes: 0,
+				drawVotes: 0,
 			})
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
@@ -303,6 +308,7 @@ describe('confirmMatch', () => {
 				teamAssignments: JSON.stringify(teamAssignments),
 				blueVotes: 0,
 				redVotes: 0,
+				drawVotes: 0,
 			})
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
@@ -346,6 +352,7 @@ describe('confirmMatch', () => {
 				teamAssignments: JSON.stringify(teamAssignments),
 				blueVotes: 2,
 				redVotes: 1,
+				drawVotes: 0,
 			})
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
@@ -384,6 +391,7 @@ describe('confirmMatch', () => {
 				teamAssignments: JSON.stringify(teamAssignments),
 				blueVotes: 1,
 				redVotes: 1,
+				drawVotes: 0,
 			})
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
@@ -421,8 +429,9 @@ describe('confirmMatch', () => {
 				messageId: ctx.messageId,
 				status: 'voting',
 				teamAssignments: JSON.stringify(teamAssignments),
-				blueVotes: 1,
+				blueVotes: 2,
 				redVotes: 0,
+				drawVotes: 0,
 			})
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
@@ -465,8 +474,9 @@ describe('confirmMatch', () => {
 				messageId: ctx.messageId,
 				status: 'voting',
 				teamAssignments: JSON.stringify(teamAssignments),
-				blueVotes: 1,
+				blueVotes: 2,
 				redVotes: 0,
+				drawVotes: 0,
 			})
 
 			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
@@ -484,6 +494,159 @@ describe('confirmMatch', () => {
 
 				expect(Math.abs(player1Change?.change || 0)).toBeLessThanOrEqual(32)
 				expect(Math.abs(player2Change?.change || 0)).toBeLessThanOrEqual(32)
+			}
+		})
+	})
+
+	describe('Draw cases', () => {
+		it('confirms draw with majority votes', async () => {
+			const db = drizzle(env.DB)
+			const matchId = ctx.generatePendingMatchId()
+
+			await setupTestUsers(db, ctx)
+			await db.insert(guildUserStats).values([
+				{ guildId: ctx.guildId, discordId: ctx.discordId, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
+				{ guildId: ctx.guildId, discordId: ctx.discordId2, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
+			])
+
+			const teamAssignments = {
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
+			}
+
+			await db.insert(guildPendingMatches).values({
+				id: matchId,
+				guildId: ctx.guildId,
+				channelId: ctx.channelId,
+				messageId: ctx.messageId,
+				status: 'voting',
+				teamAssignments: JSON.stringify(teamAssignments),
+				blueVotes: 0,
+				redVotes: 0,
+				drawVotes: 2,
+			})
+
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
+			)
+
+			expect(res.status).toBe(200)
+
+			if (res.ok) {
+				const data = await res.json()
+				expect(data.winningTeam).toBe('DRAW')
+				expect(data.ratingChanges).toHaveLength(2)
+
+				// No rating change for draw
+				for (const rc of data.ratingChanges) {
+					expect(rc.change).toBe(0)
+					expect(rc.ratingBefore).toBe(rc.ratingAfter)
+				}
+			}
+
+			// Verify no wins/losses added
+			const updatedRatings = await db.select().from(guildUserStats).where(eq(guildUserStats.guildId, ctx.guildId))
+			for (const rating of updatedRatings) {
+				expect(rating.wins).toBe(0)
+				expect(rating.losses).toBe(0)
+				expect(rating.placementGames).toBe(1)
+			}
+		})
+
+		it('confirms draw when all voted and tie between blue and red (full voting)', async () => {
+			const db = drizzle(env.DB)
+			const matchId = ctx.generatePendingMatchId()
+			const player3 = ctx.generateUserId()
+			const player4 = ctx.generateUserId()
+
+			await setupTestUsers(db, ctx)
+			await db.insert(users).values([{ discordId: player3 }, { discordId: player4 }])
+			await db.insert(guildUserStats).values([
+				{ guildId: ctx.guildId, discordId: ctx.discordId, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
+				{ guildId: ctx.guildId, discordId: ctx.discordId2, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
+				{ guildId: ctx.guildId, discordId: player3, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
+				{ guildId: ctx.guildId, discordId: player4, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
+			])
+
+			const teamAssignments = {
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'BLUE', role: 'MIDDLE', rating: 1500 },
+				[player3]: { team: 'RED', role: 'TOP', rating: 1500 },
+				[player4]: { team: 'RED', role: 'MIDDLE', rating: 1500 },
+			}
+
+			// All 4 voted: 2 blue, 2 red = tie = draw
+			await db.insert(guildPendingMatches).values({
+				id: matchId,
+				guildId: ctx.guildId,
+				channelId: ctx.channelId,
+				messageId: ctx.messageId,
+				status: 'voting',
+				teamAssignments: JSON.stringify(teamAssignments),
+				blueVotes: 2,
+				redVotes: 2,
+				drawVotes: 0,
+			})
+
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
+			)
+
+			expect(res.status).toBe(200)
+
+			if (res.ok) {
+				const data = await res.json()
+				expect(data.winningTeam).toBe('DRAW')
+			}
+		})
+
+		it('confirms highest vote winner when all voted (blue wins with plurality)', async () => {
+			const db = drizzle(env.DB)
+			const matchId = ctx.generatePendingMatchId()
+			const player3 = ctx.generateUserId()
+			const player4 = ctx.generateUserId()
+
+			await setupTestUsers(db, ctx)
+			await db.insert(users).values([{ discordId: player3 }, { discordId: player4 }])
+			await db.insert(guildUserStats).values([
+				{ guildId: ctx.guildId, discordId: ctx.discordId, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
+				{ guildId: ctx.guildId, discordId: ctx.discordId2, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
+				{ guildId: ctx.guildId, discordId: player3, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
+				{ guildId: ctx.guildId, discordId: player4, rating: 1500, wins: 0, losses: 0, placementGames: 0 },
+			])
+
+			const teamAssignments = {
+				[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
+				[ctx.discordId2]: { team: 'BLUE', role: 'MIDDLE', rating: 1500 },
+				[player3]: { team: 'RED', role: 'TOP', rating: 1500 },
+				[player4]: { team: 'RED', role: 'MIDDLE', rating: 1500 },
+			}
+
+			// All 4 voted: 2 blue, 1 red, 1 draw = blue wins
+			await db.insert(guildPendingMatches).values({
+				id: matchId,
+				guildId: ctx.guildId,
+				channelId: ctx.channelId,
+				messageId: ctx.messageId,
+				status: 'voting',
+				teamAssignments: JSON.stringify(teamAssignments),
+				blueVotes: 2,
+				redVotes: 1,
+				drawVotes: 1,
+			})
+
+			const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+				{ param: { guildId: ctx.guildId, matchId } },
+				authHeaders,
+			)
+
+			expect(res.status).toBe(200)
+
+			if (res.ok) {
+				const data = await res.json()
+				expect(data.winningTeam).toBe('BLUE')
 			}
 		})
 	})

@@ -79,6 +79,7 @@ export const typedApp = app.openapi(route, async (c) => {
 					changed: false,
 					blueVotes: match.blueVotes,
 					redVotes: match.redVotes,
+					drawVotes: match.drawVotes,
 					totalParticipants,
 					votesRequired,
 				},
@@ -92,17 +93,24 @@ export const typedApp = app.openapi(route, async (c) => {
 			.where(and(eq(guildMatchVotes.pendingMatchId, matchId), eq(guildMatchVotes.discordId, discordId)))
 
 		// Use SQL increment for atomic vote count updates
-		const blueIncrement = vote === 'BLUE' ? 1 : -1
-		const redIncrement = vote === 'RED' ? 1 : -1
+		const prevVote = existingVote.vote
+		const blueIncrement = (vote === 'BLUE' ? 1 : 0) - (prevVote === 'BLUE' ? 1 : 0)
+		const redIncrement = (vote === 'RED' ? 1 : 0) - (prevVote === 'RED' ? 1 : 0)
+		const drawIncrement = (vote === 'DRAW' ? 1 : 0) - (prevVote === 'DRAW' ? 1 : 0)
 
 		const [updatedMatch] = await db
 			.update(guildPendingMatches)
 			.set({
 				blueVotes: sql`${guildPendingMatches.blueVotes} + ${blueIncrement}`,
 				redVotes: sql`${guildPendingMatches.redVotes} + ${redIncrement}`,
+				drawVotes: sql`${guildPendingMatches.drawVotes} + ${drawIncrement}`,
 			})
 			.where(eq(guildPendingMatches.id, matchId))
-			.returning({ blueVotes: guildPendingMatches.blueVotes, redVotes: guildPendingMatches.redVotes })
+			.returning({
+				blueVotes: guildPendingMatches.blueVotes,
+				redVotes: guildPendingMatches.redVotes,
+				drawVotes: guildPendingMatches.drawVotes,
+			})
 
 		if (!updatedMatch) {
 			return c.json({ message: 'Match not found' }, 404)
@@ -113,6 +121,7 @@ export const typedApp = app.openapi(route, async (c) => {
 				changed: true,
 				blueVotes: updatedMatch.blueVotes,
 				redVotes: updatedMatch.redVotes,
+				drawVotes: updatedMatch.drawVotes,
 				totalParticipants,
 				votesRequired,
 			},
@@ -129,15 +138,21 @@ export const typedApp = app.openapi(route, async (c) => {
 	// Use SQL increment for atomic vote count updates
 	const blueIncrement = vote === 'BLUE' ? 1 : 0
 	const redIncrement = vote === 'RED' ? 1 : 0
+	const drawIncrement = vote === 'DRAW' ? 1 : 0
 
 	const [updatedMatch] = await db
 		.update(guildPendingMatches)
 		.set({
 			blueVotes: sql`${guildPendingMatches.blueVotes} + ${blueIncrement}`,
 			redVotes: sql`${guildPendingMatches.redVotes} + ${redIncrement}`,
+			drawVotes: sql`${guildPendingMatches.drawVotes} + ${drawIncrement}`,
 		})
 		.where(eq(guildPendingMatches.id, matchId))
-		.returning({ blueVotes: guildPendingMatches.blueVotes, redVotes: guildPendingMatches.redVotes })
+		.returning({
+			blueVotes: guildPendingMatches.blueVotes,
+			redVotes: guildPendingMatches.redVotes,
+			drawVotes: guildPendingMatches.drawVotes,
+		})
 
 	if (!updatedMatch) {
 		return c.json({ message: 'Match not found' }, 404)
@@ -148,6 +163,7 @@ export const typedApp = app.openapi(route, async (c) => {
 			changed: true,
 			blueVotes: updatedMatch.blueVotes,
 			redVotes: updatedMatch.redVotes,
+			drawVotes: updatedMatch.drawVotes,
 			totalParticipants,
 			votesRequired,
 		},

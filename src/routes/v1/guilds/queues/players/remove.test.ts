@@ -29,7 +29,6 @@ describe('removeQueuePlayer', () => {
 			status: 'open',
 		})
 		await db.insert(guildQueuePlayers).values({
-			id: crypto.randomUUID(),
 			queueId: queueId,
 			discordId: ctx.discordId2,
 			mainRole: 'BOTTOM',

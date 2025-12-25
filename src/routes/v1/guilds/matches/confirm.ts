@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq, inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { guildPendingMatches, guildUserStats } from '@/db/schema'
+import { guildMatches, guildMatchPlayers, guildPendingMatches, guildUserStats } from '@/db/schema'
 import {
 	calculateNewRating,
 	calculateTeamAverageRating,
@@ -61,13 +61,37 @@ export const typedApp = app.openapi(route, async (c) => {
 	const teamAssignments = parseTeamAssignments(match.teamAssignments)
 	const totalParticipants = Object.keys(teamAssignments).length
 	const votesRequired = calculateMajority(totalParticipants)
+	const totalVotes = match.blueVotes + match.redVotes + match.drawVotes
 
-	const winningTeam: 'BLUE' | 'RED' | null =
-		match.blueVotes >= votesRequired ? 'BLUE' : match.redVotes >= votesRequired ? 'RED' : null
+	// Determine winning team with 2-phase logic
+	const determineWinningTeam = (): 'BLUE' | 'RED' | 'DRAW' | null => {
+		// Phase 1: Early confirmation with majority
+		if (match.blueVotes >= votesRequired) return 'BLUE'
+		if (match.redVotes >= votesRequired) return 'RED'
+		if (match.drawVotes >= votesRequired) return 'DRAW'
+
+		// Phase 2: After all votes, determine by plurality (ties = draw)
+		if (totalVotes >= totalParticipants) {
+			const maxVotes = Math.max(match.blueVotes, match.redVotes, match.drawVotes)
+			const winners: Array<'BLUE' | 'RED' | 'DRAW'> = []
+			if (match.blueVotes === maxVotes) winners.push('BLUE')
+			if (match.redVotes === maxVotes) winners.push('RED')
+			if (match.drawVotes === maxVotes) winners.push('DRAW')
+
+			// Single winner or tie = draw
+			return winners.length === 1 && winners[0] ? winners[0] : 'DRAW'
+		}
+
+		return null
+	}
+
+	const winningTeam = determineWinningTeam()
 
 	if (!winningTeam) {
 		return c.json({ message: 'Not enough votes' }, 400)
 	}
+
+	const isDraw = winningTeam === 'DRAW'
 	const participants = Object.entries(teamAssignments)
 
 	const blueRatings = participants.filter(([, a]) => a.team === 'BLUE').map(([, a]) => a.rating)
@@ -86,7 +110,7 @@ export const typedApp = app.openapi(route, async (c) => {
 	const ratingChanges: Array<{
 		discordId: string
 		team: 'BLUE' | 'RED'
-		role: string
+		role: 'TOP' | 'JUNGLE' | 'MIDDLE' | 'BOTTOM' | 'SUPPORT'
 		ratingBefore: number
 		ratingAfter: number
 		change: number
@@ -102,7 +126,10 @@ export const typedApp = app.openapi(route, async (c) => {
 		const placementGames = currentRating?.placementGames ?? 0
 		const isPlacement = isInPlacement(placementGames)
 
-		const newRating = calculateNewRating(assignment.rating, opponentAverage, won, isPlacement)
+		// Draw: no rating change
+		const newRating = isDraw
+			? assignment.rating
+			: calculateNewRating(assignment.rating, opponentAverage, won, isPlacement)
 
 		ratingChanges.push({
 			discordId,
@@ -114,57 +141,57 @@ export const typedApp = app.openapi(route, async (c) => {
 		})
 	}
 
-	const statements: D1PreparedStatement[] = []
-
 	const finalMatchId = crypto.randomUUID()
-	statements.push(
-		c.env.DB.prepare(
-			'INSERT INTO guild_matches (id, guild_id, winning_team, created_at) VALUES (?, ?, ?, current_timestamp)',
-		).bind(finalMatchId, match.guildId, winningTeam),
-	)
 
-	for (const rc of ratingChanges) {
-		const participantId = crypto.randomUUID()
-		statements.push(
-			c.env.DB.prepare(
-				'INSERT INTO guild_match_participants (id, match_id, discord_id, team, role, rating_before, rating_after) VALUES (?, ?, ?, ?, ?, ?, ?)',
-			).bind(participantId, finalMatchId, rc.discordId, rc.team, rc.role, rc.ratingBefore, rc.ratingAfter),
-		)
-	}
-
-	for (const rc of ratingChanges) {
-		const won = rc.change > 0 || (rc.team === winningTeam && rc.change === 0)
+	// Build stats updates
+	const statsUpdates = ratingChanges.map((rc) => {
+		const won = !isDraw && (rc.change > 0 || (rc.team === winningTeam && rc.change === 0))
+		const lost = !isDraw && !won
 		const existing = ratingsMap.get(rc.discordId)
 
 		if (existing) {
-			statements.push(
-				c.env.DB.prepare(
-					'UPDATE guild_ratings SET rating = ?, wins = ?, losses = ?, placement_games = ?, updated_at = current_timestamp WHERE guild_id = ? AND discord_id = ?',
-				).bind(
-					rc.ratingAfter,
-					won ? existing.wins + 1 : existing.wins,
-					won ? existing.losses : existing.losses + 1,
-					Math.min(existing.placementGames + 1, PLACEMENT_GAMES),
-					match.guildId,
-					rc.discordId,
-				),
-			)
-		} else {
-			statements.push(
-				c.env.DB.prepare(
-					'INSERT INTO guild_ratings (guild_id, discord_id, rating, wins, losses, placement_games, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, current_timestamp, current_timestamp)',
-				).bind(match.guildId, rc.discordId, rc.ratingAfter, won ? 1 : 0, won ? 0 : 1, 1),
-			)
+			return db
+				.update(guildUserStats)
+				.set({
+					rating: rc.ratingAfter,
+					wins: won ? existing.wins + 1 : existing.wins,
+					losses: lost ? existing.losses + 1 : existing.losses,
+					placementGames: Math.min(existing.placementGames + 1, PLACEMENT_GAMES),
+				})
+				.where(and(eq(guildUserStats.guildId, match.guildId), eq(guildUserStats.discordId, rc.discordId)))
 		}
-	}
+		return db.insert(guildUserStats).values({
+			guildId: match.guildId,
+			discordId: rc.discordId,
+			rating: rc.ratingAfter,
+			wins: won ? 1 : 0,
+			losses: lost ? 1 : 0,
+			placementGames: 1,
+		})
+	})
 
-	statements.push(c.env.DB.prepare("UPDATE guild_pending_matches SET status = 'confirmed' WHERE id = ?").bind(matchId))
-
-	const results = await c.env.DB.batch(statements)
-
-	const failedResults = results.filter((r) => !r.success)
-	if (failedResults.length > 0) {
-		console.error('Batch execution failed:', failedResults)
+	try {
+		await db.batch([
+			db.insert(guildMatches).values({
+				id: finalMatchId,
+				guildId: match.guildId,
+				winningTeam,
+			}),
+			db.insert(guildMatchPlayers).values(
+				ratingChanges.map((rc) => ({
+					matchId: finalMatchId,
+					discordId: rc.discordId,
+					team: rc.team,
+					role: rc.role,
+					ratingBefore: rc.ratingBefore,
+					ratingAfter: rc.ratingAfter,
+				})),
+			),
+			...statsUpdates,
+			db.update(guildPendingMatches).set({ status: 'confirmed' }).where(eq(guildPendingMatches.id, matchId)),
+		])
+	} catch (error) {
+		console.error('Batch execution failed:', error)
 		return c.json({ message: 'Failed to confirm match' }, 500)
 	}
 

@@ -127,6 +127,20 @@
 			"when": 1766453384210,
 			"tag": "0017_condemned_thunderbolt_ross",
 			"breakpoints": true
+		},
+		{
+			"idx": 18,
+			"version": "6",
+			"when": 1766622210947,
+			"tag": "0018_hot_revanche",
+			"breakpoints": true
+		},
+		{
+			"idx": 19,
+			"version": "6",
+			"when": 1766625073413,
+			"tag": "0019_yummy_paper_doll",
+			"breakpoints": true
 		}
 	]
 }

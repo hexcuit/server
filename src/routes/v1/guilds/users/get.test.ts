@@ -23,9 +23,9 @@ describe('getUser', () => {
 		const matchId3 = ctx.generateMatchId()
 
 		const now = new Date()
-		const match1Time = new Date(now.getTime() - 3000).toISOString()
-		const match2Time = new Date(now.getTime() - 2000).toISOString()
-		const match3Time = new Date(now.getTime() - 1000).toISOString()
+		const match1Time = new Date(now.getTime() - 3000)
+		const match2Time = new Date(now.getTime() - 2000)
+		const match3Time = new Date(now.getTime() - 1000)
 
 		// Match 1: User on blue team (won)
 		await db.insert(guildMatches).values({
@@ -35,7 +35,6 @@ describe('getUser', () => {
 			createdAt: match1Time,
 		})
 		await db.insert(guildMatchPlayers).values({
-			id: crypto.randomUUID(),
 			matchId: matchId1,
 			discordId: ctx.discordId,
 			team: 'BLUE',
@@ -52,7 +51,6 @@ describe('getUser', () => {
 			createdAt: match2Time,
 		})
 		await db.insert(guildMatchPlayers).values({
-			id: crypto.randomUUID(),
 			matchId: matchId2,
 			discordId: ctx.discordId,
 			team: 'RED',
@@ -69,7 +67,6 @@ describe('getUser', () => {
 			createdAt: match3Time,
 		})
 		await db.insert(guildMatchPlayers).values({
-			id: crypto.randomUUID(),
 			matchId: matchId3,
 			discordId: ctx.discordId,
 			team: 'BLUE',
@@ -127,7 +124,7 @@ describe('getUser', () => {
 		const now = new Date()
 		for (let i = 0; i < 3; i++) {
 			const matchId = ctx.generateMatchId()
-			const matchTime = new Date(now.getTime() - (3 - i) * 1000).toISOString()
+			const matchTime = new Date(now.getTime() - (3 - i) * 1000)
 
 			await db.insert(guildMatches).values({
 				id: matchId,
@@ -136,7 +133,6 @@ describe('getUser', () => {
 				createdAt: matchTime,
 			})
 			await db.insert(guildMatchPlayers).values({
-				id: crypto.randomUUID(),
 				matchId,
 				discordId: ctx.discordId,
 				team: 'BLUE',
@@ -166,7 +162,7 @@ describe('getUser', () => {
 		const now = new Date()
 		for (let i = 0; i < 7; i++) {
 			const matchId = ctx.generateMatchId()
-			const matchTime = new Date(now.getTime() - (7 - i) * 1000).toISOString()
+			const matchTime = new Date(now.getTime() - (7 - i) * 1000)
 
 			await db.insert(guildMatches).values({
 				id: matchId,
@@ -175,7 +171,6 @@ describe('getUser', () => {
 				createdAt: matchTime,
 			})
 			await db.insert(guildMatchPlayers).values({
-				id: crypto.randomUUID(),
 				matchId,
 				discordId: ctx.discordId,
 				team: 'BLUE',
@@ -224,7 +219,6 @@ describe('getUser', () => {
 			winningTeam: 'BLUE',
 		})
 		await db.insert(guildMatchPlayers).values({
-			id: crypto.randomUUID(),
 			matchId: matchId1,
 			discordId: ctx.discordId,
 			team: 'BLUE',
@@ -241,7 +235,6 @@ describe('getUser', () => {
 			winningTeam: 'BLUE',
 		})
 		await db.insert(guildMatchPlayers).values({
-			id: crypto.randomUUID(),
 			matchId: matchId2,
 			discordId: ctx.discordId,
 			team: 'BLUE',
@@ -274,7 +267,6 @@ describe('getUser', () => {
 			winningTeam: 'BLUE',
 		})
 		await db.insert(guildMatchPlayers).values({
-			id: crypto.randomUUID(),
 			matchId: matchId1,
 			discordId: ctx.discordId,
 			team: 'BLUE',
@@ -290,7 +282,6 @@ describe('getUser', () => {
 			winningTeam: 'BLUE',
 		})
 		await db.insert(guildMatchPlayers).values({
-			id: crypto.randomUUID(),
 			matchId: matchId2,
 			discordId: ctx.discordId2,
 			team: 'BLUE',
@@ -321,7 +312,6 @@ describe('getUser', () => {
 			winningTeam: 'BLUE',
 		})
 		await db.insert(guildMatchPlayers).values({
-			id: crypto.randomUUID(),
 			matchId: matchId1,
 			discordId: ctx.discordId,
 			team: 'RED',

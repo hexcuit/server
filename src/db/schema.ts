@@ -1,6 +1,15 @@
 import { sql } from 'drizzle-orm'
 import { customType, index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-import { LOL_DIVISIONS, LOL_ROLES, LOL_TEAMS, LOL_TIERS, QUEUE_STATUSES, QUEUE_TYPES } from '@/constants'
+import {
+	LOL_DIVISIONS,
+	LOL_ROLES,
+	LOL_TEAMS,
+	LOL_TIERS,
+	MATCH_RESULTS,
+	QUEUE_STATUSES,
+	QUEUE_TYPES,
+	VOTE_OPTIONS,
+} from '@/constants'
 
 const isoDateTime = customType<{
 	data: Date
@@ -149,7 +158,7 @@ export const guildMatches = sqliteTable(
 			onDelete: 'set null',
 			onUpdate: 'cascade',
 		}),
-		winningTeam: text('winning_team', { enum: LOL_TEAMS }).notNull(),
+		winningTeam: text('winning_team', { enum: MATCH_RESULTS }).notNull(),
 		createdAt: isoDateTime('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 	},
 	(table) => [index('guild_matches_guild_created_idx').on(table.guildId, table.createdAt)],
@@ -194,6 +203,7 @@ export const guildPendingMatches = sqliteTable('guild_pending_matches', {
 	teamAssignments: text('team_assignments').notNull(), // JSON: { discordId: { team, role, rating } }
 	blueVotes: integer('blue_votes').notNull(),
 	redVotes: integer('red_votes').notNull(),
+	drawVotes: integer('draw_votes').notNull(),
 	createdAt: isoDateTime('created_at').notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 	updatedAt: isoDateTime('updated_at')
 		.notNull()
@@ -216,7 +226,7 @@ export const guildMatchVotes = sqliteTable(
 				onDelete: 'cascade',
 				onUpdate: 'cascade',
 			}),
-		vote: text('vote', { enum: LOL_TEAMS }).notNull(),
+		vote: text('vote', { enum: VOTE_OPTIONS }).notNull(),
 	},
 	(table) => [primaryKey({ columns: [table.pendingMatchId, table.discordId] })],
 )

@@ -55,8 +55,10 @@ export const typedApp = app.openapi(route, async (c) => {
 	const data = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	await db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing()
-	await db.insert(guilds).values({ guildId }).onConflictDoNothing()
+	await db.batch([
+		db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing(),
+		db.insert(guilds).values({ guildId }).onConflictDoNothing(),
+	])
 
 	const [queue] = (await db
 		.insert(guildQueues)

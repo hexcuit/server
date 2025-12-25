@@ -58,6 +58,7 @@ export const typedApp = app.openapi(route, async (c) => {
 				teamAssignments,
 				blueVotes: match.blueVotes,
 				redVotes: match.redVotes,
+				drawVotes: match.drawVotes,
 				createdAt: match.createdAt,
 			},
 			votes: votes.map((v) => ({ discordId: v.discordId, vote: v.vote })),

@@ -145,8 +145,8 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	// Build stats updates
 	const statsUpdates = ratingChanges.map((rc) => {
-		const won = !isDraw && (rc.change > 0 || (rc.team === winningTeam && rc.change === 0))
-		const lost = !isDraw && !won
+		const won = !isDraw && rc.team === winningTeam
+		const lost = !isDraw && rc.team !== winningTeam
 		const existing = ratingsMap.get(rc.discordId)
 
 		if (existing) {

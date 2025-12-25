@@ -15,9 +15,11 @@ import { typedApp as app8 } from './routes/v1/guilds/queues/remove'
 import { typedApp as app9 } from './routes/v1/guilds/rankings/get'
 import { typedApp as app10 } from './routes/v1/guilds/ratings/get'
 import { typedApp as app11 } from './routes/v1/guilds/ratings/upsert'
-import { typedApp as app12 } from './routes/v1/guilds/users/get'
-import { typedApp as app13 } from './routes/v1/ranks/get'
-import { typedApp as app14 } from './routes/v1/ranks/upsert'
+import { typedApp as app12 } from './routes/v1/guilds/stats/reset'
+import { typedApp as app13 } from './routes/v1/guilds/users/get'
+import { typedApp as app14 } from './routes/v1/guilds/users/reset-stats'
+import { typedApp as app15 } from './routes/v1/ranks/get'
+import { typedApp as app16 } from './routes/v1/ranks/upsert'
 
 const app = new OpenAPIHono()
 	.route('/', app0)
@@ -35,6 +37,8 @@ const app = new OpenAPIHono()
 	.route('/', app12)
 	.route('/', app13)
 	.route('/', app14)
+	.route('/', app15)
+	.route('/', app16)
 
 export type AppType = typeof app
 

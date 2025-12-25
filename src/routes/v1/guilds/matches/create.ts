@@ -29,10 +29,10 @@ export const typedApp = app.openapi(route, async (c) => {
 	const db = drizzle(c.env.DB)
 
 	const discordIds = Object.keys(teamAssignments)
-	for (const discordId of discordIds) {
-		await db.insert(users).values({ discordId }).onConflictDoNothing()
-	}
-	await db.insert(guilds).values({ guildId }).onConflictDoNothing()
+	await db.batch([
+		db.insert(guilds).values({ guildId }).onConflictDoNothing(),
+		...discordIds.map((discordId) => db.insert(users).values({ discordId }).onConflictDoNothing()),
+	])
 
 	await db.insert(guildPendingMatches).values({
 		id,

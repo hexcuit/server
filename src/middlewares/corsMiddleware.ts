@@ -15,7 +15,7 @@ export const corsMiddleware = createMiddleware<{ Bindings: Cloudflare.Env }>(asy
 			const allowedOrigins = corsOrigin.split(',').map((url) => url.trim())
 			return allowedOrigins.includes(origin) ? origin : null
 		},
-		allowHeaders: ['Origin', 'Content-Type', 'Authorization'],
+		allowHeaders: ['Origin', 'Content-Type', 'Authorization', 'x-api-key'],
 		allowMethods: ['GET', 'OPTIONS', 'POST', 'PUT', 'DELETE'],
 		credentials: true,
 		maxAge: 86400,

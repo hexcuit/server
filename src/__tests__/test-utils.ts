@@ -1,7 +1,7 @@
 import type { DrizzleD1Database } from 'drizzle-orm/d1'
 import { drizzle } from 'drizzle-orm/d1'
 import type { LOL_DIVISIONS, LOL_TIERS } from '@/constants'
-import { guilds, guildUserStats, lolRanks, users } from '@/db/schema'
+import { guilds, guildUserStats, ranks, users } from '@/db/schema'
 import { env } from './setup'
 
 /**
@@ -85,7 +85,7 @@ export async function setupTestUsers(
 	}
 
 	if (options?.withLolRank) {
-		await db.insert(lolRanks).values({
+		await db.insert(ranks).values({
 			discordId: ctx.discordId,
 			tier: 'DIAMOND',
 			division: 'III',
@@ -102,7 +102,7 @@ export async function seedLolRank(
 ): Promise<void> {
 	const db = drizzle(env.DB)
 	await db.insert(users).values({ discordId }).onConflictDoNothing()
-	await db.insert(lolRanks).values({
+	await db.insert(ranks).values({
 		discordId,
 		tier: rank.tier,
 		division: rank.division ?? null,

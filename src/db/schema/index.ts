@@ -6,4 +6,4 @@ export {
 	guildUserMatchHistory,
 } from './matches'
 export { guildQueuePlayers, guildQueues } from './queues'
-export { lolRanks, users } from './users'
+export { ranks, users } from './users'

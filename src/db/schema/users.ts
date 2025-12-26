@@ -11,7 +11,7 @@ export const users = sqliteTable('users', {
 		.$onUpdate(() => currentTimestamp),
 })
 
-export const lolRanks = sqliteTable('lol_ranks', {
+export const ranks = sqliteTable('ranks', {
 	discordId: text('discord_id')
 		.primaryKey()
 		.references(() => users.discordId, {

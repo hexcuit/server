@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { inArray } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { lolRanks } from '@/db/schema'
+import { ranks } from '@/db/schema'
 import { LoLRankSelectSchema } from './schemas'
 
 export const QuerySchema = z
@@ -43,9 +43,9 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { id } = c.req.valid('query')
 	const db = drizzle(c.env.DB)
 
-	const ranks = await db.select().from(lolRanks).where(inArray(lolRanks.discordId, id))
+	const rank = await db.select().from(ranks).where(inArray(ranks.discordId, id))
 
-	return c.json({ ranks })
+	return c.json({ rank })
 })
 
 export default app

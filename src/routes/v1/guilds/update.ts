@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { createSelectSchema } from 'drizzle-zod'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { guilds } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
@@ -11,19 +11,13 @@ const ParamSchema = z
 	})
 	.openapi('UpdateGuildParam')
 
-const BodySchema = z
-	.object({
-		plan: z.enum(['free', 'premium']).optional(),
-		planExpiresAt: z.string().datetime().nullable().optional(),
-	})
+const BodySchema = createInsertSchema(guilds)
+	.pick({ plan: true, planExpiresAt: true })
+	.partial()
 	.openapi('UpdateGuildBody')
 
 const ResponseSchema = createSelectSchema(guilds)
-	.pick({ guildId: true, plan: true })
-	.extend({
-		planExpiresAt: z.string().nullable(),
-		updatedAt: z.string(),
-	})
+	.pick({ guildId: true, plan: true, planExpiresAt: true, updatedAt: true })
 	.openapi('UpdateGuildResponse')
 
 const route = createRoute({
@@ -79,8 +73,8 @@ export const typedApp = app.openapi(route, async (c) => {
 		{
 			guildId: guild.guildId,
 			plan: guild.plan,
-			planExpiresAt: guild.planExpiresAt?.toISOString() ?? null,
-			updatedAt: guild.updatedAt.toISOString(),
+			planExpiresAt: guild.planExpiresAt,
+			updatedAt: guild.updatedAt,
 		},
 		200,
 	)

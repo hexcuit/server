@@ -1,1 +1,0 @@
-CREATE UNIQUE INDEX `queue_players_queue_id_discord_id_unique` ON `queue_players` (`queue_id`,`discord_id`);

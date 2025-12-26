@@ -12,11 +12,7 @@ const ParamSchema = z
 	.openapi('GetGuildParam')
 
 const ResponseSchema = createSelectSchema(guilds)
-	.pick({ guildId: true, plan: true })
-	.extend({
-		planExpiresAt: z.string().nullable(),
-		createdAt: z.string(),
-	})
+	.pick({ guildId: true, plan: true, planExpiresAt: true, createdAt: true })
 	.openapi('GetGuildResponse')
 
 const route = createRoute({
@@ -65,8 +61,8 @@ export const typedApp = app.openapi(route, async (c) => {
 		{
 			guildId: guild.guildId,
 			plan: guild.plan,
-			planExpiresAt: guild.planExpiresAt?.toISOString() ?? null,
-			createdAt: guild.createdAt.toISOString(),
+			planExpiresAt: guild.planExpiresAt,
+			createdAt: guild.createdAt,
 		},
 		200,
 	)

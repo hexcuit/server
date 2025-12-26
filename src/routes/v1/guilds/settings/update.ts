@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { createSelectSchema } from 'drizzle-zod'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { guildSettings, guilds } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
@@ -11,19 +11,13 @@ const ParamSchema = z
 	})
 	.openapi('UpdateGuildSettingsParam')
 
-const BodySchema = z
-	.object({
-		initialRating: z.number().int().positive().optional(),
-		kFactor: z.number().int().positive().optional(),
-		placementGamesRequired: z.number().int().min(0).optional(),
-	})
+const BodySchema = createInsertSchema(guildSettings)
+	.pick({ initialRating: true, kFactor: true, placementGamesRequired: true })
+	.partial()
 	.openapi('UpdateGuildSettingsBody')
 
 const ResponseSchema = createSelectSchema(guildSettings)
-	.pick({ initialRating: true, kFactor: true, placementGamesRequired: true })
-	.extend({
-		updatedAt: z.string(),
-	})
+	.pick({ initialRating: true, kFactor: true, placementGamesRequired: true, updatedAt: true })
 	.openapi('UpdateGuildSettingsResponse')
 
 const route = createRoute({
@@ -87,7 +81,7 @@ export const typedApp = app.openapi(route, async (c) => {
 			initialRating: settings.initialRating,
 			kFactor: settings.kFactor,
 			placementGamesRequired: settings.placementGamesRequired,
-			updatedAt: settings.updatedAt.toISOString(),
+			updatedAt: settings.updatedAt,
 		},
 		200,
 	)

@@ -14,9 +14,8 @@ const ParamSchema = z
 const RankSchema = createSelectSchema(ranks).pick({ tier: true, division: true })
 
 const ResponseSchema = createSelectSchema(users)
-	.pick({ discordId: true })
+	.pick({ discordId: true, createdAt: true })
 	.extend({
-		createdAt: z.string(),
 		rank: RankSchema.nullable(),
 	})
 	.openapi('GetUserResponse')
@@ -59,7 +58,7 @@ export const typedApp = app.openapi(route, async (c) => {
 	return c.json(
 		{
 			discordId: user.discordId,
-			createdAt: user.createdAt.toISOString(),
+			createdAt: user.createdAt,
 			rank: rank
 				? {
 						tier: rank.tier,

@@ -1,4 +1,4 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { guilds } from '@/db/schema'
@@ -7,10 +7,7 @@ import { ErrorResponseSchema } from '@/utils/schemas'
 const BodySchema = createInsertSchema(guilds).pick({ guildId: true }).openapi('CreateGuildBody')
 
 const ResponseSchema = createSelectSchema(guilds)
-	.pick({ guildId: true, plan: true })
-	.extend({
-		createdAt: z.string(),
-	})
+	.pick({ guildId: true, plan: true, createdAt: true })
 	.openapi('CreateGuildResponse')
 
 const route = createRoute({
@@ -54,7 +51,7 @@ export const typedApp = app.openapi(route, async (c) => {
 		{
 			guildId: guild.guildId,
 			plan: guild.plan,
-			createdAt: guild.createdAt.toISOString(),
+			createdAt: guild.createdAt,
 		},
 		201,
 	)

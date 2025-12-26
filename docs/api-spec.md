@@ -16,13 +16,13 @@
   - [x] PATCH /v1/guilds/:guildId/settings
 
 ### Phase 2: 統計
-- [ ] GuildUserStats
-  - [ ] POST /v1/guilds/:guildId/users/:discordId/stats
-  - [ ] GET /v1/guilds/:guildId/users/:discordId/stats
-  - [ ] PATCH /v1/guilds/:guildId/users/:discordId/stats
-  - [ ] DELETE /v1/guilds/:guildId/users/:discordId/stats
-- [ ] Rankings
-  - [ ] GET /v1/guilds/:guildId/rankings
+- [x] GuildUserStats
+  - [x] POST /v1/guilds/:guildId/users/:discordId/stats
+  - [x] GET /v1/guilds/:guildId/users/:discordId/stats
+  - [x] PATCH /v1/guilds/:guildId/users/:discordId/stats
+  - [x] DELETE /v1/guilds/:guildId/users/:discordId/stats
+- [x] Rankings
+  - [x] GET /v1/guilds/:guildId/rankings
 
 ### Phase 3: キュー
 - [ ] Queues

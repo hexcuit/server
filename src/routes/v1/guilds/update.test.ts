@@ -40,7 +40,7 @@ describe('PATCH /v1/guilds/:guildId', () => {
 		const db = drizzle(env.DB)
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 
-		const expiresAt = '2026-01-01T00:00:00.000Z'
+		const expiresAt = new Date('2026-01-01T00:00:00.000Z')
 
 		const res = await client.v1.guilds[':guildId'].$patch(
 			{
@@ -55,7 +55,7 @@ describe('PATCH /v1/guilds/:guildId', () => {
 		if (res.ok) {
 			const data = await res.json()
 			expect(data.plan).toBe('premium')
-			expect(data.planExpiresAt).toBe(expiresAt)
+			expect(data.planExpiresAt).toBe(expiresAt.toISOString())
 		}
 	})
 

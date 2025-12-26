@@ -14,10 +14,7 @@ const ParamSchema = z
 const BodySchema = createInsertSchema(ranks).pick({ tier: true, division: true }).openapi('UpsertRankBody')
 
 const ResponseSchema = createSelectSchema(ranks)
-	.pick({ tier: true, division: true })
-	.extend({
-		updatedAt: z.string(),
-	})
+	.pick({ tier: true, division: true, updatedAt: true })
 	.openapi('UpsertRankResponse')
 
 const route = createRoute({
@@ -72,7 +69,7 @@ export const typedApp = app.openapi(route, async (c) => {
 		{
 			tier: rank.tier,
 			division: rank.division,
-			updatedAt: rank.updatedAt.toISOString(),
+			updatedAt: rank.updatedAt,
 		},
 		200,
 	)

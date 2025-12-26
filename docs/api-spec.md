@@ -1,10 +1,104 @@
 # API仕様書
 
+## 実装状況
+
+### Phase 1: 基盤
+- [x] Users
+  - [x] POST /v1/users
+  - [x] GET /v1/users/:discordId
+  - [x] PUT /v1/users/:discordId/rank
+- [x] Guilds
+  - [x] POST /v1/guilds
+  - [x] GET /v1/guilds/:guildId
+  - [x] PATCH /v1/guilds/:guildId
+- [x] GuildSettings
+  - [x] GET /v1/guilds/:guildId/settings
+  - [x] PATCH /v1/guilds/:guildId/settings
+
+### Phase 2: 統計
+- [ ] GuildUserStats
+  - [ ] POST /v1/guilds/:guildId/users/:discordId/stats
+  - [ ] GET /v1/guilds/:guildId/users/:discordId/stats
+  - [ ] PATCH /v1/guilds/:guildId/users/:discordId/stats
+  - [ ] DELETE /v1/guilds/:guildId/users/:discordId/stats
+- [ ] Rankings
+  - [ ] GET /v1/guilds/:guildId/rankings
+
+### Phase 3: キュー
+- [ ] Queues
+  - [ ] POST /v1/guilds/:guildId/queues
+  - [ ] GET /v1/guilds/:guildId/queues/:queueId
+  - [ ] DELETE /v1/guilds/:guildId/queues/:queueId
+- [ ] QueuePlayers
+  - [ ] POST /v1/guilds/:guildId/queues/:queueId/players
+  - [ ] DELETE /v1/guilds/:guildId/queues/:queueId/players/:discordId
+
+### Phase 4: 試合
+- [ ] Matches
+  - [ ] POST /v1/guilds/:guildId/matches
+  - [ ] GET /v1/guilds/:guildId/matches/:matchId
+- [ ] Votes
+  - [ ] POST /v1/guilds/:guildId/matches/:matchId/votes
+- [ ] Confirm
+  - [ ] POST /v1/guilds/:guildId/matches/:matchId/confirm
+- [ ] History
+  - [ ] GET /v1/guilds/:guildId/users/:discordId/history
+
+---
+
 ## 概要
 
 - ベースURL: `/v1`
 - 認証: `x-api-key` ヘッダー
 - ページネーション: `offset` 方式（`?limit=10&offset=0`）
+
+---
+
+## ディレクトリ構成
+
+```
+src/routes/v1/
+├── index.ts
+├── users/
+│   ├── index.ts
+│   ├── schemas.ts
+│   ├── create.ts               # POST /users
+│   ├── get.ts                  # GET /users/:discordId
+│   └── rank/
+│       └── upsert.ts           # PUT /users/:discordId/rank
+├── guilds/
+│   ├── index.ts
+│   ├── schemas.ts
+│   ├── create.ts               # POST /guilds
+│   ├── get.ts                  # GET /guilds/:guildId
+│   ├── update.ts               # PATCH /guilds/:guildId
+│   ├── settings/
+│   │   ├── get.ts              # GET /guilds/:guildId/settings
+│   │   └── update.ts           # PATCH /guilds/:guildId/settings
+│   ├── users/
+│   │   ├── stats/
+│   │   │   ├── create.ts       # POST .../stats
+│   │   │   ├── get.ts          # GET .../stats
+│   │   │   ├── update.ts       # PATCH .../stats
+│   │   │   └── delete.ts       # DELETE .../stats
+│   │   └── history/
+│   │       └── get.ts          # GET .../history
+│   ├── rankings/
+│   │   └── get.ts              # GET /guilds/:guildId/rankings
+│   ├── queues/
+│   │   ├── create.ts
+│   │   ├── get.ts
+│   │   ├── delete.ts
+│   │   └── players/
+│   │       ├── create.ts
+│   │       └── delete.ts
+│   └── matches/
+│       ├── create.ts
+│       ├── get.ts
+│       ├── votes/
+│       │   └── create.ts
+│       └── confirm.ts
+```
 
 ---
 

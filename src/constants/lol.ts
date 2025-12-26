@@ -32,3 +32,11 @@ export type VoteOption = (typeof VOTE_OPTIONS)[number]
 // 試合結果（BLUE, RED, DRAW）
 export const MATCH_RESULTS = ['BLUE', 'RED', 'DRAW'] as const
 export type MatchResult = (typeof MATCH_RESULTS)[number]
+
+// プレイヤーの試合結果（WIN, LOSE, DRAW）
+export const PLAYER_RESULTS = ['WIN', 'LOSE', 'DRAW'] as const
+export type PlayerResult = (typeof PLAYER_RESULTS)[number]
+
+// マッチステータス
+export const MATCH_STATUSES = ['voting', 'confirmed'] as const
+export type MatchStatus = (typeof MATCH_STATUSES)[number]

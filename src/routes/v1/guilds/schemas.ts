@@ -218,7 +218,7 @@ export const DeletedCountsSchema = z
 	.object({
 		userStats: z.number(),
 		matches: z.number(),
-		matchPlayers: z.number(),
+		matchHistory: z.number(),
 		pendingMatches: z.number(),
 	})
 	.openapi('DeletedCounts')
@@ -233,7 +233,7 @@ export const ResetGuildStatsResponseSchema = z
 export const UserDeletedCountsSchema = z
 	.object({
 		userStats: z.number(),
-		matchPlayers: z.number(),
+		matchHistory: z.number(),
 	})
 	.openapi('UserDeletedCounts')
 

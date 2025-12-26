@@ -1,9 +1,5 @@
 import type { LolDivision, LolTier } from '@/constants/lol'
-
-export const INITIAL_RATING = 1200
-export const K_FACTOR_NORMAL = 32
-export const K_FACTOR_PLACEMENT = 64
-export const PLACEMENT_GAMES = 5
+import { INITIAL_RATING, K_FACTOR_NORMAL, K_FACTOR_PLACEMENT, PLACEMENT_GAMES } from '@/constants/rating'
 
 const DIVISION_POINT_RANGE = 100
 const DIVISIONS_PER_TIER = 4

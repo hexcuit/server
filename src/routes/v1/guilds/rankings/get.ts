@@ -1,8 +1,9 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, desc, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
+import { PLACEMENT_GAMES } from '@/constants/rating'
 import { guildUserStats } from '@/db/schema'
-import { formatRankDisplay, getRankDisplay, PLACEMENT_GAMES } from '@/utils/elo'
+import { formatRankDisplay, getRankDisplay } from '@/utils/elo'
 import { GetRankingQuerySchema, GetRankingResponseSchema, GuildParamSchema } from '../schemas'
 
 const route = createRoute({

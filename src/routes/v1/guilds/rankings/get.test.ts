@@ -3,8 +3,8 @@ import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
+import { PLACEMENT_GAMES } from '@/constants/rating'
 import { guildUserStats } from '@/db/schema'
-import { PLACEMENT_GAMES } from '@/utils/elo'
 import { typedApp } from './get'
 
 describe('getRankings', () => {

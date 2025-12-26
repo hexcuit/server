@@ -20,6 +20,7 @@ import { typedApp as app13 } from './routes/v1/guilds/users/get'
 import { typedApp as app14 } from './routes/v1/guilds/users/reset-stats'
 import { typedApp as app15 } from './routes/v1/ranks/get'
 import { typedApp as app16 } from './routes/v1/ranks/upsert'
+import { typedApp as app17 } from './routes/v1/test/stats-card'
 
 const app = new OpenAPIHono()
 	.route('/', app0)
@@ -39,6 +40,7 @@ const app = new OpenAPIHono()
 	.route('/', app14)
 	.route('/', app15)
 	.route('/', app16)
+	.route('/', app17)
 
 export type AppType = typeof app
 

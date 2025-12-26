@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { guildMatches, guildMatchPlayers, guildUserStats } from '@/db/schema'
+import { guildUserMatchHistory, guildUserStats } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 import { ResetUserStatsResponseSchema, UserHistoryParamSchema } from '../schemas'
 
@@ -67,44 +67,24 @@ export const typedApp = app.openapi(route, async (c) => {
 		return c.json({ message: 'User stats not found' }, 404)
 	}
 
-	// 2. Get all match IDs for this guild
-	const matches = await db.select({ id: guildMatches.id }).from(guildMatches).where(eq(guildMatches.guildId, guildId))
-
-	const matchIds = matches.map((m) => m.id)
-
-	// 3. Delete match players and user stats in a single transaction
+	// 2. Delete match history and user stats
 	try {
+		const deleteMatchHistory = db
+			.delete(guildUserMatchHistory)
+			.where(and(eq(guildUserMatchHistory.guildId, guildId), eq(guildUserMatchHistory.discordId, discordId)))
+
 		const deleteUserStats = db
 			.delete(guildUserStats)
 			.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, discordId)))
 
-		if (matchIds.length > 0) {
-			const deleteMatchPlayers = db
-				.delete(guildMatchPlayers)
-				.where(and(eq(guildMatchPlayers.discordId, discordId), inArray(guildMatchPlayers.matchId, matchIds)))
-
-			const [matchPlayersResult, userStatsResult] = await db.batch([deleteMatchPlayers, deleteUserStats])
-
-			return c.json(
-				{
-					deleted: true,
-					deletedCounts: {
-						userStats: userStatsResult.meta.changes,
-						matchPlayers: matchPlayersResult.meta.changes,
-					},
-				},
-				200,
-			)
-		}
-
-		const [userStatsResult] = await db.batch([deleteUserStats])
+		const [matchHistoryResult, userStatsResult] = await db.batch([deleteMatchHistory, deleteUserStats])
 
 		return c.json(
 			{
 				deleted: true,
 				deletedCounts: {
 					userStats: userStatsResult.meta.changes,
-					matchPlayers: 0,
+					matchHistory: matchHistoryResult.meta.changes,
 				},
 			},
 			200,

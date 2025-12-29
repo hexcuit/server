@@ -5,7 +5,6 @@ export const corsMiddleware = createMiddleware<{ Bindings: Cloudflare.Env }>(asy
 	const corsOrigin = c.env.CORS_ORIGIN?.trim()
 
 	if (!corsOrigin) {
-		console.error('CORS_ORIGIN is not set in environment variables')
 		return c.json({ error: 'Server configuration error' }, 500)
 	}
 

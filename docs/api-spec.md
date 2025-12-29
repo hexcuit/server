@@ -25,13 +25,13 @@
   - [x] GET /v1/guilds/:guildId/rankings
 
 ### Phase 3: キュー
-- [ ] Queues
-  - [ ] POST /v1/guilds/:guildId/queues
-  - [ ] GET /v1/guilds/:guildId/queues/:queueId
-  - [ ] DELETE /v1/guilds/:guildId/queues/:queueId
-- [ ] QueuePlayers
-  - [ ] POST /v1/guilds/:guildId/queues/:queueId/players
-  - [ ] DELETE /v1/guilds/:guildId/queues/:queueId/players/:discordId
+- [x] Queues
+  - [x] POST /v1/guilds/:guildId/queues
+  - [x] GET /v1/guilds/:guildId/queues/:queueId
+  - [x] DELETE /v1/guilds/:guildId/queues/:queueId
+- [x] QueuePlayers
+  - [x] POST /v1/guilds/:guildId/queues/:queueId/players
+  - [x] DELETE /v1/guilds/:guildId/queues/:queueId/players/:discordId
 
 ### Phase 4: 試合
 - [ ] Matches

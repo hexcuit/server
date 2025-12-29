@@ -5,17 +5,22 @@ import { OpenAPIHono } from '@hono/zod-openapi'
 import { hc } from 'hono/client'
 import { typedApp as app0 } from './routes/v1/guilds/create'
 import { typedApp as app1 } from './routes/v1/guilds/get'
-import { typedApp as app2 } from './routes/v1/guilds/rankings/get'
-import { typedApp as app3 } from './routes/v1/guilds/settings/get'
-import { typedApp as app4 } from './routes/v1/guilds/settings/update'
-import { typedApp as app5 } from './routes/v1/guilds/update'
-import { typedApp as app6 } from './routes/v1/guilds/users/stats/create'
-import { typedApp as app7 } from './routes/v1/guilds/users/stats/delete'
-import { typedApp as app8 } from './routes/v1/guilds/users/stats/get'
-import { typedApp as app9 } from './routes/v1/guilds/users/stats/update'
-import { typedApp as app10 } from './routes/v1/users/create'
-import { typedApp as app11 } from './routes/v1/users/get'
-import { typedApp as app12 } from './routes/v1/users/rank/upsert'
+import { typedApp as app2 } from './routes/v1/guilds/queues/create'
+import { typedApp as app3 } from './routes/v1/guilds/queues/delete'
+import { typedApp as app4 } from './routes/v1/guilds/queues/get'
+import { typedApp as app5 } from './routes/v1/guilds/queues/players/create'
+import { typedApp as app6 } from './routes/v1/guilds/queues/players/delete'
+import { typedApp as app7 } from './routes/v1/guilds/rankings/get'
+import { typedApp as app8 } from './routes/v1/guilds/settings/get'
+import { typedApp as app9 } from './routes/v1/guilds/settings/update'
+import { typedApp as app10 } from './routes/v1/guilds/update'
+import { typedApp as app11 } from './routes/v1/guilds/users/stats/create'
+import { typedApp as app12 } from './routes/v1/guilds/users/stats/delete'
+import { typedApp as app13 } from './routes/v1/guilds/users/stats/get'
+import { typedApp as app14 } from './routes/v1/guilds/users/stats/update'
+import { typedApp as app15 } from './routes/v1/users/create'
+import { typedApp as app16 } from './routes/v1/users/get'
+import { typedApp as app17 } from './routes/v1/users/rank/upsert'
 
 const app = new OpenAPIHono()
 	.route('/', app0)
@@ -31,6 +36,11 @@ const app = new OpenAPIHono()
 	.route('/', app10)
 	.route('/', app11)
 	.route('/', app12)
+	.route('/', app13)
+	.route('/', app14)
+	.route('/', app15)
+	.route('/', app16)
+	.route('/', app17)
 
 export type AppType = typeof app
 

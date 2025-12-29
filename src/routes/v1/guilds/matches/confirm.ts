@@ -106,6 +106,7 @@ export const typedApp = app.openapi(route, async (c) => {
 	// Get guild settings for kFactor
 	const settings = await db.select().from(guildSettings).where(eq(guildSettings.guildId, guildId)).get()
 	const kFactorNormal = settings?.kFactor ?? K_FACTOR_NORMAL
+	const kFactorPlacement = settings?.kFactorPlacement ?? K_FACTOR_PLACEMENT
 	const placementGamesRequired = settings?.placementGamesRequired ?? PLACEMENT_GAMES
 
 	// Get players and their current stats
@@ -137,7 +138,7 @@ export const typedApp = app.openapi(route, async (c) => {
 
 		// Use higher K factor during placement games
 		const isPlacement = currentStats.placementGames < placementGamesRequired
-		const kFactor = isPlacement ? K_FACTOR_PLACEMENT : kFactorNormal
+		const kFactor = isPlacement ? kFactorPlacement : kFactorNormal
 
 		let result: PlayerResult
 		let ratingChange: number

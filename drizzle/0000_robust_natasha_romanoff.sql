@@ -69,6 +69,7 @@ CREATE TABLE `guild_settings` (
 	`guild_id` text PRIMARY KEY NOT NULL,
 	`initial_rating` integer DEFAULT 1200 NOT NULL,
 	`k_factor` integer DEFAULT 32 NOT NULL,
+	`k_factor_placement` integer DEFAULT 64 NOT NULL,
 	`placement_games_required` integer DEFAULT 5 NOT NULL,
 	`updated_at` text DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) NOT NULL,
 	FOREIGN KEY (`guild_id`) REFERENCES `guilds`(`guild_id`) ON UPDATE cascade ON DELETE cascade

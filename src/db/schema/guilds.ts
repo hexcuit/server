@@ -1,5 +1,5 @@
 import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-import { INITIAL_RATING, K_FACTOR_NORMAL, PLACEMENT_GAMES } from '@/constants/rating'
+import { INITIAL_RATING, K_FACTOR_NORMAL, K_FACTOR_PLACEMENT, PLACEMENT_GAMES } from '@/constants/rating'
 import { currentTimestamp, timestamp } from './common'
 import { users } from './users'
 
@@ -25,6 +25,7 @@ export const guildSettings = sqliteTable('guild_settings', {
 		}),
 	initialRating: integer('initial_rating').notNull().default(INITIAL_RATING),
 	kFactor: integer('k_factor').notNull().default(K_FACTOR_NORMAL),
+	kFactorPlacement: integer('k_factor_placement').notNull().default(K_FACTOR_PLACEMENT),
 	placementGamesRequired: integer('placement_games_required').notNull().default(PLACEMENT_GAMES),
 	updatedAt: timestamp('updated_at')
 		.notNull()

@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "7665057e-9e7b-47b1-b8eb-883d537ba00d",
+	"id": "6e4f8801-afa7-448c-a274-a1ba43dffc54",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"tables": {
 		"guild_match_players": {
@@ -460,6 +460,14 @@
 					"notNull": true,
 					"autoincrement": false,
 					"default": 32
+				},
+				"k_factor_placement": {
+					"name": "k_factor_placement",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 64
 				},
 				"placement_games_required": {
 					"name": "placement_games_required",

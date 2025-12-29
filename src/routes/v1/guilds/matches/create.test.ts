@@ -1,38 +1,36 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
-import { guildPendingMatches } from '@/db/schema'
+import { guilds, users } from '@/db/schema'
 import { typedApp } from './create'
 
-describe('createMatch', () => {
+describe('POST /v1/guilds/:guildId/matches', () => {
 	const client = testClient(typedApp, env)
 	let ctx: TestContext
 
-	beforeEach(async () => {
+	beforeEach(() => {
 		ctx = createTestContext()
 	})
 
-	it('creates a new match and returns 201', async () => {
-		const matchId = ctx.generatePendingMatchId()
-		const player1 = ctx.generateUserId()
-		const player2 = ctx.generateUserId()
-
-		const teamAssignments = {
-			[player1]: { team: 'BLUE' as const, role: 'TOP' as const, rating: 1500 },
-			[player2]: { team: 'RED' as const, role: 'TOP' as const, rating: 1500 },
-		}
+	it('creates a match with players', async () => {
+		const db = drizzle(env.DB)
+		const player1 = `player1_${ctx.guildId}`
+		const player2 = `player2_${ctx.guildId}`
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+		await db.insert(users).values([{ discordId: player1 }, { discordId: player2 }])
 
 		const res = await client.v1.guilds[':guildId'].matches.$post(
 			{
 				param: { guildId: ctx.guildId },
 				json: {
-					id: matchId,
-					channelId: ctx.channelId,
-					messageId: ctx.messageId,
-					teamAssignments,
+					channelId: 'channel_123',
+					messageId: `message_${ctx.guildId}`,
+					players: [
+						{ discordId: player1, team: 'BLUE', role: 'TOP', ratingBefore: 1000 },
+						{ discordId: player2, team: 'RED', role: 'TOP', ratingBefore: 1000 },
+					],
 				},
 			},
 			authHeaders,
@@ -42,12 +40,74 @@ describe('createMatch', () => {
 
 		if (res.ok) {
 			const data = await res.json()
-			expect(data.matchId).toBe(matchId)
+			expect(data.id).toBeDefined()
+			expect(data.status).toBe('voting')
+			expect(data.createdAt).toBeDefined()
 		}
+	})
 
+	it('creates a match without players', async () => {
 		const db = drizzle(env.DB)
-		const saved = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
-		expect(saved).toBeDefined()
-		expect(saved?.status).toBe('voting')
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+
+		const res = await client.v1.guilds[':guildId'].matches.$post(
+			{
+				param: { guildId: ctx.guildId },
+				json: {
+					channelId: 'channel_123',
+					messageId: `message_${ctx.guildId}`,
+					players: [],
+				},
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(201)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.id).toBeDefined()
+			expect(data.status).toBe('voting')
+		}
+	})
+
+	it('returns 409 when match with same messageId exists', async () => {
+		const db = drizzle(env.DB)
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+
+		const messageId = `duplicate_${ctx.guildId}`
+
+		// Create first match
+		await client.v1.guilds[':guildId'].matches.$post(
+			{
+				param: { guildId: ctx.guildId },
+				json: {
+					channelId: 'channel_123',
+					messageId,
+					players: [],
+				},
+			},
+			authHeaders,
+		)
+
+		// Try to create second match with same messageId
+		const res = await client.v1.guilds[':guildId'].matches.$post(
+			{
+				param: { guildId: ctx.guildId },
+				json: {
+					channelId: 'channel_456',
+					messageId,
+					players: [],
+				},
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(409)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Match with this messageId already exists')
+		}
 	})
 })

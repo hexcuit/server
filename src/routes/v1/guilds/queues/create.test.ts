@@ -1,29 +1,32 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
 import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
-import { guildQueues } from '@/db/schema'
+import { guilds, users } from '@/db/schema'
 import { typedApp } from './create'
 
-describe('createQueue', () => {
+describe('POST /v1/guilds/:guildId/queues', () => {
 	const client = testClient(typedApp, env)
 	let ctx: TestContext
 
-	beforeEach(async () => {
+	beforeEach(() => {
 		ctx = createTestContext()
 	})
 
-	it('creates a new queue and returns 201', async () => {
+	it('creates a queue', async () => {
+		const db = drizzle(env.DB)
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+		await db.insert(users).values({ discordId: ctx.discordId })
+
 		const res = await client.v1.guilds[':guildId'].queues.$post(
 			{
 				param: { guildId: ctx.guildId },
 				json: {
-					channelId: ctx.channelId,
-					messageId: ctx.messageId,
+					channelId: 'channel_123',
+					messageId: `message_${ctx.guildId}`,
 					creatorId: ctx.discordId,
-					type: 'normal',
+					type: 'ranked',
 					anonymous: false,
 					capacity: 10,
 				},
@@ -32,17 +35,58 @@ describe('createQueue', () => {
 		)
 
 		expect(res.status).toBe(201)
-		expect(res.ok).toBe(true)
 
-		const data = await res.json()
-		expect(data.queue.id).toBeDefined()
-		expect(typeof data.queue.id).toBe('string')
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.id).toBeDefined()
+			expect(data.status).toBe('open')
+			expect(data.createdAt).toBeDefined()
+		}
+	})
 
+	it('returns 409 when queue with same messageId exists', async () => {
 		const db = drizzle(env.DB)
-		const saved = await db.select().from(guildQueues).where(eq(guildQueues.id, data.queue.id)).get()
+		await db.insert(guilds).values({ guildId: ctx.guildId })
 
-		expect(saved).toBeDefined()
-		expect(saved?.guildId).toBe(ctx.guildId)
-		expect(saved?.status).toBe('open')
+		const messageId = `duplicate_${ctx.guildId}`
+
+		// Create first queue
+		await client.v1.guilds[':guildId'].queues.$post(
+			{
+				param: { guildId: ctx.guildId },
+				json: {
+					channelId: 'channel_123',
+					messageId,
+					creatorId: null,
+					type: 'normal',
+					anonymous: false,
+					capacity: 10,
+				},
+			},
+			authHeaders,
+		)
+
+		// Try to create second queue with same messageId
+		const res = await client.v1.guilds[':guildId'].queues.$post(
+			{
+				param: { guildId: ctx.guildId },
+				json: {
+					channelId: 'channel_456',
+					messageId,
+					creatorId: null,
+					type: 'ranked',
+					anonymous: true,
+					capacity: 5,
+				},
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(409)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Queue with this messageId already exists')
+		}
 	})
 })

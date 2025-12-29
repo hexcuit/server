@@ -1,42 +1,43 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
-import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
-import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { guildQueuePlayers, guildQueues } from '@/db/schema'
+import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
+import { guildQueues, guilds, users } from '@/db/schema'
 import { typedApp } from './create'
 
-describe('createQueuePlayer', () => {
+describe('POST /v1/guilds/:guildId/queues/:queueId/players', () => {
 	const client = testClient(typedApp, env)
 	let ctx: TestContext
-	let queueId: string
 
-	beforeEach(async () => {
+	beforeEach(() => {
 		ctx = createTestContext()
-		queueId = ctx.generateQueueId()
-		const db = drizzle(env.DB)
-		await setupTestUsers(db, ctx)
-
-		await db.insert(guildQueues).values({
-			id: queueId,
-			guildId: ctx.guildId,
-			channelId: ctx.channelId,
-			messageId: ctx.messageId,
-			creatorId: ctx.discordId,
-			type: 'normal',
-			anonymous: false,
-			capacity: 10,
-			status: 'open',
-		})
 	})
 
-	it('joins queue and returns 201', async () => {
-		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
+	it('adds player to queue', async () => {
+		const db = drizzle(env.DB)
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+		await db.insert(users).values({ discordId: ctx.discordId })
+
+		const [queue] = (await db
+			.insert(guildQueues)
+			.values({
+				guildId: ctx.guildId,
+				channelId: 'channel_123',
+				messageId: `message_${ctx.guildId}`,
+				creatorId: ctx.discordId,
+				type: 'ranked',
+				anonymous: false,
+				capacity: 10,
+				status: 'open',
+			})
+			.returning()) as [typeof guildQueues.$inferSelect]
+
+		const res = await client.v1.guilds[':guildId'].queues[':queueId'].players.$post(
 			{
-				param: { guildId: ctx.guildId, id: queueId },
+				param: { guildId: ctx.guildId, queueId: queue.id },
 				json: {
-					discordId: ctx.discordId2,
+					discordId: ctx.discordId,
 					mainRole: 'MIDDLE',
 					subRole: 'TOP',
 				},
@@ -44,29 +45,33 @@ describe('createQueuePlayer', () => {
 			authHeaders,
 		)
 
-		expect(res.ok).toBe(true)
 		expect(res.status).toBe(201)
 
 		if (res.ok) {
 			const data = await res.json()
-			expect(data.player.discordId).toBe(ctx.discordId2)
-			expect(data.player.mainRole).toBe('MIDDLE')
-			expect(data.player.subRole).toBe('TOP')
-			expect(data.count).toBe(1)
-			expect(data.isFull).toBe(false)
+			expect(data.discordId).toBe(ctx.discordId)
+			expect(data.mainRole).toBe('MIDDLE')
+			expect(data.subRole).toBe('TOP')
+			expect(data.joinedAt).toBeDefined()
 		}
 	})
 
-	it('returns 404 for non-existent queue', async () => {
-		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
+	it('returns 404 when queue not found', async () => {
+		const db = drizzle(env.DB)
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+
+		const res = await client.v1.guilds[':guildId'].queues[':queueId'].players.$post(
 			{
-				param: { guildId: ctx.guildId, id: crypto.randomUUID() },
-				json: { discordId: ctx.discordId2 },
+				param: { guildId: ctx.guildId, queueId: 'nonexistent' },
+				json: {
+					discordId: ctx.discordId,
+					mainRole: 'MIDDLE',
+					subRole: 'TOP',
+				},
 			},
 			authHeaders,
 		)
 
-		expect(res.ok).toBe(false)
 		expect(res.status).toBe(404)
 
 		if (!res.ok) {
@@ -75,125 +80,56 @@ describe('createQueuePlayer', () => {
 		}
 	})
 
-	it('returns 400 when already joined', async () => {
-		await client.v1.guilds[':guildId'].queues[':id'].players.$post(
+	it('returns 409 when player already in queue', async () => {
+		const db = drizzle(env.DB)
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+		await db.insert(users).values({ discordId: ctx.discordId })
+
+		const [queue] = (await db
+			.insert(guildQueues)
+			.values({
+				guildId: ctx.guildId,
+				channelId: 'channel_123',
+				messageId: `message_${ctx.guildId}`,
+				creatorId: ctx.discordId,
+				type: 'ranked',
+				anonymous: false,
+				capacity: 10,
+				status: 'open',
+			})
+			.returning()) as [typeof guildQueues.$inferSelect]
+
+		// Add player first time
+		await client.v1.guilds[':guildId'].queues[':queueId'].players.$post(
 			{
-				param: { guildId: ctx.guildId, id: queueId },
-				json: { discordId: ctx.discordId2 },
+				param: { guildId: ctx.guildId, queueId: queue.id },
+				json: {
+					discordId: ctx.discordId,
+					mainRole: 'MIDDLE',
+					subRole: 'TOP',
+				},
 			},
 			authHeaders,
 		)
 
-		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
+		// Try to add same player again
+		const res = await client.v1.guilds[':guildId'].queues[':queueId'].players.$post(
 			{
-				param: { guildId: ctx.guildId, id: queueId },
-				json: { discordId: ctx.discordId2 },
+				param: { guildId: ctx.guildId, queueId: queue.id },
+				json: {
+					discordId: ctx.discordId,
+					mainRole: 'BOTTOM',
+					subRole: 'SUPPORT',
+				},
 			},
 			authHeaders,
 		)
 
-		expect(res.ok).toBe(false)
-		expect(res.status).toBe(400)
+		expect(res.status).toBe(409)
 
 		if (!res.ok) {
 			const data = await res.json()
-			expect(data.message).toBe('Already joined')
+			expect(data.message).toBe('Player already in queue')
 		}
-	})
-
-	it('returns 400 when queue is not open', async () => {
-		const db = drizzle(env.DB)
-		await db.update(guildQueues).set({ status: 'full' }).where(eq(guildQueues.id, queueId))
-
-		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
-			{
-				param: { guildId: ctx.guildId, id: queueId },
-				json: { discordId: ctx.discordId2 },
-			},
-			authHeaders,
-		)
-
-		expect(res.ok).toBe(false)
-		expect(res.status).toBe(400)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('Queue is not open')
-		}
-	})
-
-	it('returns 400 when queue is full', async () => {
-		const db = drizzle(env.DB)
-		const smallQueueId = ctx.generateQueueId()
-
-		await db.insert(guildQueues).values({
-			id: smallQueueId,
-			guildId: ctx.guildId,
-			channelId: ctx.channelId,
-			messageId: ctx.messageId,
-			creatorId: ctx.discordId,
-			type: 'normal',
-			anonymous: false,
-			status: 'open',
-			capacity: 1,
-		})
-
-		await db.insert(guildQueuePlayers).values({
-			queueId: smallQueueId,
-			discordId: ctx.discordId,
-		})
-
-		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
-			{
-				param: { guildId: ctx.guildId, id: smallQueueId },
-				json: { discordId: ctx.discordId2 },
-			},
-			authHeaders,
-		)
-
-		expect(res.ok).toBe(false)
-		expect(res.status).toBe(400)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('Queue is full')
-		}
-	})
-
-	it('sets queue status to full when capacity is reached', async () => {
-		const db = drizzle(env.DB)
-		const smallQueueId = ctx.generateQueueId()
-
-		await db.insert(guildQueues).values({
-			id: smallQueueId,
-			guildId: ctx.guildId,
-			channelId: ctx.channelId,
-			messageId: ctx.messageId,
-			creatorId: ctx.discordId,
-			type: 'normal',
-			anonymous: false,
-			status: 'open',
-			capacity: 1,
-		})
-
-		const res = await client.v1.guilds[':guildId'].queues[':id'].players.$post(
-			{
-				param: { guildId: ctx.guildId, id: smallQueueId },
-				json: { discordId: ctx.discordId2 },
-			},
-			authHeaders,
-		)
-
-		expect(res.ok).toBe(true)
-		expect(res.status).toBe(201)
-
-		if (res.ok) {
-			const data = await res.json()
-			expect(data.isFull).toBe(true)
-			expect(data.count).toBe(1)
-		}
-
-		const queue = await db.select().from(guildQueues).where(eq(guildQueues.id, smallQueueId)).get()
-		expect(queue?.status).toBe('full')
 	})
 })

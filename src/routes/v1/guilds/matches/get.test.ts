@@ -2,96 +2,44 @@ import { beforeEach, describe, expect, it } from 'bun:test'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
-import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { guildMatchVotes, guildPendingMatches } from '@/db/schema'
+import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
+import { guildMatches, guildMatchPlayers, guilds, users } from '@/db/schema'
 import { typedApp } from './get'
 
-describe('getMatch', () => {
+describe('GET /v1/guilds/:guildId/matches/:matchId', () => {
 	const client = testClient(typedApp, env)
 	let ctx: TestContext
-	let matchId: string
 
-	beforeEach(async () => {
+	beforeEach(() => {
 		ctx = createTestContext()
-		matchId = ctx.generatePendingMatchId()
+	})
+
+	it('gets a match with players and votes', async () => {
 		const db = drizzle(env.DB)
+		const player1 = `player1_${ctx.guildId}`
+		const player2 = `player2_${ctx.guildId}`
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+		await db.insert(users).values([{ discordId: player1 }, { discordId: player2 }])
 
-		await setupTestUsers(db, ctx)
+		const [match] = (await db
+			.insert(guildMatches)
+			.values({
+				guildId: ctx.guildId,
+				channelId: 'channel_123',
+				messageId: `message_${ctx.guildId}`,
+				status: 'voting',
+			})
+			.returning()) as [typeof guildMatches.$inferSelect]
 
-		const teamAssignments = {
-			[ctx.discordId]: { team: 'BLUE', role: 'TOP', rating: 1500 },
-			[ctx.discordId2]: { team: 'RED', role: 'TOP', rating: 1500 },
-		}
-
-		await db.insert(guildPendingMatches).values({
-			id: matchId,
-			guildId: ctx.guildId,
-			channelId: ctx.channelId,
-			messageId: ctx.messageId,
-			status: 'voting',
-			teamAssignments: JSON.stringify(teamAssignments),
-			blueVotes: 0,
-			redVotes: 0,
-			drawVotes: 0,
-		})
-	})
-
-	it('returns match details', async () => {
-		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$get(
-			{ param: { guildId: ctx.guildId, matchId } },
-			authHeaders,
-		)
-
-		expect(res.status).toBe(200)
-
-		if (res.ok) {
-			const data = await res.json()
-			expect(data.match.id).toBe(matchId)
-			expect(data.match.status).toBe('voting')
-			expect(data.totalParticipants).toBe(2)
-			expect(data.votesRequired).toBe(2)
-		}
-	})
-
-	it('returns 404 for non-existent match', async () => {
-		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$get(
-			{ param: { guildId: ctx.guildId, matchId: crypto.randomUUID() } },
-			authHeaders,
-		)
-
-		expect(res.status).toBe(404)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('Match not found')
-		}
-	})
-
-	it('returns 404 when match belongs to different guild', async () => {
-		const otherGuildId = `other-guild-${ctx.prefix}`
-
-		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$get(
-			{ param: { guildId: otherGuildId, matchId } },
-			authHeaders,
-		)
-
-		expect(res.status).toBe(404)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('Match not found')
-		}
-	})
-
-	it('returns match with votes', async () => {
-		const db = drizzle(env.DB)
-		await db.insert(guildMatchVotes).values([
-			{ pendingMatchId: matchId, discordId: ctx.discordId, vote: 'BLUE' },
-			{ pendingMatchId: matchId, discordId: ctx.discordId2, vote: 'RED' },
+		await db.insert(guildMatchPlayers).values([
+			{ matchId: match.id, discordId: player1, team: 'BLUE', role: 'TOP', ratingBefore: 1000 },
+			{ matchId: match.id, discordId: player2, team: 'RED', role: 'TOP', ratingBefore: 1000 },
 		])
 
 		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$get(
-			{ param: { guildId: ctx.guildId, matchId } },
+			{
+				param: { guildId: ctx.guildId, matchId: match.id },
+			},
 			authHeaders,
 		)
 
@@ -99,9 +47,45 @@ describe('getMatch', () => {
 
 		if (res.ok) {
 			const data = await res.json()
-			expect(data.votes).toHaveLength(2)
-			expect(data.votes).toContainEqual({ discordId: ctx.discordId, vote: 'BLUE' })
-			expect(data.votes).toContainEqual({ discordId: ctx.discordId2, vote: 'RED' })
+			expect(data.id).toBe(match.id)
+			expect(data.status).toBe('voting')
+			expect(data.players).toHaveLength(2)
+			expect(data.votes).toHaveLength(0)
+		}
+	})
+
+	it('returns 404 when guild not found', async () => {
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$get(
+			{
+				param: { guildId: ctx.guildId, matchId: 'any-match-id' },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Guild not found')
+		}
+	})
+
+	it('returns 404 when match not found', async () => {
+		const db = drizzle(env.DB)
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].$get(
+			{
+				param: { guildId: ctx.guildId, matchId: 'nonexistent' },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Match not found')
 		}
 	})
 })

@@ -1,43 +1,59 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { guildQueuePlayers, guildQueues } from '@/db/schema'
+import { createSelectSchema } from 'drizzle-zod'
+import { z } from 'zod'
+import { guildQueuePlayers, guildQueues, guilds } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
-import { QueuePathParamsSchema, QueuePlayerSelectSchema, QueueSelectSchema } from './schemas'
 
-const ResponseSchema = z
+const ParamSchema = z
 	.object({
-		queue: QueueSelectSchema,
-		players: z.array(QueuePlayerSelectSchema),
-		count: z.number(),
+		guildId: z.string().openapi({ description: 'Guild ID' }),
+		queueId: z.string().openapi({ description: 'Queue ID' }),
+	})
+	.openapi('GetQueueParam')
+
+const PlayerSchema = createSelectSchema(guildQueuePlayers).pick({
+	discordId: true,
+	mainRole: true,
+	subRole: true,
+	joinedAt: true,
+})
+
+const ResponseSchema = createSelectSchema(guildQueues)
+	.pick({
+		id: true,
+		channelId: true,
+		messageId: true,
+		creatorId: true,
+		type: true,
+		anonymous: true,
+		capacity: true,
+		status: true,
+		createdAt: true,
+	})
+	.extend({
+		players: z.array(PlayerSchema),
 	})
 	.openapi('GetQueueResponse')
 
 const route = createRoute({
 	method: 'get',
-	path: '/v1/guilds/{guildId}/queues/{id}',
-	tags: ['Guild Queues'],
+	path: '/v1/guilds/{guildId}/queues/{queueId}',
+	tags: ['Queues'],
 	summary: 'Get queue',
-	description: 'Get queue details with participants',
+	description: 'Get queue by ID',
 	request: {
-		params: QueuePathParamsSchema,
+		params: ParamSchema,
 	},
 	responses: {
 		200: {
-			description: 'Queue retrieved successfully',
-			content: {
-				'application/json': {
-					schema: ResponseSchema,
-				},
-			},
+			description: 'Queue found',
+			content: { 'application/json': { schema: ResponseSchema } },
 		},
 		404: {
-			description: 'Queue not found',
-			content: {
-				'application/json': {
-					schema: ErrorResponseSchema,
-				},
-			},
+			description: 'Guild or queue not found',
+			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 	},
 })
@@ -45,29 +61,49 @@ const route = createRoute({
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
-	const { guildId, id } = c.req.valid('param')
+	const { guildId, queueId } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
+	// Check if guild exists
+	const guild = await db.select().from(guilds).where(eq(guilds.guildId, guildId)).get()
+
+	if (!guild) {
+		return c.json({ message: 'Guild not found' }, 404)
+	}
+
+	// Get queue
 	const queue = await db
-		.select()
+		.select({
+			id: guildQueues.id,
+			channelId: guildQueues.channelId,
+			messageId: guildQueues.messageId,
+			creatorId: guildQueues.creatorId,
+			type: guildQueues.type,
+			anonymous: guildQueues.anonymous,
+			capacity: guildQueues.capacity,
+			status: guildQueues.status,
+			createdAt: guildQueues.createdAt,
+		})
 		.from(guildQueues)
-		.where(and(eq(guildQueues.id, id), eq(guildQueues.guildId, guildId)))
+		.where(and(eq(guildQueues.id, queueId), eq(guildQueues.guildId, guildId)))
 		.get()
 
 	if (!queue) {
 		return c.json({ message: 'Queue not found' }, 404)
 	}
 
-	const players = await db.select().from(guildQueuePlayers).where(eq(guildQueuePlayers.queueId, id))
+	// Get players
+	const players = await db
+		.select({
+			discordId: guildQueuePlayers.discordId,
+			mainRole: guildQueuePlayers.mainRole,
+			subRole: guildQueuePlayers.subRole,
+			joinedAt: guildQueuePlayers.joinedAt,
+		})
+		.from(guildQueuePlayers)
+		.where(eq(guildQueuePlayers.queueId, queueId))
 
-	return c.json(
-		{
-			queue,
-			players,
-			count: players.length,
-		},
-		200,
-	)
+	return c.json({ ...queue, players }, 200)
 })
 
 export default app

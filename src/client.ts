@@ -3,23 +3,30 @@
 
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { hc } from 'hono/client'
-import { typedApp as app0 } from './routes/v1/guilds/matches/confirm'
-import { typedApp as app1 } from './routes/v1/guilds/matches/create'
-import { typedApp as app2 } from './routes/v1/guilds/matches/get'
-import { typedApp as app3 } from './routes/v1/guilds/matches/vote'
-import { typedApp as app4 } from './routes/v1/guilds/queues/create'
-import { typedApp as app5 } from './routes/v1/guilds/queues/get'
-import { typedApp as app6 } from './routes/v1/guilds/queues/players/create'
-import { typedApp as app7 } from './routes/v1/guilds/queues/players/remove'
-import { typedApp as app8 } from './routes/v1/guilds/queues/remove'
-import { typedApp as app9 } from './routes/v1/guilds/rankings/get'
-import { typedApp as app10 } from './routes/v1/guilds/ratings/get'
-import { typedApp as app11 } from './routes/v1/guilds/ratings/upsert'
-import { typedApp as app12 } from './routes/v1/guilds/stats/reset'
-import { typedApp as app13 } from './routes/v1/guilds/users/get'
-import { typedApp as app14 } from './routes/v1/guilds/users/reset-stats'
-import { typedApp as app15 } from './routes/v1/ranks/get'
-import { typedApp as app16 } from './routes/v1/ranks/upsert'
+import { typedApp as app0 } from './routes/v1/guilds/create'
+import { typedApp as app1 } from './routes/v1/guilds/get'
+import { typedApp as app2 } from './routes/v1/guilds/matches/confirm'
+import { typedApp as app3 } from './routes/v1/guilds/matches/create'
+import { typedApp as app4 } from './routes/v1/guilds/matches/get'
+import { typedApp as app5 } from './routes/v1/guilds/matches/votes/create'
+import { typedApp as app6 } from './routes/v1/guilds/queues/create'
+import { typedApp as app7 } from './routes/v1/guilds/queues/delete'
+import { typedApp as app8 } from './routes/v1/guilds/queues/get'
+import { typedApp as app9 } from './routes/v1/guilds/queues/players/create'
+import { typedApp as app10 } from './routes/v1/guilds/queues/players/delete'
+import { typedApp as app11 } from './routes/v1/guilds/rankings/get'
+import { typedApp as app12 } from './routes/v1/guilds/settings/get'
+import { typedApp as app13 } from './routes/v1/guilds/settings/update'
+import { typedApp as app14 } from './routes/v1/guilds/update'
+import { typedApp as app15 } from './routes/v1/guilds/users/history/get'
+import { typedApp as app16 } from './routes/v1/guilds/users/stats/create'
+import { typedApp as app17 } from './routes/v1/guilds/users/stats/delete'
+import { typedApp as app18 } from './routes/v1/guilds/users/stats/get'
+import { typedApp as app19 } from './routes/v1/guilds/users/stats/image'
+import { typedApp as app20 } from './routes/v1/guilds/users/stats/update'
+import { typedApp as app21 } from './routes/v1/users/create'
+import { typedApp as app22 } from './routes/v1/users/get'
+import { typedApp as app23 } from './routes/v1/users/rank/upsert'
 
 const app = new OpenAPIHono()
 	.route('/', app0)
@@ -39,6 +46,13 @@ const app = new OpenAPIHono()
 	.route('/', app14)
 	.route('/', app15)
 	.route('/', app16)
+	.route('/', app17)
+	.route('/', app18)
+	.route('/', app19)
+	.route('/', app20)
+	.route('/', app21)
+	.route('/', app22)
+	.route('/', app23)
 
 export type AppType = typeof app
 

@@ -1,42 +1,55 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
-import { guildMatches, guildMatchPlayers, guildPendingMatches, guildUserStats } from '@/db/schema'
-import {
-	calculateNewRating,
-	calculateTeamAverageRating,
-	formatRankDisplay,
-	getRankDisplay,
-	isInPlacement,
-	PLACEMENT_GAMES,
-} from '@/utils/elo'
+import { z } from 'zod'
+import type { MatchResult, PlayerResult } from '@/constants'
+import { K_FACTOR_NORMAL, K_FACTOR_PLACEMENT, PLACEMENT_GAMES } from '@/constants/rating'
+import { guildMatches, guildMatchPlayers, guildSettings, guildUserMatchHistory, guildUserStats } from '@/db/schema'
+import { ensureGuild } from '@/utils/ensure'
 import { ErrorResponseSchema } from '@/utils/schemas'
-import { ConfirmMatchResponseSchema, calculateMajority, MatchIdParamSchema, parseTeamAssignments } from '../schemas'
+
+const ParamSchema = z
+	.object({
+		guildId: z.string().openapi({ description: 'Guild ID' }),
+		matchId: z.string().openapi({ description: 'Match ID' }),
+	})
+	.openapi('ConfirmMatchParam')
+
+const RatingChangeSchema = z.object({
+	discordId: z.string(),
+	ratingBefore: z.number(),
+	ratingAfter: z.number(),
+	ratingChange: z.number(),
+})
+
+const ResponseSchema = z
+	.object({
+		confirmed: z.boolean(),
+		winningTeam: z.enum(['BLUE', 'RED', 'DRAW']).nullable(),
+		ratingChanges: z.array(RatingChangeSchema),
+	})
+	.openapi('ConfirmMatchResponse')
 
 const route = createRoute({
 	method: 'post',
 	path: '/v1/guilds/{guildId}/matches/{matchId}/confirm',
-	tags: ['Guild Matches'],
+	tags: ['Matches'],
 	summary: 'Confirm match',
-	description: 'Confirm match based on voting results',
+	description: 'Confirm match result and calculate rating changes',
 	request: {
-		params: MatchIdParamSchema,
+		params: ParamSchema,
 	},
 	responses: {
 		200: {
 			description: 'Match confirmed',
-			content: { 'application/json': { schema: ConfirmMatchResponseSchema } },
-		},
-		400: {
-			description: 'Match is not in voting state or not enough votes',
-			content: { 'application/json': { schema: ErrorResponseSchema } },
+			content: { 'application/json': { schema: ResponseSchema } },
 		},
 		404: {
 			description: 'Match not found',
 			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
-		500: {
-			description: 'Internal server error',
+		400: {
+			description: 'Match already confirmed or no majority vote',
 			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 	},
@@ -45,168 +58,172 @@ const route = createRoute({
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
-	const { matchId } = c.req.valid('param')
+	const { guildId, matchId } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
-	const match = await db.select().from(guildPendingMatches).where(eq(guildPendingMatches.id, matchId)).get()
+	// Ensure guild exists
+	await ensureGuild(db, guildId)
+
+	// Get match
+	const match = await db
+		.select()
+		.from(guildMatches)
+		.where(and(eq(guildMatches.id, matchId), eq(guildMatches.guildId, guildId)))
+		.get()
 
 	if (!match) {
 		return c.json({ message: 'Match not found' }, 404)
 	}
 
-	if (match.status !== 'voting') {
-		return c.json({ message: 'Match is not in voting state' }, 400)
+	if (match.status === 'confirmed') {
+		return c.json({ message: 'Match already confirmed' }, 400)
 	}
 
-	const teamAssignments = parseTeamAssignments(match.teamAssignments)
-	const totalParticipants = Object.keys(teamAssignments).length
-	const votesRequired = calculateMajority(totalParticipants)
-	const totalVotes = match.blueVotes + match.redVotes + match.drawVotes
+	// Determine winner
+	const { blueVotes, redVotes, drawVotes } = match
+	let winningTeam: MatchResult | null = null
 
-	// Determine winning team with 2-phase logic
-	const determineWinningTeam = (): 'BLUE' | 'RED' | 'DRAW' | null => {
-		// Phase 1: Early confirmation with majority
-		if (match.blueVotes >= votesRequired) return 'BLUE'
-		if (match.redVotes >= votesRequired) return 'RED'
-		if (match.drawVotes >= votesRequired) return 'DRAW'
+	if (blueVotes > redVotes && blueVotes > drawVotes) {
+		winningTeam = 'BLUE'
+	} else if (redVotes > blueVotes && redVotes > drawVotes) {
+		winningTeam = 'RED'
+	} else if (drawVotes > blueVotes && drawVotes > redVotes) {
+		winningTeam = 'DRAW'
+	} else {
+		return c.json({ message: 'No majority vote' }, 400)
+	}
 
-		// Phase 2: After all votes, determine by plurality (ties = draw)
-		if (totalVotes >= totalParticipants) {
-			const maxVotes = Math.max(match.blueVotes, match.redVotes, match.drawVotes)
-			const winners: Array<'BLUE' | 'RED' | 'DRAW'> = []
-			if (match.blueVotes === maxVotes) winners.push('BLUE')
-			if (match.redVotes === maxVotes) winners.push('RED')
-			if (match.drawVotes === maxVotes) winners.push('DRAW')
+	// Get guild settings for kFactor
+	const settings = await db.select().from(guildSettings).where(eq(guildSettings.guildId, guildId)).get()
+	const kFactorNormal = settings?.kFactor ?? K_FACTOR_NORMAL
+	const kFactorPlacement = settings?.kFactorPlacement ?? K_FACTOR_PLACEMENT
+	const placementGamesRequired = settings?.placementGamesRequired ?? PLACEMENT_GAMES
 
-			// Single winner or tie = draw
-			return winners.length === 1 && winners[0] ? winners[0] : 'DRAW'
+	// Get players and their current stats
+	const players = await db.select().from(guildMatchPlayers).where(eq(guildMatchPlayers.matchId, matchId))
+
+	const playerStats = await db.select().from(guildUserStats).where(eq(guildUserStats.guildId, guildId))
+
+	const statsMap = new Map(playerStats.map((s) => [s.discordId, s]))
+
+	// Calculate rating changes
+	const ratingChanges: { discordId: string; ratingBefore: number; ratingAfter: number; ratingChange: number }[] = []
+	const statsUpdates: {
+		discordId: string
+		rating: number
+		wins: number
+		losses: number
+		placementGames: number
+		currentStreak: number
+		peakRating: number
+		lastPlayedAt: Date
+	}[] = []
+	const historyInserts: (typeof guildUserMatchHistory.$inferInsert)[] = []
+
+	const now = new Date()
+
+	for (const player of players) {
+		const currentStats = statsMap.get(player.discordId)
+		if (!currentStats) continue
+
+		// Use higher K factor during placement games
+		const isPlacement = currentStats.placementGames < placementGamesRequired
+		const kFactor = isPlacement ? kFactorPlacement : kFactorNormal
+
+		let result: PlayerResult
+		let ratingChange: number
+
+		if (winningTeam === 'DRAW') {
+			result = 'DRAW'
+			ratingChange = 0
+		} else if (player.team === winningTeam) {
+			result = 'WIN'
+			ratingChange = Math.round(kFactor / 2)
+		} else {
+			result = 'LOSE'
+			ratingChange = -Math.round(kFactor / 2)
 		}
 
-		return null
-	}
+		const ratingAfter = player.ratingBefore + ratingChange
+		const newWins = result === 'WIN' ? currentStats.wins + 1 : currentStats.wins
+		const newLosses = result === 'LOSE' ? currentStats.losses + 1 : currentStats.losses
+		const newPlacementGames = isPlacement ? currentStats.placementGames + 1 : currentStats.placementGames
+		const newStreak =
+			result === 'WIN'
+				? currentStats.currentStreak > 0
+					? currentStats.currentStreak + 1
+					: 1
+				: result === 'LOSE'
+					? currentStats.currentStreak < 0
+						? currentStats.currentStreak - 1
+						: -1
+					: 0
+		const newPeakRating = Math.max(currentStats.peakRating, ratingAfter)
 
-	const winningTeam = determineWinningTeam()
+		// Collect updates for batch
+		statsUpdates.push({
+			discordId: player.discordId,
+			rating: ratingAfter,
+			wins: newWins,
+			losses: newLosses,
+			placementGames: newPlacementGames,
+			currentStreak: newStreak,
+			peakRating: newPeakRating,
+			lastPlayedAt: now,
+		})
 
-	if (!winningTeam) {
-		return c.json({ message: 'Not enough votes' }, 400)
-	}
-
-	const isDraw = winningTeam === 'DRAW'
-	const participants = Object.entries(teamAssignments)
-
-	const blueRatings = participants.filter(([, a]) => a.team === 'BLUE').map(([, a]) => a.rating)
-	const redRatings = participants.filter(([, a]) => a.team === 'RED').map(([, a]) => a.rating)
-	const blueAverage = calculateTeamAverageRating(blueRatings)
-	const redAverage = calculateTeamAverageRating(redRatings)
-
-	const participantDiscordIds = participants.map(([discordId]) => discordId)
-	const currentRatings = await db
-		.select()
-		.from(guildUserStats)
-		.where(and(eq(guildUserStats.guildId, match.guildId), inArray(guildUserStats.discordId, participantDiscordIds)))
-
-	const ratingsMap = new Map(currentRatings.map((r) => [r.discordId, r]))
-
-	const ratingChanges: Array<{
-		discordId: string
-		team: 'BLUE' | 'RED'
-		role: 'TOP' | 'JUNGLE' | 'MIDDLE' | 'BOTTOM' | 'SUPPORT'
-		ratingBefore: number
-		ratingAfter: number
-		change: number
-	}> = []
-
-	for (const [discordId, assignment] of participants) {
-		const isBlue = assignment.team === 'BLUE'
-		const won = (isBlue && winningTeam === 'BLUE') || (!isBlue && winningTeam === 'RED')
-		const opponentAverage = isBlue ? redAverage : blueAverage
-
-		const currentRating = ratingsMap.get(discordId)
-
-		const placementGames = currentRating?.placementGames ?? 0
-		const isPlacement = isInPlacement(placementGames)
-
-		// Draw: no rating change
-		const newRating = isDraw
-			? assignment.rating
-			: calculateNewRating(assignment.rating, opponentAverage, won, isPlacement)
+		historyInserts.push({
+			guildId,
+			discordId: player.discordId,
+			matchId,
+			result,
+			ratingChange,
+			ratingAfter,
+		})
 
 		ratingChanges.push({
-			discordId,
-			team: assignment.team,
-			role: assignment.role,
-			ratingBefore: assignment.rating,
-			ratingAfter: newRating,
-			change: newRating - assignment.rating,
+			discordId: player.discordId,
+			ratingBefore: player.ratingBefore,
+			ratingAfter,
+			ratingChange,
 		})
 	}
 
-	const finalMatchId = crypto.randomUUID()
-
-	// Build stats updates
-	const statsUpdates = ratingChanges.map((rc) => {
-		const won = !isDraw && rc.team === winningTeam
-		const lost = !isDraw && rc.team !== winningTeam
-		const existing = ratingsMap.get(rc.discordId)
-
-		if (existing) {
-			return db
+	// Execute all updates in a batch (atomic operation in D1)
+	await db.batch([
+		// Update match status
+		db
+			.update(guildMatches)
+			.set({
+				status: 'confirmed',
+				winningTeam,
+				confirmedAt: now,
+			})
+			.where(eq(guildMatches.id, matchId)),
+		// Update all player stats
+		...statsUpdates.map((update) =>
+			db
 				.update(guildUserStats)
 				.set({
-					rating: rc.ratingAfter,
-					wins: won ? existing.wins + 1 : existing.wins,
-					losses: lost ? existing.losses + 1 : existing.losses,
-					placementGames: Math.min(existing.placementGames + 1, PLACEMENT_GAMES),
+					rating: update.rating,
+					wins: update.wins,
+					losses: update.losses,
+					placementGames: update.placementGames,
+					currentStreak: update.currentStreak,
+					peakRating: update.peakRating,
+					lastPlayedAt: update.lastPlayedAt,
 				})
-				.where(and(eq(guildUserStats.guildId, match.guildId), eq(guildUserStats.discordId, rc.discordId)))
-		}
-		return db.insert(guildUserStats).values({
-			guildId: match.guildId,
-			discordId: rc.discordId,
-			rating: rc.ratingAfter,
-			wins: won ? 1 : 0,
-			losses: lost ? 1 : 0,
-			placementGames: 1,
-		})
-	})
-
-	try {
-		await db.batch([
-			db.insert(guildMatches).values({
-				id: finalMatchId,
-				guildId: match.guildId,
-				winningTeam,
-			}),
-			db.insert(guildMatchPlayers).values(
-				ratingChanges.map((rc) => ({
-					matchId: finalMatchId,
-					discordId: rc.discordId,
-					team: rc.team,
-					role: rc.role,
-					ratingBefore: rc.ratingBefore,
-					ratingAfter: rc.ratingAfter,
-				})),
-			),
-			...statsUpdates,
-			db.update(guildPendingMatches).set({ status: 'confirmed' }).where(eq(guildPendingMatches.id, matchId)),
-		])
-	} catch (error) {
-		console.error('Batch execution failed:', error)
-		return c.json({ message: 'Failed to confirm match' }, 500)
-	}
+				.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, update.discordId as string))),
+		),
+		// Insert all history records
+		...(historyInserts.length > 0 ? [db.insert(guildUserMatchHistory).values(historyInserts)] : []),
+	])
 
 	return c.json(
 		{
-			matchId: finalMatchId,
+			confirmed: true,
 			winningTeam,
-			ratingChanges: ratingChanges.map((rc) => ({
-				discordId: rc.discordId,
-				team: rc.team,
-				ratingBefore: rc.ratingBefore,
-				ratingAfter: rc.ratingAfter,
-				change: rc.change,
-				rank: formatRankDisplay(getRankDisplay(rc.ratingAfter)),
-			})),
+			ratingChanges,
 		},
 		200,
 	)

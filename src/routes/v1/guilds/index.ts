@@ -1,18 +1,22 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
+import create from './create'
+import get from './get'
 import matches from './matches'
 import queues from './queues'
 import rankings from './rankings'
-import ratings from './ratings'
-import stats from './stats'
+import settings from './settings'
+import update from './update'
 import users from './users'
 
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
-app.route('/', ratings)
-app.route('/', rankings)
-app.route('/', matches)
+app.route('/', create)
+app.route('/', get)
+app.route('/', update)
+app.route('/', settings)
 app.route('/', users)
+app.route('/', rankings)
 app.route('/', queues)
-app.route('/', stats)
+app.route('/', matches)
 
 export default app

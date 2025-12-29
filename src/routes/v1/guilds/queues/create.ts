@@ -1,49 +1,43 @@
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
-import { guildQueues, guilds, users } from '@/db/schema'
-import { GuildParamSchema } from '../schemas'
-import { QueueInsertSchema, QueueSelectSchema } from './schemas'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
+import { z } from 'zod'
+import { guildQueues } from '@/db/schema'
+import { ensureGuild } from '@/utils/ensure'
+import { ErrorResponseSchema } from '@/utils/schemas'
 
-const ParamsSchema = GuildParamSchema.openapi('CreateQueueParams')
-
-const BodySchema = QueueInsertSchema.omit({
-	id: true,
-	guildId: true,
-	status: true,
-	createdAt: true,
-	updatedAt: true,
-}).openapi('CreateQueueBody')
-
-const ResponseSchema = z
+const ParamSchema = z
 	.object({
-		queue: QueueSelectSchema,
+		guildId: z.string().openapi({ description: 'Guild ID' }),
 	})
+	.openapi('CreateQueueParam')
+
+const BodySchema = createInsertSchema(guildQueues)
+	.pick({ channelId: true, messageId: true, creatorId: true, type: true, anonymous: true, capacity: true })
+	.openapi('CreateQueueBody')
+
+const ResponseSchema = createSelectSchema(guildQueues)
+	.pick({ id: true, status: true, createdAt: true })
 	.openapi('CreateQueueResponse')
 
 const route = createRoute({
 	method: 'post',
 	path: '/v1/guilds/{guildId}/queues',
-	tags: ['Guild Queues'],
+	tags: ['Queues'],
 	summary: 'Create queue',
 	description: 'Create a new queue',
 	request: {
-		params: ParamsSchema,
-		body: {
-			content: {
-				'application/json': {
-					schema: BodySchema,
-				},
-			},
-		},
+		params: ParamSchema,
+		body: { content: { 'application/json': { schema: BodySchema } } },
 	},
 	responses: {
 		201: {
-			description: 'Queue created successfully',
-			content: {
-				'application/json': {
-					schema: ResponseSchema,
-				},
-			},
+			description: 'Queue created',
+			content: { 'application/json': { schema: ResponseSchema } },
+		},
+		409: {
+			description: 'Queue with this messageId already exists',
+			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 	},
 })
@@ -52,29 +46,32 @@ const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
 	const { guildId } = c.req.valid('param')
-	const data = c.req.valid('json')
+	const body = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	await db.batch([
-		db.insert(users).values({ discordId: data.creatorId }).onConflictDoNothing(),
-		db.insert(guilds).values({ guildId }).onConflictDoNothing(),
-	])
+	// Ensure guild exists
+	await ensureGuild(db, guildId)
 
-	const [queue] = (await db
+	// Create queue
+	const [queue] = await db
 		.insert(guildQueues)
 		.values({
 			guildId,
-			channelId: data.channelId,
-			messageId: data.messageId,
-			creatorId: data.creatorId,
-			type: data.type,
-			anonymous: data.anonymous,
-			capacity: data.capacity,
+			...body,
 			status: 'open',
 		})
-		.returning()) as [typeof guildQueues.$inferSelect]
+		.onConflictDoNothing()
+		.returning({
+			id: guildQueues.id,
+			status: guildQueues.status,
+			createdAt: guildQueues.createdAt,
+		})
 
-	return c.json({ queue }, 201)
+	if (!queue) {
+		return c.json({ message: 'Queue with this messageId already exists' }, 409)
+	}
+
+	return c.json(queue, 201)
 })
 
 export default app

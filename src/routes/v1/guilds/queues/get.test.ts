@@ -2,58 +2,91 @@ import { beforeEach, describe, expect, it } from 'bun:test'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { env } from '@/__tests__/setup'
-import { authHeaders, createTestContext, setupTestUsers, type TestContext } from '@/__tests__/test-utils'
-import { guildQueues } from '@/db/schema'
+import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
+import { guildQueuePlayers, guildQueues, guilds, users } from '@/db/schema'
 import { typedApp } from './get'
 
-describe('getQueue', () => {
+describe('GET /v1/guilds/:guildId/queues/:queueId', () => {
 	const client = testClient(typedApp, env)
 	let ctx: TestContext
-	let queueId: string
 
-	beforeEach(async () => {
+	beforeEach(() => {
 		ctx = createTestContext()
-		queueId = ctx.generateQueueId()
-		const db = drizzle(env.DB)
-		await setupTestUsers(db, ctx)
-
-		await db.insert(guildQueues).values({
-			id: queueId,
-			guildId: ctx.guildId,
-			channelId: ctx.channelId,
-			messageId: ctx.messageId,
-			creatorId: ctx.discordId,
-			type: 'normal',
-			anonymous: false,
-			capacity: 10,
-			status: 'open',
-		})
 	})
 
-	it('returns queue with participants', async () => {
-		const res = await client.v1.guilds[':guildId'].queues[':id'].$get(
-			{ param: { guildId: ctx.guildId, id: queueId } },
+	it('returns queue with players', async () => {
+		const db = drizzle(env.DB)
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+		await db.insert(users).values({ discordId: ctx.discordId })
+
+		const [queue] = (await db
+			.insert(guildQueues)
+			.values({
+				guildId: ctx.guildId,
+				channelId: 'channel_123',
+				messageId: `message_${ctx.guildId}`,
+				creatorId: ctx.discordId,
+				type: 'ranked',
+				anonymous: false,
+				capacity: 10,
+				status: 'open',
+			})
+			.returning()) as [typeof guildQueues.$inferSelect]
+
+		await db.insert(guildQueuePlayers).values({
+			queueId: queue.id,
+			discordId: ctx.discordId,
+			mainRole: 'MIDDLE',
+			subRole: 'TOP',
+		})
+
+		const res = await client.v1.guilds[':guildId'].queues[':queueId'].$get(
+			{
+				param: { guildId: ctx.guildId, queueId: queue.id },
+			},
 			authHeaders,
 		)
 
-		expect(res.ok).toBe(true)
 		expect(res.status).toBe(200)
 
 		if (res.ok) {
 			const data = await res.json()
-			expect(data.queue.id).toBe(queueId)
-			expect(data.players).toEqual([])
-			expect(data.count).toBe(0)
+			expect(data.id).toBe(queue.id)
+			expect(data.type).toBe('ranked')
+			expect(data.status).toBe('open')
+			expect(data.players).toHaveLength(1)
+			expect(data.players[0]?.discordId).toBe(ctx.discordId)
+			expect(data.players[0]?.mainRole).toBe('MIDDLE')
 		}
 	})
 
-	it('returns 404 for non-existent queue', async () => {
-		const res = await client.v1.guilds[':guildId'].queues[':id'].$get(
-			{ param: { guildId: ctx.guildId, id: crypto.randomUUID() } },
+	it('returns 404 when guild not found', async () => {
+		const res = await client.v1.guilds[':guildId'].queues[':queueId'].$get(
+			{
+				param: { guildId: ctx.guildId, queueId: 'any-queue-id' },
+			},
 			authHeaders,
 		)
 
-		expect(res.ok).toBe(false)
+		expect(res.status).toBe(404)
+
+		if (!res.ok) {
+			const data = await res.json()
+			expect(data.message).toBe('Guild not found')
+		}
+	})
+
+	it('returns 404 when queue not found', async () => {
+		const db = drizzle(env.DB)
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+
+		const res = await client.v1.guilds[':guildId'].queues[':queueId'].$get(
+			{
+				param: { guildId: ctx.guildId, queueId: 'nonexistent' },
+			},
+			authHeaders,
+		)
+
 		expect(res.status).toBe(404)
 
 		if (!res.ok) {

@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
-import { guildQueuePlayers, guildQueues, guilds } from '@/db/schema'
+import { guildQueuePlayers, guildQueues, guilds, users } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
@@ -70,6 +70,13 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	if (!queue) {
 		return c.json({ message: 'Queue not found' }, 404)
+	}
+
+	// Check if user exists
+	const user = await db.select().from(users).where(eq(users.discordId, body.discordId)).get()
+
+	if (!user) {
+		return c.json({ message: 'User not found' }, 404)
 	}
 
 	// Add player

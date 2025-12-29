@@ -64,13 +64,13 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/confirm', () => {
 			expect(data.winningTeam).toBe('BLUE')
 			expect(data.ratingChanges).toHaveLength(2)
 
-			// Check player1 (winner) rating change
+			// Check player1 (winner) rating change - placement games use K_FACTOR_PLACEMENT (64)
 			const player1Change = data.ratingChanges.find((r) => r.discordId === player1)
-			expect(player1Change?.ratingChange).toBe(16) // K_FACTOR / 2
+			expect(player1Change?.ratingChange).toBe(32) // K_FACTOR_PLACEMENT / 2
 
 			// Check player2 (loser) rating change
 			const player2Change = data.ratingChanges.find((r) => r.discordId === player2)
-			expect(player2Change?.ratingChange).toBe(-16)
+			expect(player2Change?.ratingChange).toBe(-32)
 		}
 
 		// Verify stats were updated
@@ -80,7 +80,8 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/confirm', () => {
 			.where(and(eq(guildUserStats.guildId, ctx.guildId), eq(guildUserStats.discordId, player1)))
 			.get()
 		expect(player1Stats?.wins).toBe(1)
-		expect(player1Stats?.rating).toBe(1016)
+		expect(player1Stats?.rating).toBe(1032)
+		expect(player1Stats?.placementGames).toBe(1)
 
 		const player2Stats = await db
 			.select()
@@ -88,7 +89,8 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/confirm', () => {
 			.where(and(eq(guildUserStats.guildId, ctx.guildId), eq(guildUserStats.discordId, player2)))
 			.get()
 		expect(player2Stats?.losses).toBe(1)
-		expect(player2Stats?.rating).toBe(984)
+		expect(player2Stats?.rating).toBe(968)
+		expect(player2Stats?.placementGames).toBe(1)
 	})
 
 	it('confirms a match with draw', async () => {

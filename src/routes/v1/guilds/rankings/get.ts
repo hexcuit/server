@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
-import { desc, eq } from 'drizzle-orm'
+import { count, desc, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createSelectSchema } from 'drizzle-zod'
 import { guilds, guildUserStats } from '@/db/schema'
@@ -74,12 +74,12 @@ export const typedApp = app.openapi(route, async (c) => {
 	}
 
 	// Get total count
-	const allStats = await db
-		.select({ discordId: guildUserStats.discordId })
+	const totalResult = await db
+		.select({ total: count() })
 		.from(guildUserStats)
 		.where(eq(guildUserStats.guildId, guildId))
 
-	const total = allStats.length
+	const total = totalResult[0]?.total ?? 0
 
 	// Get rankings
 	const stats = await db

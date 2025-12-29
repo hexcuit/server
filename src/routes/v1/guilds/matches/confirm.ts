@@ -3,7 +3,15 @@ import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { z } from 'zod'
 import type { MatchResult, PlayerResult } from '@/constants'
-import { guildMatches, guildMatchPlayers, guilds, guildUserMatchHistory, guildUserStats } from '@/db/schema'
+import { K_FACTOR_NORMAL, K_FACTOR_PLACEMENT, PLACEMENT_GAMES } from '@/constants/rating'
+import {
+	guildMatches,
+	guildMatchPlayers,
+	guildSettings,
+	guilds,
+	guildUserMatchHistory,
+	guildUserStats,
+} from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
@@ -95,14 +103,42 @@ export const typedApp = app.openapi(route, async (c) => {
 		return c.json({ message: 'No majority vote' }, 400)
 	}
 
-	// Get players
+	// Get guild settings for kFactor
+	const settings = await db.select().from(guildSettings).where(eq(guildSettings.guildId, guildId)).get()
+	const kFactorNormal = settings?.kFactor ?? K_FACTOR_NORMAL
+	const placementGamesRequired = settings?.placementGamesRequired ?? PLACEMENT_GAMES
+
+	// Get players and their current stats
 	const players = await db.select().from(guildMatchPlayers).where(eq(guildMatchPlayers.matchId, matchId))
 
-	// Calculate rating changes (simple ELO-like system)
-	const K_FACTOR = 32
+	const playerStats = await db.select().from(guildUserStats).where(eq(guildUserStats.guildId, guildId))
+
+	const statsMap = new Map(playerStats.map((s) => [s.discordId, s]))
+
+	// Calculate rating changes
 	const ratingChanges: { discordId: string; ratingBefore: number; ratingAfter: number; ratingChange: number }[] = []
+	const statsUpdates: {
+		discordId: string
+		rating: number
+		wins: number
+		losses: number
+		placementGames: number
+		currentStreak: number
+		peakRating: number
+		lastPlayedAt: Date
+	}[] = []
+	const historyInserts: (typeof guildUserMatchHistory.$inferInsert)[] = []
+
+	const now = new Date()
 
 	for (const player of players) {
+		const currentStats = statsMap.get(player.discordId)
+		if (!currentStats) continue
+
+		// Use higher K factor during placement games
+		const isPlacement = currentStats.placementGames < placementGamesRequired
+		const kFactor = isPlacement ? K_FACTOR_PLACEMENT : kFactorNormal
+
 		let result: PlayerResult
 		let ratingChange: number
 
@@ -111,51 +147,41 @@ export const typedApp = app.openapi(route, async (c) => {
 			ratingChange = 0
 		} else if (player.team === winningTeam) {
 			result = 'WIN'
-			ratingChange = Math.round(K_FACTOR / 2)
+			ratingChange = Math.round(kFactor / 2)
 		} else {
 			result = 'LOSE'
-			ratingChange = -Math.round(K_FACTOR / 2)
+			ratingChange = -Math.round(kFactor / 2)
 		}
 
 		const ratingAfter = player.ratingBefore + ratingChange
+		const newWins = result === 'WIN' ? currentStats.wins + 1 : currentStats.wins
+		const newLosses = result === 'LOSE' ? currentStats.losses + 1 : currentStats.losses
+		const newPlacementGames = isPlacement ? currentStats.placementGames + 1 : currentStats.placementGames
+		const newStreak =
+			result === 'WIN'
+				? currentStats.currentStreak > 0
+					? currentStats.currentStreak + 1
+					: 1
+				: result === 'LOSE'
+					? currentStats.currentStreak < 0
+						? currentStats.currentStreak - 1
+						: -1
+					: 0
+		const newPeakRating = Math.max(currentStats.peakRating, ratingAfter)
 
-		// Update user stats
-		const currentStats = await db
-			.select()
-			.from(guildUserStats)
-			.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, player.discordId)))
-			.get()
+		// Collect updates for batch
+		statsUpdates.push({
+			discordId: player.discordId,
+			rating: ratingAfter,
+			wins: newWins,
+			losses: newLosses,
+			placementGames: newPlacementGames,
+			currentStreak: newStreak,
+			peakRating: newPeakRating,
+			lastPlayedAt: now,
+		})
 
-		if (currentStats) {
-			const newWins = result === 'WIN' ? currentStats.wins + 1 : currentStats.wins
-			const newLosses = result === 'LOSE' ? currentStats.losses + 1 : currentStats.losses
-			const newStreak =
-				result === 'WIN'
-					? currentStats.currentStreak > 0
-						? currentStats.currentStreak + 1
-						: 1
-					: result === 'LOSE'
-						? currentStats.currentStreak < 0
-							? currentStats.currentStreak - 1
-							: -1
-						: 0
-			const newPeakRating = Math.max(currentStats.peakRating, ratingAfter)
-
-			await db
-				.update(guildUserStats)
-				.set({
-					rating: ratingAfter,
-					wins: newWins,
-					losses: newLosses,
-					currentStreak: newStreak,
-					peakRating: newPeakRating,
-					lastPlayedAt: new Date(),
-				})
-				.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, player.discordId)))
-		}
-
-		// Add to history
-		await db.insert(guildUserMatchHistory).values({
+		historyInserts.push({
 			guildId,
 			discordId: player.discordId,
 			matchId,
@@ -172,15 +198,35 @@ export const typedApp = app.openapi(route, async (c) => {
 		})
 	}
 
-	// Update match
-	await db
-		.update(guildMatches)
-		.set({
-			status: 'confirmed',
-			winningTeam,
-			confirmedAt: new Date(),
-		})
-		.where(eq(guildMatches.id, matchId))
+	// Execute all updates in a batch (atomic operation in D1)
+	await db.batch([
+		// Update match status
+		db
+			.update(guildMatches)
+			.set({
+				status: 'confirmed',
+				winningTeam,
+				confirmedAt: now,
+			})
+			.where(eq(guildMatches.id, matchId)),
+		// Update all player stats
+		...statsUpdates.map((update) =>
+			db
+				.update(guildUserStats)
+				.set({
+					rating: update.rating,
+					wins: update.wins,
+					losses: update.losses,
+					placementGames: update.placementGames,
+					currentStreak: update.currentStreak,
+					peakRating: update.peakRating,
+					lastPlayedAt: update.lastPlayedAt,
+				})
+				.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, update.discordId as string))),
+		),
+		// Insert all history records
+		...(historyInserts.length > 0 ? [db.insert(guildUserMatchHistory).values(historyInserts)] : []),
+	])
 
 	return c.json(
 		{

@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { and, eq } from 'drizzle-orm'
+import { and, count, eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
@@ -100,59 +100,64 @@ export const typedApp = app.openapi(route, async (c) => {
 		.get()
 
 	let changed = false
-	let blueVotes = match.blueVotes
-	let redVotes = match.redVotes
-	let drawVotes = match.drawVotes
 
 	if (existingVote) {
 		if (existingVote.vote !== vote) {
-			// Remove old vote count
-			if (existingVote.vote === 'BLUE') blueVotes--
-			else if (existingVote.vote === 'RED') redVotes--
-			else drawVotes--
+			// Calculate vote count adjustments using SQL increment/decrement
+			const blueAdjust = (vote === 'BLUE' ? 1 : 0) - (existingVote.vote === 'BLUE' ? 1 : 0)
+			const redAdjust = (vote === 'RED' ? 1 : 0) - (existingVote.vote === 'RED' ? 1 : 0)
+			const drawAdjust = (vote === 'DRAW' ? 1 : 0) - (existingVote.vote === 'DRAW' ? 1 : 0)
 
-			// Add new vote count
-			if (vote === 'BLUE') blueVotes++
-			else if (vote === 'RED') redVotes++
-			else drawVotes++
-
-			// Update vote
-			await db
-				.update(guildMatchVotes)
-				.set({ vote })
-				.where(and(eq(guildMatchVotes.matchId, matchId), eq(guildMatchVotes.discordId, discordId)))
-
-			// Update match vote counts
-			await db.update(guildMatches).set({ blueVotes, redVotes, drawVotes }).where(eq(guildMatches.id, matchId))
+			// Atomic batch update
+			await db.batch([
+				db
+					.update(guildMatchVotes)
+					.set({ vote })
+					.where(and(eq(guildMatchVotes.matchId, matchId), eq(guildMatchVotes.discordId, discordId))),
+				db
+					.update(guildMatches)
+					.set({
+						blueVotes: sql`${guildMatches.blueVotes} + ${blueAdjust}`,
+						redVotes: sql`${guildMatches.redVotes} + ${redAdjust}`,
+						drawVotes: sql`${guildMatches.drawVotes} + ${drawAdjust}`,
+					})
+					.where(eq(guildMatches.id, matchId)),
+			])
 
 			changed = true
 		}
 	} else {
-		// Insert new vote
-		await db.insert(guildMatchVotes).values({ matchId, discordId, vote })
-
-		// Update vote count
-		if (vote === 'BLUE') blueVotes++
-		else if (vote === 'RED') redVotes++
-		else drawVotes++
-
-		await db.update(guildMatches).set({ blueVotes, redVotes, drawVotes }).where(eq(guildMatches.id, matchId))
+		// Atomic batch: insert vote and increment count
+		await db.batch([
+			db.insert(guildMatchVotes).values({ matchId, discordId, vote }),
+			db
+				.update(guildMatches)
+				.set({
+					blueVotes: sql`${guildMatches.blueVotes} + ${vote === 'BLUE' ? 1 : 0}`,
+					redVotes: sql`${guildMatches.redVotes} + ${vote === 'RED' ? 1 : 0}`,
+					drawVotes: sql`${guildMatches.drawVotes} + ${vote === 'DRAW' ? 1 : 0}`,
+				})
+				.where(eq(guildMatches.id, matchId)),
+		])
 
 		changed = true
 	}
 
-	// Get total participants
-	const players = await db.select().from(guildMatchPlayers).where(eq(guildMatchPlayers.matchId, matchId))
+	// Get updated match and participant count
+	const [updatedMatch, participantCount] = await Promise.all([
+		db.select().from(guildMatches).where(eq(guildMatches.id, matchId)).get(),
+		db.select({ total: count() }).from(guildMatchPlayers).where(eq(guildMatchPlayers.matchId, matchId)),
+	])
 
-	const totalParticipants = players.length
+	const totalParticipants = participantCount[0]?.total ?? 0
 	const votesRequired = Math.ceil(totalParticipants / 2) + 1 // Majority
 
 	return c.json(
 		{
 			changed,
-			blueVotes,
-			redVotes,
-			drawVotes,
+			blueVotes: updatedMatch?.blueVotes ?? 0,
+			redVotes: updatedMatch?.redVotes ?? 0,
+			drawVotes: updatedMatch?.drawVotes ?? 0,
 			totalParticipants,
 			votesRequired,
 		},

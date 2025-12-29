@@ -1,5 +1,5 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
@@ -91,12 +91,12 @@ export const typedApp = app.openapi(route, async (c) => {
 		.offset(offset)
 
 	// Get total count
-	const allHistory = await db
-		.select({ matchId: guildUserMatchHistory.matchId })
+	const totalResult = await db
+		.select({ total: count() })
 		.from(guildUserMatchHistory)
 		.where(and(eq(guildUserMatchHistory.guildId, guildId), eq(guildUserMatchHistory.discordId, discordId)))
 
-	return c.json({ history, total: allHistory.length }, 200)
+	return c.json({ history, total: totalResult[0]?.total ?? 0 }, 200)
 })
 
 export default app

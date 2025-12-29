@@ -190,12 +190,13 @@ function StatsGrid({ data }: { data: StatsCardData }) {
 				flexDirection: 'column',
 				gap: '4px',
 				flex: 1,
+				alignSelf: 'stretch',
 			},
 			children: [
 				{
 					type: 'div',
 					props: {
-						style: { display: 'flex', gap: '4px' },
+						style: { display: 'flex', gap: '4px', flex: 1, alignItems: 'stretch' },
 						children: [
 							StatCard({
 								label: 'RANK',
@@ -216,7 +217,7 @@ function StatsGrid({ data }: { data: StatsCardData }) {
 				{
 					type: 'div',
 					props: {
-						style: { display: 'flex', gap: '4px' },
+						style: { display: 'flex', gap: '4px', flex: 1, alignItems: 'stretch' },
 						children: [
 							StatCard({
 								label: 'WINS',
@@ -256,8 +257,8 @@ function MatchHistoryItemComponent({ match, index }: { match: MatchHistoryItem; 
 				display: 'flex',
 				alignItems: 'center',
 				fontSize: '12px',
-				gap: '8px',
-				padding: '4px 0',
+				gap: '6px',
+				padding: '2px 0',
 			},
 			children: [
 				{
@@ -283,6 +284,8 @@ function MatchHistoryItemComponent({ match, index }: { match: MatchHistoryItem; 
 					props: {
 						style: {
 							color: match.won ? colors.win : colors.lose,
+							width: '36px',
+							textAlign: 'right',
 						},
 						children: `${match.won ? '+' : ''}${match.change}`,
 					},
@@ -356,7 +359,7 @@ function MatchHistorySection({ matches }: { matches: MatchHistoryItem[] }) {
 					type: 'div',
 					props: {
 						style: { display: 'flex', flexDirection: 'column' },
-						children: matches.slice(0, 5).map((match, i) => MatchHistoryItemComponent({ match, index: i })),
+						children: matches.slice(0, 10).map((match, i) => MatchHistoryItemComponent({ match, index: i })),
 					},
 				},
 			],
@@ -391,8 +394,8 @@ function RatingChart({ history }: { history: RatingHistoryPoint[] }) {
 		}
 	}
 
-	const chartWidth = 540
-	const chartHeight = 80
+	const chartWidth = 740
+	const chartHeight = 180
 	const padding = { left: 8, right: 8, top: 8, bottom: 8 }
 
 	const ratings = history.map((p) => p.rating)
@@ -462,50 +465,87 @@ function RatingChart({ history }: { history: RatingHistoryPoint[] }) {
 					},
 				},
 				{
-					type: 'svg',
+					type: 'div',
 					props: {
-						width: chartWidth,
-						height: chartHeight,
-						viewBox: `0 0 ${chartWidth} ${chartHeight}`,
+						style: { display: 'flex', alignItems: 'stretch' },
 						children: [
-							// グリッド線
+							// Y軸ラベル（SVG外）
 							{
-								type: 'line',
+								type: 'div',
 								props: {
-									x1: padding.left,
-									y1: chartHeight - padding.bottom,
-									x2: chartWidth - padding.right,
-									y2: chartHeight - padding.bottom,
-									stroke: '#3a4255',
-									strokeWidth: 1,
+									style: {
+										display: 'flex',
+										flexDirection: 'column',
+										justifyContent: 'space-between',
+										paddingRight: '4px',
+										width: '40px',
+									},
+									children: [0, 0.33, 0.67, 1].map((ratio) => ({
+										type: 'span',
+										props: {
+											style: {
+												fontSize: '10px',
+												color: colors.textMuted,
+												textAlign: 'right',
+											},
+											children: Math.round(maxRating - range * ratio).toString(),
+										},
+									})),
 								},
 							},
-							// 塗りつぶしエリア
+							// SVGグラフ
 							{
-								type: 'path',
+								type: 'svg',
 								props: {
-									d: areaPath,
-									fill: 'rgba(88, 101, 242, 0.2)',
-								},
-							},
-							// ライン
-							{
-								type: 'path',
-								props: {
-									d: linePath,
-									fill: 'none',
-									stroke: colors.accent,
-									strokeWidth: 2,
-								},
-							},
-							// ポイント（最新のみ）
-							{
-								type: 'circle',
-								props: {
-									cx: lastPoint.x,
-									cy: lastPoint.y,
-									r: 4,
-									fill: colors.accent,
+									width: chartWidth,
+									height: chartHeight,
+									viewBox: `0 0 ${chartWidth} ${chartHeight}`,
+									children: [
+										// 水平グリッド線
+										...[0.25, 0.5, 0.75, 1].map((ratio) => {
+											const y = padding.top + (chartHeight - padding.top - padding.bottom) * ratio
+											return {
+												type: 'line',
+												props: {
+													x1: padding.left,
+													y1: y,
+													x2: chartWidth - padding.right,
+													y2: y,
+													stroke: '#3a4255',
+													strokeWidth: 1,
+													strokeDasharray: ratio === 1 ? undefined : '4,4',
+												},
+											}
+										}),
+										// 塗りつぶしエリア
+										{
+											type: 'path',
+											props: {
+												d: areaPath,
+												fill: 'rgba(88, 101, 242, 0.2)',
+											},
+										},
+										// ライン
+										{
+											type: 'path',
+											props: {
+												d: linePath,
+												fill: 'none',
+												stroke: colors.accent,
+												strokeWidth: 2,
+											},
+										},
+										// ポイント（最新のみ）
+										{
+											type: 'circle',
+											props: {
+												cx: lastPoint.x,
+												cy: lastPoint.y,
+												r: 4,
+												fill: colors.accent,
+											},
+										},
+									],
 								},
 							},
 						],
@@ -571,6 +611,8 @@ export function createStatsCard(data: StatsCardData) {
 				display: 'flex',
 				gap: '4px',
 				padding: '12px',
+				alignItems: 'stretch',
+				height: '250px',
 			},
 			children: [StatsGrid({ data }), MatchHistorySection({ matches: data.matchHistory })],
 		},
@@ -594,8 +636,8 @@ export function createStatsCard(data: StatsCardData) {
 			style: {
 				display: 'flex',
 				flexDirection: 'column',
-				width: '580px',
-				height: '440px',
+				width: '825px',
+				height: '620px',
 				backgroundColor: colors.background,
 				fontFamily: 'Inter',
 			},

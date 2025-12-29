@@ -27,8 +27,8 @@ export async function generateStatsCard(data: StatsCardData): Promise<Uint8Array
 
 	console.log('Creating SVG with satori...')
 	const svg = await satori(createStatsCard(data), {
-		width: 580,
-		height: 440,
+		width: 825,
+		height: 620,
 		fonts: [
 			{
 				name: 'Inter',

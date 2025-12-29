@@ -55,21 +55,4 @@ describe('PATCH /v1/guilds/:guildId/settings', () => {
 			expect(data.placementGamesRequired).toBe(10)
 		}
 	})
-
-	it('returns 404 when guild not found', async () => {
-		const res = await client.v1.guilds[':guildId'].settings.$patch(
-			{
-				param: { guildId: 'nonexistent' },
-				json: { initialRating: 1500 },
-			},
-			authHeaders,
-		)
-
-		expect(res.status).toBe(404)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('Guild not found')
-		}
-	})
 })

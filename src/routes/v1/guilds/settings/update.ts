@@ -1,9 +1,8 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { guildSettings, guilds } from '@/db/schema'
-import { ErrorResponseSchema } from '@/utils/schemas'
+import { guildSettings } from '@/db/schema'
+import { ensureGuild } from '@/utils/ensure'
 
 const ParamSchema = z
 	.object({
@@ -35,10 +34,6 @@ const route = createRoute({
 			description: 'Guild settings updated',
 			content: { 'application/json': { schema: ResponseSchema } },
 		},
-		404: {
-			description: 'Guild not found',
-			content: { 'application/json': { schema: ErrorResponseSchema } },
-		},
 	},
 })
 
@@ -49,12 +44,8 @@ export const typedApp = app.openapi(route, async (c) => {
 	const body = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	// Check if guild exists
-	const guild = await db.select().from(guilds).where(eq(guilds.guildId, guildId)).get()
-
-	if (!guild) {
-		return c.json({ message: 'Guild not found' }, 404)
-	}
+	// Ensure guild exists
+	await ensureGuild(db, guildId)
 
 	// Upsert settings
 	const [settings] = (await db

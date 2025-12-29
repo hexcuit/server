@@ -59,20 +59,21 @@ describe('PATCH /v1/guilds/:guildId', () => {
 		}
 	})
 
-	it('returns 404 when guild not found', async () => {
+	it('auto-creates guild when not found', async () => {
 		const res = await client.v1.guilds[':guildId'].$patch(
 			{
-				param: { guildId: 'nonexistent' },
+				param: { guildId: ctx.guildId },
 				json: { plan: 'premium' },
 			},
 			authHeaders,
 		)
 
-		expect(res.status).toBe(404)
+		expect(res.status).toBe(200)
 
-		if (!res.ok) {
+		if (res.ok) {
 			const data = await res.json()
-			expect(data.message).toBe('Guild not found')
+			expect(data.guildId).toBe(ctx.guildId)
+			expect(data.plan).toBe('premium')
 		}
 	})
 })

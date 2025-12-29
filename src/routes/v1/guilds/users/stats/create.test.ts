@@ -63,44 +63,6 @@ describe('POST /v1/guilds/:guildId/users/:discordId/stats', () => {
 		}
 	})
 
-	it('returns 404 when guild not found', async () => {
-		const db = drizzle(env.DB)
-		await db.insert(users).values({ discordId: ctx.discordId })
-
-		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.$post(
-			{
-				param: { guildId: 'nonexistent', discordId: ctx.discordId },
-			},
-			authHeaders,
-		)
-
-		expect(res.status).toBe(404)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('Guild not found')
-		}
-	})
-
-	it('returns 404 when user not found', async () => {
-		const db = drizzle(env.DB)
-		await db.insert(guilds).values({ guildId: ctx.guildId })
-
-		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.$post(
-			{
-				param: { guildId: ctx.guildId, discordId: 'nonexistent' },
-			},
-			authHeaders,
-		)
-
-		expect(res.status).toBe(404)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('User not found')
-		}
-	})
-
 	it('returns 409 when stats already exist', async () => {
 		const db = drizzle(env.DB)
 		await db.insert(guilds).values({ guildId: ctx.guildId })

@@ -1,9 +1,8 @@
 import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { ranks, users } from '@/db/schema'
-import { ErrorResponseSchema } from '@/utils/schemas'
+import { ranks } from '@/db/schema'
+import { ensureUser } from '@/utils/ensure'
 
 const ParamSchema = z
 	.object({
@@ -32,10 +31,6 @@ const route = createRoute({
 			description: 'Rank updated',
 			content: { 'application/json': { schema: ResponseSchema } },
 		},
-		404: {
-			description: 'User not found',
-			content: { 'application/json': { schema: ErrorResponseSchema } },
-		},
 	},
 })
 
@@ -46,11 +41,8 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { tier, division } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	const user = await db.select().from(users).where(eq(users.discordId, discordId)).get()
-
-	if (!user) {
-		return c.json({ message: 'User not found' }, 404)
-	}
+	// Ensure user exists
+	await ensureUser(db, discordId)
 
 	const [rank] = (await db
 		.insert(ranks)

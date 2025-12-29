@@ -71,27 +71,6 @@ describe('POST /v1/guilds/:guildId/matches', () => {
 		}
 	})
 
-	it('returns 404 when guild not found', async () => {
-		const res = await client.v1.guilds[':guildId'].matches.$post(
-			{
-				param: { guildId: 'nonexistent' },
-				json: {
-					channelId: 'channel_123',
-					messageId: 'message_123',
-					players: [],
-				},
-			},
-			authHeaders,
-		)
-
-		expect(res.status).toBe(404)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('Guild not found')
-		}
-	})
-
 	it('returns 409 when match with same messageId exists', async () => {
 		const db = drizzle(env.DB)
 		await db.insert(guilds).values({ guildId: ctx.guildId })

@@ -107,7 +107,7 @@ describe('GET /v1/guilds/:guildId/rankings', () => {
 	it('returns 404 when guild not found', async () => {
 		const res = await client.v1.guilds[':guildId'].rankings.$get(
 			{
-				param: { guildId: 'nonexistent' },
+				param: { guildId: ctx.guildId },
 				query: {},
 			},
 			authHeaders,

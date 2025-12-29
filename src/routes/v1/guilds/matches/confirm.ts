@@ -4,14 +4,8 @@ import { drizzle } from 'drizzle-orm/d1'
 import { z } from 'zod'
 import type { MatchResult, PlayerResult } from '@/constants'
 import { K_FACTOR_NORMAL, K_FACTOR_PLACEMENT, PLACEMENT_GAMES } from '@/constants/rating'
-import {
-	guildMatches,
-	guildMatchPlayers,
-	guildSettings,
-	guilds,
-	guildUserMatchHistory,
-	guildUserStats,
-} from '@/db/schema'
+import { guildMatches, guildMatchPlayers, guildSettings, guildUserMatchHistory, guildUserStats } from '@/db/schema'
+import { ensureGuild } from '@/utils/ensure'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
@@ -51,7 +45,7 @@ const route = createRoute({
 			content: { 'application/json': { schema: ResponseSchema } },
 		},
 		404: {
-			description: 'Guild or match not found',
+			description: 'Match not found',
 			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 		400: {
@@ -67,12 +61,8 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, matchId } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
-	// Check if guild exists
-	const guild = await db.select().from(guilds).where(eq(guilds.guildId, guildId)).get()
-
-	if (!guild) {
-		return c.json({ message: 'Guild not found' }, 404)
-	}
+	// Ensure guild exists
+	await ensureGuild(db, guildId)
 
 	// Get match
 	const match = await db

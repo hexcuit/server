@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { guilds } from '@/db/schema'
-import { ErrorResponseSchema } from '@/utils/schemas'
+import { ensureGuild } from '@/utils/ensure'
 
 const ParamSchema = z
 	.object({
@@ -35,10 +35,6 @@ const route = createRoute({
 			description: 'Guild updated',
 			content: { 'application/json': { schema: ResponseSchema } },
 		},
-		404: {
-			description: 'Guild not found',
-			content: { 'application/json': { schema: ErrorResponseSchema } },
-		},
 	},
 })
 
@@ -49,6 +45,9 @@ export const typedApp = app.openapi(route, async (c) => {
 	const body = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
+	// Ensure guild exists
+	await ensureGuild(db, guildId)
+
 	const updateData: { plan?: 'free' | 'premium'; planExpiresAt?: Date | null } = {}
 
 	if (body.plan !== undefined) {
@@ -58,16 +57,12 @@ export const typedApp = app.openapi(route, async (c) => {
 		updateData.planExpiresAt = body.planExpiresAt ? new Date(body.planExpiresAt) : null
 	}
 
-	const [guild] = await db.update(guilds).set(updateData).where(eq(guilds.guildId, guildId)).returning({
+	const [guild] = (await db.update(guilds).set(updateData).where(eq(guilds.guildId, guildId)).returning({
 		guildId: guilds.guildId,
 		plan: guilds.plan,
 		planExpiresAt: guilds.planExpiresAt,
 		updatedAt: guilds.updatedAt,
-	})
-
-	if (!guild) {
-		return c.json({ message: 'Guild not found' }, 404)
-	}
+	})) as [typeof guilds.$inferSelect]
 
 	return c.json(
 		{

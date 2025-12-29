@@ -63,7 +63,7 @@ describe('GET /v1/guilds/:guildId/queues/:queueId', () => {
 	it('returns 404 when guild not found', async () => {
 		const res = await client.v1.guilds[':guildId'].queues[':queueId'].$get(
 			{
-				param: { guildId: 'nonexistent', queueId: 'some-queue-id' },
+				param: { guildId: ctx.guildId, queueId: 'any-queue-id' },
 			},
 			authHeaders,
 		)

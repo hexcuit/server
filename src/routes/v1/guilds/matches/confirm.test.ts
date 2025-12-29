@@ -93,6 +93,51 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/confirm', () => {
 		expect(player2Stats?.placementGames).toBe(1)
 	})
 
+	it('confirms a match with red win', async () => {
+		const db = drizzle(env.DB)
+		const player1 = `player1_red_${ctx.guildId}`
+		const player2 = `player2_red_${ctx.guildId}`
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+		await db.insert(users).values([{ discordId: player1 }, { discordId: player2 }])
+		await db.insert(guildUserStats).values([
+			{ guildId: ctx.guildId, discordId: player1, rating: 1000, peakRating: 1000 },
+			{ guildId: ctx.guildId, discordId: player2, rating: 1000, peakRating: 1000 },
+		])
+
+		const [match] = (await db
+			.insert(guildMatches)
+			.values({
+				guildId: ctx.guildId,
+				channelId: 'channel_123',
+				messageId: `message_${ctx.guildId}`,
+				status: 'voting',
+				blueVotes: 0,
+				redVotes: 2,
+				drawVotes: 0,
+			})
+			.returning()) as [typeof guildMatches.$inferSelect]
+
+		await db.insert(guildMatchPlayers).values([
+			{ matchId: match.id, discordId: player1, team: 'BLUE', role: 'TOP', ratingBefore: 1000 },
+			{ matchId: match.id, discordId: player2, team: 'RED', role: 'TOP', ratingBefore: 1000 },
+		])
+
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
+			{
+				param: { guildId: ctx.guildId, matchId: match.id },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(200)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.confirmed).toBe(true)
+			expect(data.winningTeam).toBe('RED')
+		}
+	})
+
 	it('confirms a match with draw', async () => {
 		const db = drizzle(env.DB)
 		const player1 = `player1_draw_${ctx.guildId}`
@@ -135,22 +180,6 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/confirm', () => {
 			const data = await res.json()
 			expect(data.winningTeam).toBe('DRAW')
 			expect(data.ratingChanges.every((r) => r.ratingChange === 0)).toBe(true)
-		}
-	})
-
-	it('returns 404 when guild not found', async () => {
-		const res = await client.v1.guilds[':guildId'].matches[':matchId'].confirm.$post(
-			{
-				param: { guildId: 'nonexistent', matchId: 'match_123' },
-			},
-			authHeaders,
-		)
-
-		expect(res.status).toBe(404)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('Guild not found')
 		}
 	})
 

@@ -72,21 +72,4 @@ describe('PUT /v1/users/:discordId/rank', () => {
 			expect(data.division).toBe('IV')
 		}
 	})
-
-	it('returns 404 when user not found', async () => {
-		const res = await client.v1.users[':discordId'].rank.$put(
-			{
-				param: { discordId: 'nonexistent' },
-				json: { tier: 'GOLD', division: 'II' },
-			},
-			authHeaders,
-		)
-
-		expect(res.status).toBe(404)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('User not found')
-		}
-	})
 })

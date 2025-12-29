@@ -3,7 +3,8 @@ import { and, count, eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
-import { guildMatches, guildMatchPlayers, guildMatchVotes, guilds } from '@/db/schema'
+import { guildMatches, guildMatchPlayers, guildMatchVotes } from '@/db/schema'
+import { ensureGuild, ensureUser } from '@/utils/ensure'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
@@ -42,7 +43,7 @@ const route = createRoute({
 			content: { 'application/json': { schema: ResponseSchema } },
 		},
 		404: {
-			description: 'Guild, match, or player not found',
+			description: 'Match not found or player not in match',
 			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 		400: {
@@ -59,12 +60,9 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { discordId, vote } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	// Check if guild exists
-	const guild = await db.select().from(guilds).where(eq(guilds.guildId, guildId)).get()
-
-	if (!guild) {
-		return c.json({ message: 'Guild not found' }, 404)
-	}
+	// Ensure guild and user exist
+	await ensureGuild(db, guildId)
+	await ensureUser(db, discordId)
 
 	// Get match
 	const match = await db

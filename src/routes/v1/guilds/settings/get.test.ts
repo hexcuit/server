@@ -39,7 +39,7 @@ describe('GET /v1/guilds/:guildId/settings', () => {
 	it('returns 404 when guild not found', async () => {
 		const res = await client.v1.guilds[':guildId'].settings.$get(
 			{
-				param: { guildId: 'nonexistent' },
+				param: { guildId: ctx.guildId },
 			},
 			authHeaders,
 		)

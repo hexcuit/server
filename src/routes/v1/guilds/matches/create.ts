@@ -1,9 +1,9 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
-import { guildMatches, guildMatchPlayers, guilds } from '@/db/schema'
+import { guildMatches, guildMatchPlayers } from '@/db/schema'
+import { ensureGuild, ensureUser } from '@/utils/ensure'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
@@ -46,10 +46,6 @@ const route = createRoute({
 			description: 'Match created',
 			content: { 'application/json': { schema: ResponseSchema } },
 		},
-		404: {
-			description: 'Guild not found',
-			content: { 'application/json': { schema: ErrorResponseSchema } },
-		},
 		409: {
 			description: 'Match with this messageId already exists',
 			content: { 'application/json': { schema: ErrorResponseSchema } },
@@ -64,12 +60,9 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { channelId, messageId, players } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	// Check if guild exists
-	const guild = await db.select().from(guilds).where(eq(guilds.guildId, guildId)).get()
-
-	if (!guild) {
-		return c.json({ message: 'Guild not found' }, 404)
-	}
+	// Ensure guild and all players exist
+	await ensureGuild(db, guildId)
+	await Promise.all(players.map((p) => ensureUser(db, p.discordId)))
 
 	// Create match
 	const [match] = await db

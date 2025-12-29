@@ -63,7 +63,7 @@ describe('DELETE /v1/guilds/:guildId/queues/:queueId/players/:discordId', () => 
 	it('returns 404 when guild not found', async () => {
 		const res = await client.v1.guilds[':guildId'].queues[':queueId'].players[':discordId'].$delete(
 			{
-				param: { guildId: 'nonexistent', queueId: 'some-queue-id', discordId: ctx.discordId },
+				param: { guildId: ctx.guildId, queueId: 'any-queue-id', discordId: ctx.discordId },
 			},
 			authHeaders,
 		)

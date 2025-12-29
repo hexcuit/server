@@ -48,7 +48,7 @@ describe('DELETE /v1/guilds/:guildId/users/:discordId/stats', () => {
 	it('returns 404 when guild not found', async () => {
 		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.$delete(
 			{
-				param: { guildId: 'nonexistent', discordId: ctx.discordId },
+				param: { guildId: ctx.guildId, discordId: ctx.discordId },
 			},
 			authHeaders,
 		)

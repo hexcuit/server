@@ -159,7 +159,7 @@ describe('GET /v1/guilds/:guildId/users/:discordId/history', () => {
 	it('returns 404 when guild not found', async () => {
 		const res = await client.v1.guilds[':guildId'].users[':discordId'].history.$get(
 			{
-				param: { guildId: 'nonexistent', discordId: ctx.discordId },
+				param: { guildId: ctx.guildId, discordId: ctx.discordId },
 				query: {},
 			},
 			authHeaders,

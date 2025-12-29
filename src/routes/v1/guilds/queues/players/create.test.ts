@@ -56,27 +56,6 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/players', () => {
 		}
 	})
 
-	it('returns 404 when guild not found', async () => {
-		const res = await client.v1.guilds[':guildId'].queues[':queueId'].players.$post(
-			{
-				param: { guildId: 'nonexistent', queueId: 'some-queue-id' },
-				json: {
-					discordId: ctx.discordId,
-					mainRole: 'MIDDLE',
-					subRole: 'TOP',
-				},
-			},
-			authHeaders,
-		)
-
-		expect(res.status).toBe(404)
-
-		if (!res.ok) {
-			const data = await res.json()
-			expect(data.message).toBe('Guild not found')
-		}
-	})
-
 	it('returns 404 when queue not found', async () => {
 		const db = drizzle(env.DB)
 		await db.insert(guilds).values({ guildId: ctx.guildId })

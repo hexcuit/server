@@ -3,7 +3,8 @@ import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
-import { guildQueuePlayers, guildQueues, guilds, users } from '@/db/schema'
+import { guildQueuePlayers, guildQueues } from '@/db/schema'
+import { ensureGuild, ensureUser } from '@/utils/ensure'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
@@ -37,7 +38,7 @@ const route = createRoute({
 			content: { 'application/json': { schema: ResponseSchema } },
 		},
 		404: {
-			description: 'Guild or queue not found',
+			description: 'Queue not found',
 			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 		409: {
@@ -54,14 +55,11 @@ export const typedApp = app.openapi(route, async (c) => {
 	const body = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	// Check if guild exists
-	const guild = await db.select().from(guilds).where(eq(guilds.guildId, guildId)).get()
+	// Ensure guild and user exist
+	await ensureGuild(db, guildId)
+	await ensureUser(db, body.discordId)
 
-	if (!guild) {
-		return c.json({ message: 'Guild not found' }, 404)
-	}
-
-	// Check if queue exists
+	// Check if queue exists (temporary resource, needs explicit check)
 	const queue = await db
 		.select()
 		.from(guildQueues)
@@ -70,13 +68,6 @@ export const typedApp = app.openapi(route, async (c) => {
 
 	if (!queue) {
 		return c.json({ message: 'Queue not found' }, 404)
-	}
-
-	// Check if user exists
-	const user = await db.select().from(users).where(eq(users.discordId, body.discordId)).get()
-
-	if (!user) {
-		return c.json({ message: 'User not found' }, 404)
 	}
 
 	// Add player

@@ -3,7 +3,8 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createSelectSchema } from 'drizzle-zod'
 import { INITIAL_RATING } from '@/constants/rating'
-import { guildSettings, guilds, guildUserStats, users } from '@/db/schema'
+import { guildSettings, guildUserStats } from '@/db/schema'
+import { ensureGuild, ensureUser } from '@/utils/ensure'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
@@ -39,10 +40,6 @@ const route = createRoute({
 			description: 'User stats created',
 			content: { 'application/json': { schema: ResponseSchema } },
 		},
-		404: {
-			description: 'Guild or user not found',
-			content: { 'application/json': { schema: ErrorResponseSchema } },
-		},
 		409: {
 			description: 'Stats already exist',
 			content: { 'application/json': { schema: ErrorResponseSchema } },
@@ -56,19 +53,9 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, discordId } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
-	// Check if guild exists
-	const guild = await db.select().from(guilds).where(eq(guilds.guildId, guildId)).get()
-
-	if (!guild) {
-		return c.json({ message: 'Guild not found' }, 404)
-	}
-
-	// Check if user exists
-	const user = await db.select().from(users).where(eq(users.discordId, discordId)).get()
-
-	if (!user) {
-		return c.json({ message: 'User not found' }, 404)
-	}
+	// Ensure guild and user exist
+	await ensureGuild(db, guildId)
+	await ensureUser(db, discordId)
 
 	// Get initial rating from guild settings or default
 	const settings = await db

@@ -34,15 +34,15 @@
   - [x] DELETE /v1/guilds/:guildId/queues/:queueId/players/:discordId
 
 ### Phase 4: 試合
-- [ ] Matches
-  - [ ] POST /v1/guilds/:guildId/matches
-  - [ ] GET /v1/guilds/:guildId/matches/:matchId
-- [ ] Votes
-  - [ ] POST /v1/guilds/:guildId/matches/:matchId/votes
-- [ ] Confirm
-  - [ ] POST /v1/guilds/:guildId/matches/:matchId/confirm
-- [ ] History
-  - [ ] GET /v1/guilds/:guildId/users/:discordId/history
+- [x] Matches
+  - [x] POST /v1/guilds/:guildId/matches
+  - [x] GET /v1/guilds/:guildId/matches/:matchId
+- [x] Votes
+  - [x] POST /v1/guilds/:guildId/matches/:matchId/votes
+- [x] Confirm
+  - [x] POST /v1/guilds/:guildId/matches/:matchId/confirm
+- [x] History
+  - [x] GET /v1/guilds/:guildId/users/:discordId/history
 
 ---
 

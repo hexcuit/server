@@ -1,10 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
-import history from './history'
-import stats from './stats'
+import get from './get'
 
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
-app.route('/', stats)
-app.route('/', history)
+app.route('/', get)
 
 export default app

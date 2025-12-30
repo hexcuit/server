@@ -36,6 +36,23 @@ describe('PATCH /v1/guilds/:guildId/settings', () => {
 		}
 	})
 
+	it('auto-creates guild on first call', async () => {
+		const res = await client.v1.guilds[':guildId'].settings.$patch(
+			{
+				param: { guildId: ctx.guildId },
+				json: { initialRating: 1500 },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(200)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.initialRating).toBe(1500)
+		}
+	})
+
 	it('creates settings if not exists', async () => {
 		const db = drizzle(env.DB)
 		await db.insert(guilds).values({ guildId: ctx.guildId })

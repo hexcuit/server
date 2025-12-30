@@ -41,6 +41,23 @@ describe('POST /v1/guilds/:guildId/users/:discordId/stats', () => {
 		}
 	})
 
+	it('auto-creates guild and user on first call', async () => {
+		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.$post(
+			{
+				param: { guildId: ctx.guildId, discordId: ctx.discordId },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(201)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.discordId).toBe(ctx.discordId)
+			expect(data.rating).toBe(INITIAL_RATING)
+		}
+	})
+
 	it('creates stats with custom initial rating from guild settings', async () => {
 		const db = drizzle(env.DB)
 		await db.insert(guilds).values({ guildId: ctx.guildId })

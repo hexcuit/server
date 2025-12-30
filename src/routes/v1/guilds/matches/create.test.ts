@@ -71,6 +71,34 @@ describe('POST /v1/guilds/:guildId/matches', () => {
 		}
 	})
 
+	it('auto-creates guild and users on first call', async () => {
+		const player1 = `new_player1_${ctx.guildId}`
+		const player2 = `new_player2_${ctx.guildId}`
+
+		const res = await client.v1.guilds[':guildId'].matches.$post(
+			{
+				param: { guildId: ctx.guildId },
+				json: {
+					channelId: 'channel_123',
+					messageId: `message_${ctx.guildId}`,
+					players: [
+						{ discordId: player1, team: 'BLUE', role: 'TOP', ratingBefore: 1000 },
+						{ discordId: player2, team: 'RED', role: 'TOP', ratingBefore: 1000 },
+					],
+				},
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(201)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.id).toBeDefined()
+			expect(data.status).toBe('voting')
+		}
+	})
+
 	it('returns 409 when match with same messageId exists', async () => {
 		const db = drizzle(env.DB)
 		await db.insert(guilds).values({ guildId: ctx.guildId })

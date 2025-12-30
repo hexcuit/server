@@ -1,5 +1,5 @@
+import { swaggerUI } from '@hono/swagger-ui'
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { Scalar } from '@scalar/hono-api-reference'
 import v1 from '@/routes/v1'
 import version from '../package.json'
 
@@ -21,7 +21,7 @@ app.doc('/docs.json', {
 	security: [{ apiKey: [] }],
 })
 
-app.get('/docs', Scalar({ url: '/docs.json' }))
+app.get('/docs', swaggerUI({ url: '/docs.json' }))
 
 app.route('/', v1)
 

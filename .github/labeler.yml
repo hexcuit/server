@@ -49,8 +49,12 @@ utils:
 tests:
   - changed-files:
     - any-glob-to-any-file:
-      - src/**/__tests__/**
-      - vitest.config.ts
+      - src/**/*.test.ts
+
+scripts:
+  - changed-files:
+    - any-glob-to-any-file:
+      - scripts/**
 
 core:
   - changed-files:

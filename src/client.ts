@@ -17,16 +17,17 @@ import { typedApp as app10 } from './routes/v1/guilds/queues/players/delete'
 import { typedApp as app11 } from './routes/v1/guilds/rankings/get'
 import { typedApp as app12 } from './routes/v1/guilds/settings/get'
 import { typedApp as app13 } from './routes/v1/guilds/settings/update'
-import { typedApp as app14 } from './routes/v1/guilds/update'
-import { typedApp as app15 } from './routes/v1/guilds/users/history/get'
-import { typedApp as app16 } from './routes/v1/guilds/users/stats/create'
-import { typedApp as app17 } from './routes/v1/guilds/users/stats/delete'
-import { typedApp as app18 } from './routes/v1/guilds/users/stats/get'
-import { typedApp as app19 } from './routes/v1/guilds/users/stats/image'
-import { typedApp as app20 } from './routes/v1/guilds/users/stats/update'
-import { typedApp as app21 } from './routes/v1/users/create'
-import { typedApp as app22 } from './routes/v1/users/get'
-import { typedApp as app23 } from './routes/v1/users/rank/upsert'
+import { typedApp as app14 } from './routes/v1/guilds/stats/delete'
+import { typedApp as app15 } from './routes/v1/guilds/update'
+import { typedApp as app16 } from './routes/v1/guilds/users/history/get'
+import { typedApp as app17 } from './routes/v1/guilds/users/stats/create'
+import { typedApp as app18 } from './routes/v1/guilds/users/stats/delete'
+import { typedApp as app19 } from './routes/v1/guilds/users/stats/get'
+import { typedApp as app20 } from './routes/v1/guilds/users/stats/image'
+import { typedApp as app21 } from './routes/v1/guilds/users/stats/update'
+import { typedApp as app22 } from './routes/v1/users/create'
+import { typedApp as app23 } from './routes/v1/users/get'
+import { typedApp as app24 } from './routes/v1/users/rank/upsert'
 
 const app = new OpenAPIHono()
 	.route('/', app0)
@@ -53,6 +54,7 @@ const app = new OpenAPIHono()
 	.route('/', app21)
 	.route('/', app22)
 	.route('/', app23)
+	.route('/', app24)
 
 export type AppType = typeof app
 

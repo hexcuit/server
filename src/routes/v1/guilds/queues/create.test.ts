@@ -44,6 +44,33 @@ describe('POST /v1/guilds/:guildId/queues', () => {
 		}
 	})
 
+	it('auto-creates guild and creator on first call', async () => {
+		const newCreator = `new_creator_${ctx.guildId}`
+
+		const res = await client.v1.guilds[':guildId'].queues.$post(
+			{
+				param: { guildId: ctx.guildId },
+				json: {
+					channelId: 'channel_123',
+					messageId: `message_${ctx.guildId}`,
+					creatorId: newCreator,
+					type: 'ranked',
+					anonymous: false,
+					capacity: 10,
+				},
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(201)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.id).toBeDefined()
+			expect(data.status).toBe('open')
+		}
+	})
+
 	it('returns 409 when queue with same messageId exists', async () => {
 		const db = drizzle(env.DB)
 		await db.insert(guilds).values({ guildId: ctx.guildId })

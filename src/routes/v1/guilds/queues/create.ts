@@ -3,7 +3,7 @@ import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { guildQueues } from '@/db/schema'
-import { ensureGuild } from '@/utils/ensure'
+import { ensureGuild, ensureUser } from '@/utils/ensure'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
@@ -49,8 +49,11 @@ export const typedApp = app.openapi(route, async (c) => {
 	const body = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	// Ensure guild exists
+	// Ensure guild and creator exist
 	await ensureGuild(db, guildId)
+	if (body.creatorId) {
+		await ensureUser(db, body.creatorId)
+	}
 
 	// Create queue
 	const [queue] = await db

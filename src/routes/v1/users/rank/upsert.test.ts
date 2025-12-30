@@ -33,6 +33,24 @@ describe('PUT /v1/users/:discordId/rank', () => {
 		}
 	})
 
+	it('auto-creates user on first call', async () => {
+		const res = await client.v1.users[':discordId'].rank.$put(
+			{
+				param: { discordId: ctx.discordId },
+				json: { tier: 'GOLD', division: 'II' },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(200)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.tier).toBe('GOLD')
+			expect(data.division).toBe('II')
+		}
+	})
+
 	it('creates a new rank without division (MASTER+)', async () => {
 		await seedUser(ctx.discordId)
 

@@ -3,6 +3,10 @@ name: Deploy
 on:
   workflow_dispatch:
     inputs:
+      tag:
+        description: 'Tag to deploy (leave empty for latest)'
+        type: string
+        default: ''
       run_migrations:
         description: 'Run D1 migrations'
         type: boolean
@@ -18,6 +22,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -z "$LATEST_TAG" ]; then
+              echo "::error::No tags found"
+              exit 1
+            fi
+            echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout tag
+        run: git checkout ${{ steps.get_tag.outputs.tag }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2

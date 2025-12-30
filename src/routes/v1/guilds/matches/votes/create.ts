@@ -30,7 +30,7 @@ const ResponseSchema = z
 const route = createRoute({
 	method: 'post',
 	path: '/v1/guilds/{guildId}/matches/{matchId}/votes',
-	tags: ['Votes'],
+	tags: ['Matches'],
 	summary: 'Vote on match',
 	description: 'Cast or change vote on a match',
 	request: {

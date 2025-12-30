@@ -2,7 +2,7 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { z } from 'zod'
-import type { MatchResult, PlayerResult } from '@/constants'
+import { MATCH_RESULTS, type MatchResult, type PlayerResult } from '@/constants'
 import { K_FACTOR_NORMAL, K_FACTOR_PLACEMENT, PLACEMENT_GAMES } from '@/constants/rating'
 import { guildMatches, guildMatchPlayers, guildSettings, guildUserMatchHistory, guildUserStats } from '@/db/schema'
 import { ensureGuild } from '@/utils/ensure'
@@ -25,7 +25,7 @@ const RatingChangeSchema = z.object({
 const ResponseSchema = z
 	.object({
 		confirmed: z.boolean(),
-		winningTeam: z.enum(['BLUE', 'RED', 'DRAW']).nullable(),
+		winningTeam: z.enum(MATCH_RESULTS).nullable(),
 		ratingChanges: z.array(RatingChangeSchema),
 	})
 	.openapi('ConfirmMatchResponse')

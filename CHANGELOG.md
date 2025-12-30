@@ -1,5 +1,15 @@
 # @hexcuit/server
 
+## 0.11.0
+
+### Minor Changes
+
+- [#95](https://github.com/hexcuit/server/pull/95) [`7059dc1`](https://github.com/hexcuit/server/commit/7059dc1cfd494368478b416c20723dc07b7d1d09) Thanks [@11gather11](https://github.com/11gather11)! - Add guild stats delete endpoint and switch to Swagger UI
+
+  - Add DELETE `/v1/guilds/{guildId}/stats` endpoint to reset all user stats in a guild
+  - Replace `@scalar/hono-api-reference` with `@hono/swagger-ui` for API documentation
+  - Improve client generation script with colored output and missing export warnings
+
 ## 0.10.0
 
 ### Minor Changes

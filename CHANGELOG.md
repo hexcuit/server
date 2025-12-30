@@ -1,5 +1,11 @@
 # @hexcuit/server
 
+## 0.11.1
+
+### Patch Changes
+
+- [#98](https://github.com/hexcuit/server/pull/98) [`a91edf1`](https://github.com/hexcuit/server/commit/a91edf14f9e52faa74aef18725ba7522e1a7e758) Thanks [@11gather11](https://github.com/11gather11)! - Fix foreign key constraint error in queue creation by ensuring creator user exists before insert. Add first-call tests to verify auto-creation of guilds and users across endpoints.
+
 ## 0.11.0
 
 ### Minor Changes

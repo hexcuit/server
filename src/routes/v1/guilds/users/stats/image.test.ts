@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { authHeaders, createTestContext, type TestContext } from '@test/context'
+import { env } from '@test/setup'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
-import { env } from '@/__tests__/setup'
-import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
 import { guildSettings, guilds, guildUserMatchHistory, guildUserStats, users } from '@/db/schema'
 
 // Mock the stats-card module to avoid WASM loading issues in tests

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
+import { authHeaders, createTestContext, type TestContext } from '@test/context'
+import { env } from '@test/setup'
 import { testClient } from 'hono/testing'
-import { env } from '@/__tests__/setup'
-import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
 import { typedApp } from './create'
 
 describe('POST /v1/guilds', () => {

@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
+import { authHeaders, createTestContext, type TestContext } from '@test/context'
+import { env } from '@test/setup'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
-import { env } from '@/__tests__/setup'
-import { authHeaders, createTestContext, type TestContext } from '@/__tests__/test-utils'
 import { guildMatches, guildMatchPlayers, guildMatchVotes, guilds, guildUserStats, users } from '@/db/schema'
 import { typedApp } from './confirm'
 

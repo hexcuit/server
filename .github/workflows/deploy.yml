@@ -68,7 +68,7 @@ jobs:
         uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: deploy
+          command: deploy --minify
           secrets: |
             API_KEY
             CORS_ORIGIN

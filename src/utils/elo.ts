@@ -14,7 +14,7 @@ interface Tier {
 	readonly divisions: number
 }
 
-export const TIERS: readonly Tier[] = [
+const TIERS: readonly Tier[] = [
 	{ name: 'IRON', min: 0, max: 399, divisions: DIVISIONS_PER_TIER },
 	{ name: 'BRONZE', min: 400, max: 799, divisions: DIVISIONS_PER_TIER },
 	{ name: 'SILVER', min: 800, max: 1199, divisions: DIVISIONS_PER_TIER },

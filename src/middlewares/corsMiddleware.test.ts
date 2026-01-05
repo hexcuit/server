@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { OpenAPIHono } from '@hono/zod-openapi'
-import { env } from '@/__tests__/setup'
+import { env } from '@test/setup'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
 
 describe('corsMiddleware', () => {

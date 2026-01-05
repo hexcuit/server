@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
+import { authHeaders, createTestContext, type TestContext } from '@test/context'
+import { seedRank, seedUser } from '@test/seed'
+import { env } from '@test/setup'
 import { testClient } from 'hono/testing'
-import { env } from '@/__tests__/setup'
-import { authHeaders, createTestContext, seedRank, seedUser, type TestContext } from '@/__tests__/test-utils'
 import { typedApp } from './get'
 
 describe('GET /v1/users/:discordId', () => {

@@ -6,7 +6,6 @@
 		"declaration": true,
 		"declarationMap": true,
 		"outDir": "./dist",
-		"rootDir": "./src",
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
 		"skipLibCheck": true,
@@ -15,9 +14,10 @@
 		"jsxImportSource": "hono/jsx",
 		"types": ["./worker-configuration.d.ts", "@types/bun"],
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@test/*": ["./test/*"]
 		}
 	},
-	"include": ["src/**/*"],
+	"include": ["src/**/*", "test/**/*", "scripts/**/*"],
 	"exclude": ["node_modules", "dist"]
 }

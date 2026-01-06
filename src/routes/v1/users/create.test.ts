@@ -13,12 +13,7 @@ describe('POST /v1/users', () => {
 	})
 
 	it('creates a new user', async () => {
-		const res = await client.v1.users.$post(
-			{
-				json: { discordId: ctx.discordId },
-			},
-			authHeaders,
-		)
+		const res = await client.v1.users.$post({ json: { discordId: ctx.discordId } }, authHeaders)
 
 		expect(res.status).toBe(201)
 
@@ -26,26 +21,15 @@ describe('POST /v1/users', () => {
 			const data = await res.json()
 			expect(data.discordId).toBe(ctx.discordId)
 			expect(data.createdAt).toBeDefined()
-			expect(data.rank).toBeNull()
 		}
 	})
 
 	it('returns 409 when user already exists', async () => {
 		// Create user first
-		await client.v1.users.$post(
-			{
-				json: { discordId: ctx.discordId },
-			},
-			authHeaders,
-		)
+		await client.v1.users.$post({ json: { discordId: ctx.discordId } }, authHeaders)
 
 		// Try to create again
-		const res = await client.v1.users.$post(
-			{
-				json: { discordId: ctx.discordId },
-			},
-			authHeaders,
-		)
+		const res = await client.v1.users.$post({ json: { discordId: ctx.discordId } }, authHeaders)
 
 		expect(res.status).toBe(409)
 

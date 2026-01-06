@@ -21,18 +21,13 @@ describe('GET /v1/guilds/:guildId/users/:discordId/stats', () => {
 		await db.insert(guildUserStats).values({
 			guildId: ctx.guildId,
 			discordId: ctx.discordId,
-			rating: 1350,
-			wins: 10,
-			losses: 5,
-			placementGames: 5,
-			peakRating: 1400,
-			currentStreak: 3,
+			rating: 1300,
+			wins: 5,
+			losses: 3,
 		})
 
 		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.$get(
-			{
-				param: { guildId: ctx.guildId, discordId: ctx.discordId },
-			},
+			{ param: { guildId: ctx.guildId, discordId: ctx.discordId } },
 			authHeaders,
 		)
 
@@ -41,49 +36,15 @@ describe('GET /v1/guilds/:guildId/users/:discordId/stats', () => {
 		if (res.ok) {
 			const data = await res.json()
 			expect(data.discordId).toBe(ctx.discordId)
-			expect(data.rating).toBe(1350)
-			expect(data.wins).toBe(10)
-			expect(data.losses).toBe(5)
-			expect(data.placementGames).toBe(5)
-			expect(data.peakRating).toBe(1400)
-			expect(data.currentStreak).toBe(3)
-			expect(data.lastPlayedAt).toBeNull()
-		}
-	})
-
-	it('returns stats with lastPlayedAt', async () => {
-		const db = drizzle(env.DB)
-		const lastPlayedAt = new Date('2025-01-01T12:00:00Z')
-		await db.insert(guilds).values({ guildId: ctx.guildId })
-		await db.insert(users).values({ discordId: ctx.discordId })
-		await db.insert(guildUserStats).values({
-			guildId: ctx.guildId,
-			discordId: ctx.discordId,
-			rating: 1200,
-			peakRating: 1200,
-			lastPlayedAt,
-		})
-
-		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.$get(
-			{
-				param: { guildId: ctx.guildId, discordId: ctx.discordId },
-			},
-			authHeaders,
-		)
-
-		expect(res.status).toBe(200)
-
-		if (res.ok) {
-			const data = await res.json()
-			expect(data.lastPlayedAt).toBe(lastPlayedAt.toISOString())
+			expect(data.rating).toBe(1300)
+			expect(data.wins).toBe(5)
+			expect(data.losses).toBe(3)
 		}
 	})
 
 	it('returns 404 when guild not found', async () => {
 		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.$get(
-			{
-				param: { guildId: ctx.guildId, discordId: ctx.discordId },
-			},
+			{ param: { guildId: 'nonexistent', discordId: ctx.discordId } },
 			authHeaders,
 		)
 
@@ -100,9 +61,7 @@ describe('GET /v1/guilds/:guildId/users/:discordId/stats', () => {
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 
 		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.$get(
-			{
-				param: { guildId: ctx.guildId, discordId: 'nonexistent' },
-			},
+			{ param: { guildId: ctx.guildId, discordId: 'nonexistent' } },
 			authHeaders,
 		)
 

@@ -40,7 +40,7 @@ const ResponseSchema = z
 const route = createRoute({
 	method: 'get',
 	path: '/v1/guilds/{guildId}/rankings',
-	tags: ['Rankings'],
+	tags: ['Stats'],
 	summary: 'Get guild rankings',
 	description: 'Get guild rankings',
 	request: {

@@ -13,7 +13,7 @@ const ParamSchema = z
 	.openapi('CreateQueueParam')
 
 const BodySchema = createInsertSchema(guildQueues)
-	.pick({ channelId: true, messageId: true, creatorId: true, type: true, anonymous: true, capacity: true })
+	.pick({ channelId: true, messageId: true, creatorId: true, type: true, capacity: true })
 	.openapi('CreateQueueBody')
 
 const ResponseSchema = createSelectSchema(guildQueues)
@@ -25,7 +25,7 @@ const route = createRoute({
 	path: '/v1/guilds/{guildId}/queues',
 	tags: ['Queues'],
 	summary: 'Create queue',
-	description: 'Create a new queue',
+	description: '募集を作成する',
 	request: {
 		params: ParamSchema,
 		body: { content: { 'application/json': { schema: BodySchema } } },
@@ -49,7 +49,7 @@ export const typedApp = app.openapi(route, async (c) => {
 	const body = c.req.valid('json')
 	const db = drizzle(c.env.DB)
 
-	// Ensure guild and creator exist
+	// Ensure guild exists (auto-create if not)
 	await ensureGuild(db, guildId)
 	if (body.creatorId) {
 		await ensureUser(db, body.creatorId)
@@ -61,6 +61,7 @@ export const typedApp = app.openapi(route, async (c) => {
 		.values({
 			guildId,
 			...body,
+			anonymous: false,
 			status: 'open',
 		})
 		.onConflictDoNothing()

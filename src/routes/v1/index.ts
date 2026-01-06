@@ -8,7 +8,7 @@ const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 app.use(corsMiddleware)
 app.use(apiKeyMiddleware)
-app.route('/', users)
 app.route('/', guilds)
+app.route('/', users)
 
 export default app

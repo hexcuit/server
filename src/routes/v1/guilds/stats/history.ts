@@ -31,7 +31,7 @@ const ResponseSchema = z
 const route = createRoute({
 	method: 'get',
 	path: '/v1/guilds/{guildId}/users/{discordId}/history',
-	tags: ['UserHistory'],
+	tags: ['Stats'],
 	summary: 'Get user match history',
 	description: 'Get match history for a user in a guild',
 	request: {

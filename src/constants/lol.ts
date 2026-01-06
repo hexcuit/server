@@ -19,9 +19,11 @@ export type LolDivision = (typeof LOL_DIVISIONS)[number]
 
 // LoLロール定義
 export const LOL_ROLES = ['TOP', 'JUNGLE', 'MIDDLE', 'BOTTOM', 'SUPPORT'] as const
+export type LolRole = (typeof LOL_ROLES)[number]
 
 // LoLチーム定義
 export const LOL_TEAMS = ['BLUE', 'RED'] as const
+export type LolTeam = (typeof LOL_TEAMS)[number]
 
 // 投票選択肢（BLUE, RED, DRAW）
 export const VOTE_OPTIONS = ['BLUE', 'RED', 'DRAW'] as const

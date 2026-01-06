@@ -1,18 +1,13 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { ranks, users } from '@/db/schema'
+import { users } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const BodySchema = createInsertSchema(users).pick({ discordId: true }).openapi('CreateUserBody')
 
-const RankSchema = createSelectSchema(ranks).pick({ tier: true, division: true })
-
 const ResponseSchema = createSelectSchema(users)
 	.pick({ discordId: true, createdAt: true })
-	.extend({
-		rank: RankSchema.nullable(),
-	})
 	.openapi('CreateUserResponse')
 
 const route = createRoute({
@@ -55,7 +50,6 @@ export const typedApp = app.openapi(route, async (c) => {
 		{
 			discordId: user.discordId,
 			createdAt: user.createdAt,
-			rank: null,
 		},
 		201,
 	)

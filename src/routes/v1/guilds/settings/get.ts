@@ -12,7 +12,7 @@ const ParamSchema = z
 	.openapi('GetGuildSettingsParam')
 
 const ResponseSchema = createSelectSchema(guildSettings)
-	.pick({ initialRating: true, kFactor: true, placementGamesRequired: true })
+	.pick({ initialRating: true, kFactor: true, kFactorPlacement: true, placementGamesRequired: true })
 	.openapi('GetGuildSettingsResponse')
 
 const route = createRoute({
@@ -54,6 +54,7 @@ export const typedApp = app.openapi(route, async (c) => {
 		.select({
 			initialRating: guildSettings.initialRating,
 			kFactor: guildSettings.kFactor,
+			kFactorPlacement: guildSettings.kFactorPlacement,
 			placementGamesRequired: guildSettings.placementGamesRequired,
 		})
 		.from(guildSettings)
@@ -65,8 +66,14 @@ export const typedApp = app.openapi(route, async (c) => {
 		const [created] = (await db.insert(guildSettings).values({ guildId }).returning({
 			initialRating: guildSettings.initialRating,
 			kFactor: guildSettings.kFactor,
+			kFactorPlacement: guildSettings.kFactorPlacement,
 			placementGamesRequired: guildSettings.placementGamesRequired,
-		})) as [Pick<typeof guildSettings.$inferSelect, 'initialRating' | 'kFactor' | 'placementGamesRequired'>]
+		})) as [
+			Pick<
+				typeof guildSettings.$inferSelect,
+				'initialRating' | 'kFactor' | 'kFactorPlacement' | 'placementGamesRequired'
+			>,
+		]
 
 		settings = created
 	}

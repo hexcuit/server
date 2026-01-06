@@ -11,12 +11,12 @@ const ParamSchema = z
 	.openapi('UpdateGuildSettingsParam')
 
 const BodySchema = createInsertSchema(guildSettings)
-	.pick({ initialRating: true, kFactor: true, placementGamesRequired: true })
+	.pick({ initialRating: true, kFactor: true, kFactorPlacement: true, placementGamesRequired: true })
 	.partial()
 	.openapi('UpdateGuildSettingsBody')
 
 const ResponseSchema = createSelectSchema(guildSettings)
-	.pick({ initialRating: true, kFactor: true, placementGamesRequired: true, updatedAt: true })
+	.pick({ initialRating: true, kFactor: true, kFactorPlacement: true, placementGamesRequired: true, updatedAt: true })
 	.openapi('UpdateGuildSettingsResponse')
 
 const route = createRoute({
@@ -61,16 +61,21 @@ export const typedApp = app.openapi(route, async (c) => {
 		.returning({
 			initialRating: guildSettings.initialRating,
 			kFactor: guildSettings.kFactor,
+			kFactorPlacement: guildSettings.kFactorPlacement,
 			placementGamesRequired: guildSettings.placementGamesRequired,
 			updatedAt: guildSettings.updatedAt,
 		})) as [
-		Pick<typeof guildSettings.$inferSelect, 'initialRating' | 'kFactor' | 'placementGamesRequired' | 'updatedAt'>,
+		Pick<
+			typeof guildSettings.$inferSelect,
+			'initialRating' | 'kFactor' | 'kFactorPlacement' | 'placementGamesRequired' | 'updatedAt'
+		>,
 	]
 
 	return c.json(
 		{
 			initialRating: settings.initialRating,
 			kFactor: settings.kFactor,
+			kFactorPlacement: settings.kFactorPlacement,
 			placementGamesRequired: settings.placementGamesRequired,
 			updatedAt: settings.updatedAt,
 		},

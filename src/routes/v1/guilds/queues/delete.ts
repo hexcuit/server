@@ -17,7 +17,7 @@ const route = createRoute({
 	path: '/v1/guilds/{guildId}/queues/{queueId}',
 	tags: ['Queues'],
 	summary: 'Delete queue',
-	description: 'Delete a queue',
+	description: '募集をキャンセルする',
 	request: {
 		params: ParamSchema,
 	},

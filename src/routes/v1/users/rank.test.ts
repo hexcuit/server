@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
-import { seedRank, seedUser } from '@test/seed'
 import { env } from '@test/setup'
+import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
-import { typedApp } from './upsert'
+import { users } from '@/db/schema'
+import { typedApp } from './rank'
 
 describe('PUT /v1/users/:discordId/rank', () => {
 	const client = testClient(typedApp, env)
@@ -13,13 +14,11 @@ describe('PUT /v1/users/:discordId/rank', () => {
 		ctx = createTestContext()
 	})
 
-	it('creates a new rank with division', async () => {
-		await seedUser(ctx.discordId)
-
+	it('creates rank and auto-creates user', async () => {
 		const res = await client.v1.users[':discordId'].rank.$put(
 			{
 				param: { discordId: ctx.discordId },
-				json: { tier: 'GOLD', division: 'II' },
+				json: { tier: 'PLATINUM', division: 'II' },
 			},
 			authHeaders,
 		)
@@ -28,17 +27,30 @@ describe('PUT /v1/users/:discordId/rank', () => {
 
 		if (res.ok) {
 			const data = await res.json()
-			expect(data.tier).toBe('GOLD')
+			expect(data.tier).toBe('PLATINUM')
 			expect(data.division).toBe('II')
 			expect(data.updatedAt).toBeDefined()
 		}
 	})
 
-	it('auto-creates user on first call', async () => {
+	it('updates an existing rank', async () => {
+		const db = drizzle(env.DB)
+		await db.insert(users).values({ discordId: ctx.discordId })
+
+		// Create initial rank
+		await client.v1.users[':discordId'].rank.$put(
+			{
+				param: { discordId: ctx.discordId },
+				json: { tier: 'GOLD', division: 'IV' },
+			},
+			authHeaders,
+		)
+
+		// Update rank
 		const res = await client.v1.users[':discordId'].rank.$put(
 			{
 				param: { discordId: ctx.discordId },
-				json: { tier: 'GOLD', division: 'II' },
+				json: { tier: 'DIAMOND', division: 'I' },
 			},
 			authHeaders,
 		)
@@ -47,18 +59,16 @@ describe('PUT /v1/users/:discordId/rank', () => {
 
 		if (res.ok) {
 			const data = await res.json()
-			expect(data.tier).toBe('GOLD')
-			expect(data.division).toBe('II')
+			expect(data.tier).toBe('DIAMOND')
+			expect(data.division).toBe('I')
 		}
 	})
 
-	it('creates a new rank without division (MASTER+)', async () => {
-		await seedUser(ctx.discordId)
-
+	it('creates rank without division for MASTER+', async () => {
 		const res = await client.v1.users[':discordId'].rank.$put(
 			{
 				param: { discordId: ctx.discordId },
-				json: { tier: 'MASTER', division: null },
+				json: { tier: 'MASTER' },
 			},
 			authHeaders,
 		)
@@ -69,26 +79,6 @@ describe('PUT /v1/users/:discordId/rank', () => {
 			const data = await res.json()
 			expect(data.tier).toBe('MASTER')
 			expect(data.division).toBeNull()
-		}
-	})
-
-	it('updates an existing rank', async () => {
-		await seedRank(ctx.discordId, { tier: 'SILVER', division: 'I' })
-
-		const res = await client.v1.users[':discordId'].rank.$put(
-			{
-				param: { discordId: ctx.discordId },
-				json: { tier: 'PLATINUM', division: 'IV' },
-			},
-			authHeaders,
-		)
-
-		expect(res.status).toBe(200)
-
-		if (res.ok) {
-			const data = await res.json()
-			expect(data.tier).toBe('PLATINUM')
-			expect(data.division).toBe('IV')
 		}
 	})
 })

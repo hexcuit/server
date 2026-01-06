@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { guilds } from '@/db/schema'
+import { guildSettings, guilds } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const BodySchema = createInsertSchema(guilds).pick({ guildId: true }).openapi('CreateGuildBody')
@@ -15,7 +15,7 @@ const route = createRoute({
 	path: '/v1/guilds',
 	tags: ['Guilds'],
 	summary: 'Create guild',
-	description: 'Create a new guild',
+	description: 'Create a new guild with default settings',
 	request: {
 		body: { content: { 'application/json': { schema: BodySchema } } },
 	},
@@ -46,6 +46,9 @@ export const typedApp = app.openapi(route, async (c) => {
 	if (!guild) {
 		return c.json({ message: 'Guild already exists' }, 409)
 	}
+
+	// Create default settings
+	await db.insert(guildSettings).values({ guildId }).onConflictDoNothing()
 
 	return c.json(
 		{

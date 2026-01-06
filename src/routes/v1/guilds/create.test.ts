@@ -13,12 +13,7 @@ describe('POST /v1/guilds', () => {
 	})
 
 	it('creates a new guild', async () => {
-		const res = await client.v1.guilds.$post(
-			{
-				json: { guildId: ctx.guildId },
-			},
-			authHeaders,
-		)
+		const res = await client.v1.guilds.$post({ json: { guildId: ctx.guildId } }, authHeaders)
 
 		expect(res.status).toBe(201)
 
@@ -32,20 +27,10 @@ describe('POST /v1/guilds', () => {
 
 	it('returns 409 when guild already exists', async () => {
 		// Create guild first
-		await client.v1.guilds.$post(
-			{
-				json: { guildId: ctx.guildId },
-			},
-			authHeaders,
-		)
+		await client.v1.guilds.$post({ json: { guildId: ctx.guildId } }, authHeaders)
 
 		// Try to create again
-		const res = await client.v1.guilds.$post(
-			{
-				json: { guildId: ctx.guildId },
-			},
-			authHeaders,
-		)
+		const res = await client.v1.guilds.$post({ json: { guildId: ctx.guildId } }, authHeaders)
 
 		expect(res.status).toBe(409)
 

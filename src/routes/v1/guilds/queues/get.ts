@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
-import { guildQueuePlayers, guildQueues, guilds } from '@/db/schema'
+import { guildQueuePlayers, guildQueues, guilds, guildUserStats } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
@@ -13,24 +13,19 @@ const ParamSchema = z
 	})
 	.openapi('GetQueueParam')
 
-const PlayerSchema = createSelectSchema(guildQueuePlayers).pick({
-	discordId: true,
-	mainRole: true,
-	subRole: true,
-	joinedAt: true,
+const PlayerSchema = z.object({
+	discordId: z.string(),
+	mainRole: z.string().nullable(),
+	subRole: z.string().nullable(),
+	rating: z.number(),
+	joinedAt: z.string(),
 })
 
 const ResponseSchema = createSelectSchema(guildQueues)
 	.pick({
 		id: true,
-		channelId: true,
-		messageId: true,
-		creatorId: true,
-		type: true,
-		anonymous: true,
-		capacity: true,
 		status: true,
-		createdAt: true,
+		capacity: true,
 	})
 	.extend({
 		players: z.array(PlayerSchema),
@@ -42,7 +37,7 @@ const route = createRoute({
 	path: '/v1/guilds/{guildId}/queues/{queueId}',
 	tags: ['Queues'],
 	summary: 'Get queue',
-	description: 'Get queue by ID',
+	description: '募集を取得する',
 	request: {
 		params: ParamSchema,
 	},
@@ -75,14 +70,8 @@ export const typedApp = app.openapi(route, async (c) => {
 	const queue = await db
 		.select({
 			id: guildQueues.id,
-			channelId: guildQueues.channelId,
-			messageId: guildQueues.messageId,
-			creatorId: guildQueues.creatorId,
-			type: guildQueues.type,
-			anonymous: guildQueues.anonymous,
-			capacity: guildQueues.capacity,
 			status: guildQueues.status,
-			createdAt: guildQueues.createdAt,
+			capacity: guildQueues.capacity,
 		})
 		.from(guildQueues)
 		.where(and(eq(guildQueues.id, queueId), eq(guildQueues.guildId, guildId)))
@@ -92,16 +81,30 @@ export const typedApp = app.openapi(route, async (c) => {
 		return c.json({ message: 'Queue not found' }, 404)
 	}
 
-	// Get players
-	const players = await db
+	// Get players with their ratings
+	const playersWithStats = await db
 		.select({
 			discordId: guildQueuePlayers.discordId,
 			mainRole: guildQueuePlayers.mainRole,
 			subRole: guildQueuePlayers.subRole,
 			joinedAt: guildQueuePlayers.joinedAt,
+			rating: guildUserStats.rating,
 		})
 		.from(guildQueuePlayers)
+		.leftJoin(
+			guildUserStats,
+			and(eq(guildQueuePlayers.discordId, guildUserStats.discordId), eq(guildUserStats.guildId, guildId)),
+		)
 		.where(eq(guildQueuePlayers.queueId, queueId))
+
+	// Default rating for players without stats (use guild settings default: 1200)
+	const players = playersWithStats.map((p) => ({
+		discordId: p.discordId,
+		mainRole: p.mainRole,
+		subRole: p.subRole,
+		rating: p.rating ?? 1200,
+		joinedAt: p.joinedAt,
+	}))
 
 	return c.json({ ...queue, players }, 200)
 })

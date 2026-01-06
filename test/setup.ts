@@ -32,4 +32,5 @@ for (const statement of statements) {
 export const env = {
 	DB: d1 as unknown as D1Database,
 	API_KEY: 'test-api-key',
+	CORS_ORIGIN: 'http://localhost:3000',
 }

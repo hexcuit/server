@@ -2,32 +2,38 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { z } from 'zod'
-import { guildQueuePlayers, guildQueues, guilds } from '@/db/schema'
+import { guildQueuePlayers, guildQueues } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
 	.object({
 		guildId: z.string().openapi({ description: 'Guild ID' }),
 		queueId: z.string().openapi({ description: 'Queue ID' }),
-		discordId: z.string().openapi({ description: 'Discord User ID' }),
 	})
-	.openapi('DeleteQueuePlayerParam')
+	.openapi('LeaveQueueParam')
+
+const BodySchema = z
+	.object({
+		discordId: z.string(),
+	})
+	.openapi('LeaveQueueBody')
 
 const route = createRoute({
-	method: 'delete',
-	path: '/v1/guilds/{guildId}/queues/{queueId}/players/{discordId}',
-	tags: ['QueuePlayers'],
+	method: 'post',
+	path: '/v1/guilds/{guildId}/queues/{queueId}/leave',
+	tags: ['Queues'],
 	summary: 'Leave queue',
-	description: 'Remove player from queue',
+	description: 'Leave a queue',
 	request: {
 		params: ParamSchema,
+		body: { content: { 'application/json': { schema: BodySchema } } },
 	},
 	responses: {
 		204: {
-			description: 'Player removed from queue',
+			description: 'Left queue',
 		},
 		404: {
-			description: 'Guild, queue, or player not found',
+			description: 'Queue not found or not in queue',
 			content: { 'application/json': { schema: ErrorResponseSchema } },
 		},
 	},
@@ -36,15 +42,9 @@ const route = createRoute({
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
-	const { guildId, queueId, discordId } = c.req.valid('param')
+	const { guildId, queueId } = c.req.valid('param')
+	const { discordId } = c.req.valid('json')
 	const db = drizzle(c.env.DB)
-
-	// Check if guild exists
-	const guild = await db.select().from(guilds).where(eq(guilds.guildId, guildId)).get()
-
-	if (!guild) {
-		return c.json({ message: 'Guild not found' }, 404)
-	}
 
 	// Check if queue exists
 	const queue = await db
@@ -61,10 +61,10 @@ export const typedApp = app.openapi(route, async (c) => {
 	const result = await db
 		.delete(guildQueuePlayers)
 		.where(and(eq(guildQueuePlayers.queueId, queueId), eq(guildQueuePlayers.discordId, discordId)))
-		.returning({ discordId: guildQueuePlayers.discordId })
+		.returning()
 
 	if (result.length === 0) {
-		return c.json({ message: 'Player not found in queue' }, 404)
+		return c.json({ message: 'Not in queue' }, 404)
 	}
 
 	return c.body(null, 204)

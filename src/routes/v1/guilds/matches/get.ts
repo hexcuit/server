@@ -3,7 +3,8 @@ import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
-import { guildMatches, guildMatchPlayers, guildMatchVotes, guilds } from '@/db/schema'
+import { LOL_TEAMS, MATCH_STATUSES } from '@/constants'
+import { guildMatches, guildMatchPlayers, guilds } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = z
@@ -13,34 +14,41 @@ const ParamSchema = z
 	})
 	.openapi('GetMatchParam')
 
-const PlayerSchema = createSelectSchema(guildMatchPlayers).pick({
-	discordId: true,
-	team: true,
-	role: true,
-	ratingBefore: true,
-})
+const TeamAssignmentSchema = createSelectSchema(guildMatchPlayers)
+	.pick({
+		team: true,
+		role: true,
+		ratingBefore: true,
+	})
+	.transform((p) => ({
+		team: p.team,
+		role: p.role,
+		rating: p.ratingBefore,
+	}))
 
-const VoteSchema = createSelectSchema(guildMatchVotes).pick({
-	discordId: true,
-	vote: true,
+const VotesSchema = z.object({
+	blueVotes: z.number(),
+	redVotes: z.number(),
+	drawVotes: z.number(),
+	totalParticipants: z.number(),
+	votesRequired: z.number(),
 })
 
 const ResponseSchema = createSelectSchema(guildMatches)
 	.pick({
 		id: true,
-		channelId: true,
-		messageId: true,
 		status: true,
-		winningTeam: true,
-		blueVotes: true,
-		redVotes: true,
-		drawVotes: true,
-		createdAt: true,
-		confirmedAt: true,
 	})
 	.extend({
-		players: z.array(PlayerSchema),
-		votes: z.array(VoteSchema),
+		teamAssignments: z.record(
+			z.string(),
+			z.object({
+				team: z.enum(LOL_TEAMS),
+				role: z.string(),
+				rating: z.number(),
+			}),
+		),
+		votes: VotesSchema,
 	})
 	.openapi('GetMatchResponse')
 
@@ -49,7 +57,7 @@ const route = createRoute({
 	path: '/v1/guilds/{guildId}/matches/{matchId}',
 	tags: ['Matches'],
 	summary: 'Get match',
-	description: 'Get match by ID',
+	description: '試合を取得する',
 	request: {
 		params: ParamSchema,
 	},
@@ -82,15 +90,10 @@ export const typedApp = app.openapi(route, async (c) => {
 	const match = await db
 		.select({
 			id: guildMatches.id,
-			channelId: guildMatches.channelId,
-			messageId: guildMatches.messageId,
 			status: guildMatches.status,
-			winningTeam: guildMatches.winningTeam,
 			blueVotes: guildMatches.blueVotes,
 			redVotes: guildMatches.redVotes,
 			drawVotes: guildMatches.drawVotes,
-			createdAt: guildMatches.createdAt,
-			confirmedAt: guildMatches.confirmedAt,
 		})
 		.from(guildMatches)
 		.where(and(eq(guildMatches.id, matchId), eq(guildMatches.guildId, guildId)))
@@ -111,16 +114,29 @@ export const typedApp = app.openapi(route, async (c) => {
 		.from(guildMatchPlayers)
 		.where(eq(guildMatchPlayers.matchId, matchId))
 
-	// Get votes
-	const votes = await db
-		.select({
-			discordId: guildMatchVotes.discordId,
-			vote: guildMatchVotes.vote,
-		})
-		.from(guildMatchVotes)
-		.where(eq(guildMatchVotes.matchId, matchId))
+	// Build teamAssignments - Drizzle infers correct enum types from schema
+	const teamAssignments = Object.fromEntries(
+		players.map((p) => [p.discordId, { team: p.team, role: p.role, rating: p.ratingBefore }]),
+	)
 
-	return c.json({ ...match, players, votes }, 200)
+	const totalParticipants = players.length
+	const votesRequired = Math.floor(totalParticipants / 2) + 1
+
+	return c.json(
+		{
+			id: match.id,
+			status: match.status,
+			teamAssignments,
+			votes: {
+				blueVotes: match.blueVotes,
+				redVotes: match.redVotes,
+				drawVotes: match.drawVotes,
+				totalParticipants,
+				votesRequired,
+			},
+		},
+		200,
+	)
 })
 
 export default app

@@ -29,7 +29,7 @@ const ResponseSchema = createSelectSchema(guildUserStats)
 const route = createRoute({
 	method: 'get',
 	path: '/v1/guilds/{guildId}/users/{discordId}/stats',
-	tags: ['GuildUserStats'],
+	tags: ['Stats'],
 	summary: 'Get user stats in guild',
 	description: 'Get user stats in guild',
 	request: {

@@ -29,6 +29,8 @@
 		"migrate:dev": "wrangler d1 migrations apply hexcuit --local",
 		"db:studio": "drizzle-kit studio --config drizzle.config.local.ts",
 		"test": "bun test",
+		"check:routes": "bun scripts/check-routes.ts",
+		"check:routes:fix": "bun scripts/check-routes.ts --fix",
 		"test:coverage": "bun test --coverage",
 		"version": "changeset version && bun i --lockfile-only",
 		"version:canary": "changeset version --snapshot canary && bun i --lockfile-only",

@@ -1,8 +1,31 @@
+#!/usr/bin/env bun
+/**
+ * Client generator
+ *
+ * Generates typed Hono client from route files.
+ * Scans for files exporting `typedApp` and creates src/client.ts
+ *
+ * Usage:
+ *   bun scripts/generate-client.ts
+ */
+
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { Glob } from 'bun'
 
+// ANSI colors
+const c = {
+	reset: '\x1b[0m',
+	bold: '\x1b[1m',
+	dim: '\x1b[2m',
+	green: '\x1b[32m',
+	yellow: '\x1b[33m',
+	cyan: '\x1b[36m',
+} as const
+
 async function main() {
+	console.log(`\n${c.bold}${c.cyan}🔧 Client Generator${c.reset}\n`)
+
 	// Find files exporting typedApp (exclude index.ts, test.ts, schemas.ts)
 	const glob = new Glob('src/routes/**/*.ts')
 	const allFiles = Array.from(glob.scanSync({ dot: false })).sort()
@@ -27,14 +50,19 @@ async function main() {
 	const imports: string[] = []
 	const chains: string[] = []
 
-	console.log('\x1b[1m\x1b[32mRegistered endpoints:\x1b[0m')
-	routeFiles.forEach((file, index) => {
+	console.log(`${c.green}${c.bold}Registered endpoints${c.reset} ${c.dim}(${routeFiles.length} routes)${c.reset}`)
+
+	for (const [i, file] of routeFiles.entries()) {
 		const relativePath = `./${path.relative('src', file).replace(/\\/g, '/').replace(/\.ts$/, '')}`
-		const varName = `app${index}`
+		const varName = `app${i}`
 		imports.push(`import { typedApp as ${varName} } from '${relativePath}'`)
 		chains.push(`.route('/', ${varName})`)
-		console.log(`  \x1b[90m[${String(index + 1).padStart(2, '0')}]\x1b[0m \x1b[36m${relativePath}\x1b[0m`)
-	})
+
+		const isLast = i === routeFiles.length - 1
+		const prefix = isLast ? '└─' : '├─'
+		const num = String(i + 1).padStart(2, '0')
+		console.log(`${c.dim}   ${prefix} ${c.reset}${c.dim}[${num}]${c.reset} ${c.cyan}${relativePath}${c.reset}`)
+	}
 
 	const clientContent = `// This file is auto-generated. Do not edit manually.
 // Run "bun run generate:client" to regenerate.
@@ -62,14 +90,22 @@ export const hcWithType = (...args) => hc(...args);
 
 	// Warn about files missing typedApp export
 	if (skippedFiles.length > 0) {
-		console.log(`\n\x1b[1m\x1b[33mWarning: Missing typedApp export:\x1b[0m`)
-		for (const file of skippedFiles) {
+		console.log()
+		console.log(`${c.yellow}⚠  Missing typedApp export${c.reset} ${c.dim}(${skippedFiles.length} files)${c.reset}`)
+
+		for (const [i, file] of skippedFiles.entries()) {
 			const relativePath = `./${path.relative('src', file).replace(/\\/g, '/').replace(/\.ts$/, '')}`
-			console.log(`  \x1b[33m⚠\x1b[0m \x1b[90m${relativePath}\x1b[0m`)
+			const isLast = i === skippedFiles.length - 1
+			const prefix = isLast ? '└─' : '├─'
+			console.log(`${c.dim}   ${prefix} ${c.yellow}${relativePath}${c.reset}`)
 		}
 	}
 
-	console.log(`\n\x1b[32m✓ Generated src/client.ts with ${routeFiles.length} routes\x1b[0m`)
+	// Summary
+	console.log()
+	console.log(`${c.dim}─────────────────────────────────${c.reset}`)
+	console.log(`${c.green}${c.bold}✅ Generated src/client.ts${c.reset}`)
+	console.log(`${c.dim}   ${routeFiles.length} routes registered${c.reset}\n`)
 }
 
 main()

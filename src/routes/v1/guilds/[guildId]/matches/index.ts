@@ -1,10 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
-import get from './get'
-import vote from './vote'
+import matchId from './[matchId]'
 
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
-app.route('/', get)
-app.route('/', vote)
+app.route('/', matchId)
 
 export default app

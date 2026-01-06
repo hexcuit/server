@@ -3,24 +3,17 @@
 
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { hc } from 'hono/client'
-import { typedApp as app0 } from './routes/v1/guilds/create'
-import { typedApp as app1 } from './routes/v1/guilds/get'
-import { typedApp as app2 } from './routes/v1/guilds/matches/get'
-import { typedApp as app3 } from './routes/v1/guilds/matches/vote'
-import { typedApp as app4 } from './routes/v1/guilds/queues/create'
-import { typedApp as app5 } from './routes/v1/guilds/queues/delete'
-import { typedApp as app6 } from './routes/v1/guilds/queues/get'
-import { typedApp as app7 } from './routes/v1/guilds/queues/join'
-import { typedApp as app8 } from './routes/v1/guilds/queues/leave'
-import { typedApp as app9 } from './routes/v1/guilds/queues/start'
-import { typedApp as app10 } from './routes/v1/guilds/settings/get'
-import { typedApp as app11 } from './routes/v1/guilds/settings/update'
-import { typedApp as app12 } from './routes/v1/guilds/stats/get'
-import { typedApp as app13 } from './routes/v1/guilds/stats/history'
-import { typedApp as app14 } from './routes/v1/guilds/stats/rankings'
-import { typedApp as app15 } from './routes/v1/users/create'
-import { typedApp as app16 } from './routes/v1/users/get'
-import { typedApp as app17 } from './routes/v1/users/rank'
+import { typedApp as app0 } from './routes/v1/guilds/[guildId]/matches/[matchId]/vote/post'
+import { typedApp as app1 } from './routes/v1/guilds/[guildId]/queues/[queueId]/delete'
+import { typedApp as app2 } from './routes/v1/guilds/[guildId]/queues/[queueId]/join/post'
+import { typedApp as app3 } from './routes/v1/guilds/[guildId]/queues/[queueId]/leave/post'
+import { typedApp as app4 } from './routes/v1/guilds/[guildId]/queues/[queueId]/start/post'
+import { typedApp as app5 } from './routes/v1/guilds/[guildId]/queues/post'
+import { typedApp as app6 } from './routes/v1/guilds/[guildId]/rankings/get'
+import { typedApp as app7 } from './routes/v1/guilds/[guildId]/users/[discordId]/history/get'
+import { typedApp as app8 } from './routes/v1/guilds/[guildId]/users/[discordId]/stats/get'
+import { typedApp as app9 } from './routes/v1/users/[discordId]/get'
+import { typedApp as app10 } from './routes/v1/users/[discordId]/rank/put'
 
 const app = new OpenAPIHono()
 	.route('/', app0)
@@ -34,13 +27,6 @@ const app = new OpenAPIHono()
 	.route('/', app8)
 	.route('/', app9)
 	.route('/', app10)
-	.route('/', app11)
-	.route('/', app12)
-	.route('/', app13)
-	.route('/', app14)
-	.route('/', app15)
-	.route('/', app16)
-	.route('/', app17)
 
 export type AppType = typeof app
 

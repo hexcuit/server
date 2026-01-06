@@ -1,10 +1,8 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
-import { users } from '@/db/schema'
-import { typedApp } from './rank'
+import { typedApp } from './put'
 
 describe('PUT /v1/users/:discordId/rank', () => {
 	const client = testClient(typedApp, env)
@@ -33,10 +31,7 @@ describe('PUT /v1/users/:discordId/rank', () => {
 		}
 	})
 
-	it('updates an existing rank', async () => {
-		const db = drizzle(env.DB)
-		await db.insert(users).values({ discordId: ctx.discordId })
-
+	it('updates existing rank', async () => {
 		// Create initial rank
 		await client.v1.users[':discordId'].rank.$put(
 			{
@@ -68,7 +63,7 @@ describe('PUT /v1/users/:discordId/rank', () => {
 		const res = await client.v1.users[':discordId'].rank.$put(
 			{
 				param: { discordId: ctx.discordId },
-				json: { tier: 'MASTER' },
+				json: { tier: 'MASTER', division: null },
 			},
 			authHeaders,
 		)

@@ -1,8 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
-import discordId from './[discordId]'
+import post from './post'
 
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
-app.route('/', discordId)
+app.route('/', post)
 
 export default app

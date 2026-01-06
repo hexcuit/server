@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { z } from 'zod'
+import { LOL_ROLES } from '@/constants'
 import { guildQueuePlayers, guildQueues } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
@@ -18,6 +19,21 @@ const BodySchema = z
 	})
 	.openapi('LeaveQueueBody')
 
+const PlayerSchema = z.object({
+	discordId: z.string(),
+	mainRole: z.enum(LOL_ROLES),
+	subRole: z.enum(LOL_ROLES),
+})
+
+const ResponseSchema = z
+	.object({
+		currentCount: z.number(),
+		capacity: z.number(),
+		creatorId: z.string().nullable(),
+		players: z.array(PlayerSchema),
+	})
+	.openapi('LeaveQueueResponse')
+
 const route = createRoute({
 	method: 'post',
 	path: '/v1/guilds/{guildId}/queues/{queueId}/leave',
@@ -29,8 +45,9 @@ const route = createRoute({
 		body: { content: { 'application/json': { schema: BodySchema } } },
 	},
 	responses: {
-		204: {
+		200: {
 			description: 'Left queue',
+			content: { 'application/json': { schema: ResponseSchema } },
 		},
 		404: {
 			description: 'Queue not found or not in queue',
@@ -67,7 +84,25 @@ export const typedApp = app.openapi(route, async (c) => {
 		return c.json({ message: 'Not in queue' }, 404)
 	}
 
-	return c.body(null, 204)
+	// Get remaining players
+	const remainingPlayers = await db
+		.select({
+			discordId: guildQueuePlayers.discordId,
+			mainRole: guildQueuePlayers.mainRole,
+			subRole: guildQueuePlayers.subRole,
+		})
+		.from(guildQueuePlayers)
+		.where(eq(guildQueuePlayers.queueId, queueId))
+
+	return c.json(
+		{
+			currentCount: remainingPlayers.length,
+			capacity: queue.capacity,
+			creatorId: queue.creatorId,
+			players: remainingPlayers,
+		},
+		200,
+	)
 })
 
 export default app

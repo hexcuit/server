@@ -25,10 +25,16 @@ const ParamSchema = z
 const BodySchema = z
 	.object({
 		discordId: z.string(),
-		mainRole: z.enum(LOL_ROLES).optional(),
-		subRole: z.enum(LOL_ROLES).optional(),
+		mainRole: z.enum(LOL_ROLES),
+		subRole: z.enum(LOL_ROLES),
 	})
 	.openapi('JoinQueueBody')
+
+const PlayerSchema = z.object({
+	discordId: z.string(),
+	mainRole: z.enum(LOL_ROLES),
+	subRole: z.enum(LOL_ROLES),
+})
 
 const TeamAssignmentSchema = z.object({
 	team: z.enum(['BLUE', 'RED']),
@@ -41,6 +47,8 @@ const JoinedResponseSchema = z
 		status: z.literal('joined'),
 		currentCount: z.number(),
 		capacity: z.number(),
+		creatorId: z.string().nullable(),
+		players: z.array(PlayerSchema),
 	})
 	.openapi('JoinQueueJoinedResponse')
 
@@ -134,7 +142,9 @@ export const typedApp = app.openapi(route, async (c) => {
 		subRole: body.subRole,
 	})
 
-	const newCount = currentPlayers.length + 1
+	const newPlayer = { discordId: body.discordId, mainRole: body.mainRole, subRole: body.subRole }
+	const allPlayers = [...currentPlayers, newPlayer]
+	const newCount = allPlayers.length
 
 	// Check if queue is now full
 	if (newCount < queue.capacity) {
@@ -143,14 +153,18 @@ export const typedApp = app.openapi(route, async (c) => {
 				status: 'joined' as const,
 				currentCount: newCount,
 				capacity: queue.capacity,
+				creatorId: queue.creatorId,
+				players: allPlayers.map((p) => ({
+					discordId: p.discordId,
+					mainRole: p.mainRole,
+					subRole: p.subRole,
+				})),
 			},
 			201,
 		)
 	}
 
 	// Queue is full - start match
-	const allPlayers = [...currentPlayers, { discordId: body.discordId, mainRole: body.mainRole, subRole: body.subRole }]
-
 	// Get settings for initial rating
 	const settings = await db.select().from(guildSettings).where(eq(guildSettings.guildId, guildId)).get()
 

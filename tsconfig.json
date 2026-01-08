@@ -15,9 +15,9 @@
 		"types": ["./worker-configuration.d.ts"],
 		"paths": {
 			"@/*": ["./src/*"],
-			"@test/*": ["./test/*"]
+			"@test/*": ["./mocks/*"]
 		}
 	},
-	"include": ["src/**/*", "test/**/*", "scripts/**/*"],
+	"include": ["src/**/*", "mocks/**/*", "scripts/**/*"],
 	"exclude": ["node_modules", "dist"]
 }

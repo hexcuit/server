@@ -15,7 +15,7 @@
 import { mkdir, readdir, readFile, rename, rmdir } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
 
-const ROUTES_DIR = join(import.meta.dir, '../src/routes/v1')
+const ROUTES_DIR = join(import.meta.dirname, '../src/routes/v1')
 const FIX_MODE = process.argv.includes('--fix')
 
 // ANSI colors

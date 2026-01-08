@@ -1,4 +1,4 @@
-import { Database } from 'bun:sqlite'
+import Database from 'better-sqlite3'
 // Ensure @hono/zod-openapi extends Zod before any schemas are loaded
 import '@hono/zod-openapi'
 import { generateSQLiteDrizzleJson, generateSQLiteMigration } from 'drizzle-kit/api'
@@ -28,7 +28,7 @@ const statements = await generateSQLiteMigration(
 )
 
 for (const statement of statements) {
-	db.run(statement)
+	db.exec(statement)
 }
 
 // Export test environment

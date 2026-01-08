@@ -10,8 +10,8 @@
  */
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { glob } from 'node:fs/promises'
 import path from 'node:path'
-import { Glob } from 'bun'
 
 // ANSI colors
 const c = {
@@ -27,8 +27,7 @@ async function main() {
 	console.log(`\n${c.bold}${c.cyan}🔧 Client Generator${c.reset}\n`)
 
 	// Find files exporting typedApp (exclude index.ts, test.ts, schemas.ts)
-	const glob = new Glob('src/routes/**/*.ts')
-	const allFiles = Array.from(glob.scanSync({ dot: false })).sort()
+	const allFiles = (await Array.fromAsync(glob('src/routes/**/*.ts'))).sort()
 	const files = allFiles.filter(
 		(file) =>
 			!file.endsWith('index.ts') && !file.endsWith('.test.ts') && !file.endsWith('schemas.ts'),
@@ -81,7 +80,8 @@ const app = new OpenAPIHono()
 
 export type AppType = typeof app
 
-export const hcWithType = (...args: Parameters<typeof hc>): ReturnType<typeof hc<AppType>> => hc<AppType>(...args)
+export const hcWithType = (...args: Parameters<typeof hc>): ReturnType<typeof hc<AppType>> => 
+	hc<AppType>(...args)
 `
 
 	writeFileSync('src/client.ts', clientContent)

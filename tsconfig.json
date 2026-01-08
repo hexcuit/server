@@ -12,7 +12,7 @@
 		"lib": ["ESNext"],
 		"jsx": "react-jsx",
 		"jsxImportSource": "hono/jsx",
-		"types": ["./worker-configuration.d.ts", "@types/bun"],
+		"types": ["./worker-configuration.d.ts"],
 		"paths": {
 			"@/*": ["./src/*"],
 			"@test/*": ["./test/*"]

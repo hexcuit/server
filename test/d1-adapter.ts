@@ -1,4 +1,4 @@
-import { Database, type SQLQueryBindings } from 'bun:sqlite'
+import Database, { type Database as DatabaseType } from 'better-sqlite3'
 
 interface D1Result<T = unknown> {
 	results?: T[]
@@ -16,16 +16,16 @@ interface D1ExecResult {
 }
 
 class D1PreparedStatementAdapter {
-	private db: Database
+	private db: DatabaseType
 	private query: string
-	private params: SQLQueryBindings[] = []
+	private params: unknown[] = []
 
-	constructor(db: Database, query: string) {
+	constructor(db: DatabaseType, query: string) {
 		this.db = db
 		this.query = query
 	}
 
-	bind(...values: SQLQueryBindings[]): D1PreparedStatementAdapter {
+	bind(...values: unknown[]): D1PreparedStatementAdapter {
 		this.params = values
 		return this
 	}
@@ -69,14 +69,14 @@ class D1PreparedStatementAdapter {
 
 	async raw<T = unknown[]>(): Promise<T[]> {
 		const stmt = this.db.prepare(this.query)
-		return stmt.values(...this.params) as T[]
+		return stmt.raw().all(...this.params) as T[]
 	}
 }
 
 export class D1DatabaseAdapter {
-	private db: Database
+	private db: DatabaseType
 
-	constructor(db: Database) {
+	constructor(db: DatabaseType) {
 		this.db = db
 	}
 
@@ -85,16 +85,16 @@ export class D1DatabaseAdapter {
 	}
 
 	async batch<T = unknown>(statements: D1PreparedStatementAdapter[]): Promise<D1Result<T>[]> {
-		this.db.run('BEGIN TRANSACTION')
+		this.db.exec('BEGIN TRANSACTION')
 		try {
 			const results: D1Result<T>[] = []
 			for (const stmt of statements) {
 				results.push((await stmt.run()) as D1Result<T>)
 			}
-			this.db.run('COMMIT')
+			this.db.exec('COMMIT')
 			return results
 		} catch (error) {
-			this.db.run('ROLLBACK')
+			this.db.exec('ROLLBACK')
 			throw error
 		}
 	}
@@ -103,9 +103,9 @@ export class D1DatabaseAdapter {
 		const start = performance.now()
 		// Use Bun's native exec() which properly handles multi-statement SQL
 		// including semicolons inside strings, comments, and complex migrations
-		const result = this.db.run(query)
+		this.db.exec(query)
 		return {
-			count: result.changes ?? 0,
+			count: 0,
 			duration: performance.now() - start,
 		}
 	}

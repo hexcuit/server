@@ -36,5 +36,5 @@ const app = new OpenAPIHono()
 
 export type AppType = typeof app
 
-export const hcWithType = (...args: Parameters<typeof hc>): ReturnType<typeof hc<AppType>> => 
+export const hcWithType = (...args: Parameters<typeof hc>): ReturnType<typeof hc<AppType>> =>
 	hc<AppType>(...args)

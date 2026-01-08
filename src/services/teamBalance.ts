@@ -6,28 +6,28 @@
 
 import { LOL_ROLES, type LolRole, type LolTeam } from '@/constants'
 
-export type ParticipantWithRating = {
+type PlayerWithRating = {
 	discordId: string
 	mainRole?: LolRole | null
 	subRole?: LolRole | null
 	rating: number
 }
 
-export type TeamAssignment = {
+type TeamAssignment = {
 	team: LolTeam
 	role: LolRole
 	rating: number
 }
 
-export type TeamAssignments = Record<string, TeamAssignment>
+type TeamAssignments = Record<string, TeamAssignment>
 
 /**
  * Eloレーティングに基づいてチームをバランス良く分配する
  * スネークドラフト方式: 0,3,4,7,8 → Blue, 1,2,5,6,9 → Red
  */
-export const balanceTeamsByElo = (participants: ParticipantWithRating[]): TeamAssignments => {
+export const balanceTeamsByElo = (players: PlayerWithRating[]): TeamAssignments => {
 	// レーティング順でソート
-	const sorted = [...participants].sort((a, b) => b.rating - a.rating)
+	const sorted = [...players].sort((a, b) => b.rating - a.rating)
 
 	// スネークドラフト方式で分配
 	const blueTeam: typeof sorted = []

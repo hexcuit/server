@@ -5,11 +5,7 @@ import { createSelectSchema } from 'drizzle-zod'
 import { guilds, guildUserStats } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
-const ParamSchema = z
-	.object({
-		guildId: z.string().openapi({ description: 'Guild ID' }),
-	})
-	.openapi('GetRankingsParam')
+const ParamSchema = createSelectSchema(guilds).pick({ guildId: true }).openapi('GetRankingsParam')
 
 const QuerySchema = z
 	.object({

@@ -1,19 +1,14 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
-import { z } from 'zod'
-import { guildQueues } from '@/db/schema'
+import { guildQueues, guilds } from '@/db/schema'
 import { ensureGuild, ensureUser } from '@/utils/ensure'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
-const ParamSchema = z
-	.object({
-		guildId: z.string().openapi({ description: 'Guild ID' }),
-	})
-	.openapi('CreateQueueParam')
+const ParamSchema = createSelectSchema(guilds).pick({ guildId: true }).openapi('CreateQueueParam')
 
 const BodySchema = createInsertSchema(guildQueues)
-	.pick({ channelId: true, messageId: true, creatorId: true, type: true, capacity: true })
+	.pick({ channelId: true, messageId: true, creatorId: true, type: true, capacity: true, anonymous: true })
 	.openapi('CreateQueueBody')
 
 const ResponseSchema = createSelectSchema(guildQueues)
@@ -61,7 +56,6 @@ export const typedApp = app.openapi(route, async (c) => {
 		.values({
 			guildId,
 			...body,
-			anonymous: false,
 			status: 'open',
 		})
 		.onConflictDoNothing()

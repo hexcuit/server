@@ -2,39 +2,25 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createSelectSchema } from 'drizzle-zod'
-import { guilds, guildUserStats } from '@/db/schema'
+import { guilds, guildUserMatchHistory, guildUserStats } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
 const ParamSchema = createSelectSchema(guildUserStats)
 	.pick({ guildId: true, discordId: true })
-	.openapi('GetGuildUserStatsParam')
-
-const ResponseSchema = createSelectSchema(guildUserStats)
-	.pick({
-		discordId: true,
-		rating: true,
-		wins: true,
-		losses: true,
-		placementGames: true,
-		peakRating: true,
-		currentStreak: true,
-		lastPlayedAt: true,
-	})
-	.openapi('GetGuildUserStatsResponse')
+	.openapi('DeleteGuildUserStatsParam')
 
 const route = createRoute({
-	method: 'get',
+	method: 'delete',
 	path: '/v1/guilds/{guildId}/users/{discordId}/stats',
 	tags: ['Stats'],
-	summary: 'Get user stats in guild',
-	description: 'Get user stats in guild',
+	summary: 'Reset user stats in guild',
+	description: 'ユーザーのスタッツと履歴をリセットする',
 	request: {
 		params: ParamSchema,
 	},
 	responses: {
-		200: {
-			description: 'User stats',
-			content: { 'application/json': { schema: ResponseSchema } },
+		204: {
+			description: 'User stats reset',
 		},
 		404: {
 			description: 'Guild or stats not found',
@@ -56,27 +42,22 @@ export const typedApp = app.openapi(route, async (c) => {
 		return c.json({ message: 'Guild not found' }, 404)
 	}
 
-	// Get stats
-	const stats = await db
-		.select({
-			discordId: guildUserStats.discordId,
-			rating: guildUserStats.rating,
-			wins: guildUserStats.wins,
-			losses: guildUserStats.losses,
-			placementGames: guildUserStats.placementGames,
-			peakRating: guildUserStats.peakRating,
-			currentStreak: guildUserStats.currentStreak,
-			lastPlayedAt: guildUserStats.lastPlayedAt,
-		})
-		.from(guildUserStats)
+	// Delete stats
+	const result = await db
+		.delete(guildUserStats)
 		.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, discordId)))
-		.get()
+		.returning({ discordId: guildUserStats.discordId })
 
-	if (!stats) {
+	if (result.length === 0) {
 		return c.json({ message: 'Stats not found' }, 404)
 	}
 
-	return c.json(stats, 200)
+	// Delete match history
+	await db
+		.delete(guildUserMatchHistory)
+		.where(and(eq(guildUserMatchHistory.guildId, guildId), eq(guildUserMatchHistory.discordId, discordId)))
+
+	return c.body(null, 204)
 })
 
 export default app

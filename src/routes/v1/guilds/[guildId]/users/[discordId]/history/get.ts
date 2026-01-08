@@ -6,11 +6,8 @@ import { z } from 'zod'
 import { guilds, guildUserMatchHistory, guildUserStats } from '@/db/schema'
 import { ErrorResponseSchema, PaginationQuerySchema } from '@/utils/schemas'
 
-const ParamSchema = z
-	.object({
-		guildId: z.string().openapi({ description: 'Guild ID' }),
-		discordId: z.string().openapi({ description: 'Discord ID' }),
-	})
+const ParamSchema = createSelectSchema(guildUserStats)
+	.pick({ guildId: true, discordId: true })
 	.openapi('GetUserHistoryParam')
 
 const HistoryItemSchema = createSelectSchema(guildUserMatchHistory).pick({

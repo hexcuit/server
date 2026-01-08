@@ -25,8 +25,8 @@ const ParamSchema = z
 const BodySchema = z
 	.object({
 		discordId: z.string(),
-		mainRole: z.enum(LOL_ROLES),
-		subRole: z.enum(LOL_ROLES),
+		mainRole: z.enum(LOL_ROLES).optional().default('FILL'),
+		subRole: z.enum(LOL_ROLES).optional().default('FILL'),
 	})
 	.openapi('JoinQueueBody')
 
@@ -55,6 +55,7 @@ const JoinedResponseSchema = z
 const MatchStartedResponseSchema = z
 	.object({
 		status: z.literal('match_started'),
+		creatorId: z.string().nullable(),
 		match: z.object({
 			id: z.string(),
 			teamAssignments: z.record(z.string(), TeamAssignmentSchema),
@@ -223,6 +224,7 @@ export const typedApp = app.openapi(route, async (c) => {
 	return c.json(
 		{
 			status: 'match_started' as const,
+			creatorId: queue.creatorId,
 			match: {
 				id: match.id,
 				teamAssignments,

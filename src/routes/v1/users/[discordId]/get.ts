@@ -5,11 +5,7 @@ import { createSelectSchema } from 'drizzle-zod'
 import { ranks, users } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
-const ParamSchema = z
-	.object({
-		discordId: z.string().openapi({ description: 'Discord User ID' }),
-	})
-	.openapi('GetUserParam')
+const ParamSchema = createSelectSchema(users).pick({ discordId: true }).openapi('GetUserParam')
 
 const RankSchema = createSelectSchema(ranks).pick({ tier: true, division: true })
 

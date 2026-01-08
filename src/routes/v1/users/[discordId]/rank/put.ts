@@ -4,11 +4,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { ranks } from '@/db/schema'
 import { ensureUser } from '@/utils/ensure'
 
-const ParamSchema = z
-	.object({
-		discordId: z.string().openapi({ description: 'Discord User ID' }),
-	})
-	.openapi('UpsertRankParam')
+const ParamSchema = createSelectSchema(ranks).pick({ discordId: true }).openapi('UpsertRankParam')
 
 const BodySchema = createInsertSchema(ranks).pick({ tier: true, division: true }).openapi('UpsertRankBody')
 

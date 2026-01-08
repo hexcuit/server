@@ -1,6 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, count, desc, eq, gt } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
+import { createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { guildSettings, guilds, guildUserMatchHistory, guildUserStats, ranks } from '@/db/schema'
 import { getRankDisplay } from '@/utils/elo'
@@ -8,11 +9,8 @@ import { ErrorResponseSchema } from '@/utils/schemas'
 import type { MatchHistoryItem, RatingHistoryPoint } from '@/utils/stats-card'
 import { generateStatsCard } from '@/utils/stats-card'
 
-const ParamSchema = z
-	.object({
-		guildId: z.string().openapi({ description: 'Guild ID' }),
-		discordId: z.string().openapi({ description: 'Discord User ID' }),
-	})
+const ParamSchema = createSelectSchema(guildUserStats)
+	.pick({ guildId: true, discordId: true })
 	.openapi('GetStatsImageParam')
 
 const QuerySchema = z

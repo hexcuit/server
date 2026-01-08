@@ -10,11 +10,13 @@ import { typedApp as app3 } from './routes/v1/guilds/[guildId]/queues/[queueId]/
 import { typedApp as app4 } from './routes/v1/guilds/[guildId]/queues/[queueId]/start/post'
 import { typedApp as app5 } from './routes/v1/guilds/[guildId]/queues/post'
 import { typedApp as app6 } from './routes/v1/guilds/[guildId]/rankings/get'
-import { typedApp as app7 } from './routes/v1/guilds/[guildId]/users/[discordId]/history/get'
-import { typedApp as app8 } from './routes/v1/guilds/[guildId]/users/[discordId]/stats/get'
-import { typedApp as app9 } from './routes/v1/guilds/[guildId]/users/[discordId]/stats/image/get'
-import { typedApp as app10 } from './routes/v1/users/[discordId]/get'
-import { typedApp as app11 } from './routes/v1/users/[discordId]/rank/put'
+import { typedApp as app7 } from './routes/v1/guilds/[guildId]/stats/delete'
+import { typedApp as app8 } from './routes/v1/guilds/[guildId]/users/[discordId]/history/get'
+import { typedApp as app9 } from './routes/v1/guilds/[guildId]/users/[discordId]/stats/delete'
+import { typedApp as app10 } from './routes/v1/guilds/[guildId]/users/[discordId]/stats/get'
+import { typedApp as app11 } from './routes/v1/guilds/[guildId]/users/[discordId]/stats/image/get'
+import { typedApp as app12 } from './routes/v1/users/[discordId]/get'
+import { typedApp as app13 } from './routes/v1/users/[discordId]/rank/put'
 
 const app = new OpenAPIHono()
 	.route('/', app0)
@@ -29,6 +31,8 @@ const app = new OpenAPIHono()
 	.route('/', app9)
 	.route('/', app10)
 	.route('/', app11)
+	.route('/', app12)
+	.route('/', app13)
 
 export type AppType = typeof app
 

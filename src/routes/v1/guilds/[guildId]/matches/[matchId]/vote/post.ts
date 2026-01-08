@@ -2,7 +2,13 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, count, eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { z } from 'zod'
-import { type LOL_TEAMS, MATCH_RESULTS, type MatchResult, type PlayerResult, VOTE_OPTIONS } from '@/constants'
+import {
+	type LOL_TEAMS,
+	MATCH_RESULTS,
+	type MatchResult,
+	type PlayerResult,
+	VOTE_OPTIONS,
+} from '@/constants'
 import { K_FACTOR_NORMAL, K_FACTOR_PLACEMENT, PLACEMENT_GAMES } from '@/constants/rating'
 import {
 	guildMatches,
@@ -143,7 +149,9 @@ export const typedApp = app.openapi(route, async (c) => {
 				db
 					.update(guildMatchVotes)
 					.set({ vote })
-					.where(and(eq(guildMatchVotes.matchId, matchId), eq(guildMatchVotes.discordId, discordId))),
+					.where(
+						and(eq(guildMatchVotes.matchId, matchId), eq(guildMatchVotes.discordId, discordId)),
+					),
 				db
 					.update(guildMatches)
 					.set({
@@ -171,7 +179,10 @@ export const typedApp = app.openapi(route, async (c) => {
 	// Get updated match and participant count
 	const [updatedMatch, participantCount] = await Promise.all([
 		db.select().from(guildMatches).where(eq(guildMatches.id, matchId)).get(),
-		db.select({ total: count() }).from(guildMatchPlayers).where(eq(guildMatchPlayers.matchId, matchId)),
+		db
+			.select({ total: count() })
+			.from(guildMatchPlayers)
+			.where(eq(guildMatchPlayers.matchId, matchId)),
 	])
 
 	if (!updatedMatch) {
@@ -211,13 +222,23 @@ export const typedApp = app.openapi(route, async (c) => {
 	}
 
 	// Majority reached - confirm match and calculate ratings
-	const settings = await db.select().from(guildSettings).where(eq(guildSettings.guildId, guildId)).get()
+	const settings = await db
+		.select()
+		.from(guildSettings)
+		.where(eq(guildSettings.guildId, guildId))
+		.get()
 	const kFactorNormal = settings?.kFactor ?? K_FACTOR_NORMAL
 	const kFactorPlacement = settings?.kFactorPlacement ?? K_FACTOR_PLACEMENT
 	const placementGamesRequired = settings?.placementGamesRequired ?? PLACEMENT_GAMES
 
-	const players = await db.select().from(guildMatchPlayers).where(eq(guildMatchPlayers.matchId, matchId))
-	const playerStats = await db.select().from(guildUserStats).where(eq(guildUserStats.guildId, guildId))
+	const players = await db
+		.select()
+		.from(guildMatchPlayers)
+		.where(eq(guildMatchPlayers.matchId, matchId))
+	const playerStats = await db
+		.select()
+		.from(guildUserStats)
+		.where(eq(guildUserStats.guildId, guildId))
 	const statsMap = new Map(playerStats.map((s) => [s.discordId, s]))
 
 	const ratingChanges: Array<{
@@ -265,7 +286,9 @@ export const typedApp = app.openapi(route, async (c) => {
 		const ratingAfter = matchPlayer.ratingBefore + ratingChange
 		const newWins = result === 'WIN' ? currentStats.wins + 1 : currentStats.wins
 		const newLosses = result === 'LOSE' ? currentStats.losses + 1 : currentStats.losses
-		const newPlacementGames = isPlacement ? currentStats.placementGames + 1 : currentStats.placementGames
+		const newPlacementGames = isPlacement
+			? currentStats.placementGames + 1
+			: currentStats.placementGames
 		const newStreak =
 			result === 'WIN'
 				? currentStats.currentStreak > 0
@@ -329,7 +352,9 @@ export const typedApp = app.openapi(route, async (c) => {
 					peakRating: update.peakRating,
 					lastPlayedAt: update.lastPlayedAt,
 				})
-				.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, update.discordId))),
+				.where(
+					and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, update.discordId)),
+				),
 		),
 		...(historyInserts.length > 0 ? [db.insert(guildUserMatchHistory).values(historyInserts)] : []),
 	])

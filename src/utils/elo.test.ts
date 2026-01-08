@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'bun:test'
-import { INITIAL_RATING, K_FACTOR_NORMAL, K_FACTOR_PLACEMENT, PLACEMENT_GAMES } from '@/constants/rating'
+import {
+	INITIAL_RATING,
+	K_FACTOR_NORMAL,
+	K_FACTOR_PLACEMENT,
+	PLACEMENT_GAMES,
+} from '@/constants/rating'
 import {
 	calculateExpectedScore,
 	calculateNewRating,

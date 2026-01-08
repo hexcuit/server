@@ -82,7 +82,12 @@ export const typedApp = app.openapi(route, async (c) => {
 			createdAt: guildUserMatchHistory.createdAt,
 		})
 		.from(guildUserMatchHistory)
-		.where(and(eq(guildUserMatchHistory.guildId, guildId), eq(guildUserMatchHistory.discordId, discordId)))
+		.where(
+			and(
+				eq(guildUserMatchHistory.guildId, guildId),
+				eq(guildUserMatchHistory.discordId, discordId),
+			),
+		)
 		.orderBy(desc(guildUserMatchHistory.createdAt))
 		.limit(limit)
 		.offset(offset)
@@ -91,7 +96,12 @@ export const typedApp = app.openapi(route, async (c) => {
 	const totalResult = await db
 		.select({ total: count() })
 		.from(guildUserMatchHistory)
-		.where(and(eq(guildUserMatchHistory.guildId, guildId), eq(guildUserMatchHistory.discordId, discordId)))
+		.where(
+			and(
+				eq(guildUserMatchHistory.guildId, guildId),
+				eq(guildUserMatchHistory.discordId, discordId),
+			),
+		)
 
 	return c.json({ history, total: totalResult[0]?.total ?? 0 }, 200)
 })

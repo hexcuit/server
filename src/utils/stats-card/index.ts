@@ -11,7 +11,9 @@ async function loadFont(): Promise<ArrayBuffer> {
 
 	// Inter font TTF from Fontsource (jsdelivr CDN)
 	// satori requires TTF/OTF format, not WOFF2
-	const fontResponse = await fetch('https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.ttf')
+	const fontResponse = await fetch(
+		'https://cdn.jsdelivr.net/fontsource/fonts/inter@latest/latin-400-normal.ttf',
+	)
 	fontCache = await fontResponse.arrayBuffer()
 	return fontCache
 }

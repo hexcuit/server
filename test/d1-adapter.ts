@@ -112,7 +112,9 @@ export class D1DatabaseAdapter {
 
 	dump(): Promise<ArrayBuffer> {
 		const buffer = this.db.serialize()
-		return Promise.resolve(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer)
+		return Promise.resolve(
+			buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer,
+		)
 	}
 }
 

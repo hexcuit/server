@@ -22,7 +22,10 @@ const emptySnapshot = {
 } as const
 
 const currentSnapshot = await generateSQLiteDrizzleJson(schema)
-const statements = await generateSQLiteMigration(emptySnapshot, currentSnapshot as typeof emptySnapshot)
+const statements = await generateSQLiteMigration(
+	emptySnapshot,
+	currentSnapshot as typeof emptySnapshot,
+)
 
 for (const statement of statements) {
 	db.run(statement)

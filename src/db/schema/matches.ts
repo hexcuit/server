@@ -1,5 +1,12 @@
 import { index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
-import { LOL_ROLES, LOL_TEAMS, MATCH_RESULTS, MATCH_STATUSES, PLAYER_RESULTS, VOTE_OPTIONS } from '@/constants'
+import {
+	LOL_ROLES,
+	LOL_TEAMS,
+	MATCH_RESULTS,
+	MATCH_STATUSES,
+	PLAYER_RESULTS,
+	VOTE_OPTIONS,
+} from '@/constants'
 import { currentTimestamp, timestamp } from './common'
 import { guilds } from './guilds'
 import { users } from './users'

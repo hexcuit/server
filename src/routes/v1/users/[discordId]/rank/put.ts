@@ -6,7 +6,9 @@ import { ensureUser } from '@/utils/ensure'
 
 const ParamSchema = createSelectSchema(ranks).pick({ discordId: true }).openapi('UpsertRankParam')
 
-const BodySchema = createInsertSchema(ranks).pick({ tier: true, division: true }).openapi('UpsertRankBody')
+const BodySchema = createInsertSchema(ranks)
+	.pick({ tier: true, division: true })
+	.openapi('UpsertRankBody')
 
 const ResponseSchema = createSelectSchema(ranks)
 	.pick({ tier: true, division: true, updatedAt: true })

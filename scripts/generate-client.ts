@@ -30,7 +30,8 @@ async function main() {
 	const glob = new Glob('src/routes/**/*.ts')
 	const allFiles = Array.from(glob.scanSync({ dot: false })).sort()
 	const files = allFiles.filter(
-		(file) => !file.endsWith('index.ts') && !file.endsWith('.test.ts') && !file.endsWith('schemas.ts'),
+		(file) =>
+			!file.endsWith('index.ts') && !file.endsWith('.test.ts') && !file.endsWith('schemas.ts'),
 	)
 
 	// Filter files that export typedApp
@@ -50,7 +51,9 @@ async function main() {
 	const imports: string[] = []
 	const chains: string[] = []
 
-	console.log(`${c.green}${c.bold}Registered endpoints${c.reset} ${c.dim}(${routeFiles.length} routes)${c.reset}`)
+	console.log(
+		`${c.green}${c.bold}Registered endpoints${c.reset} ${c.dim}(${routeFiles.length} routes)${c.reset}`,
+	)
 
 	for (const [i, file] of routeFiles.entries()) {
 		const relativePath = `./${path.relative('src', file).replace(/\\/g, '/').replace(/\.ts$/, '')}`
@@ -61,7 +64,9 @@ async function main() {
 		const isLast = i === routeFiles.length - 1
 		const prefix = isLast ? '└─' : '├─'
 		const num = String(i + 1).padStart(2, '0')
-		console.log(`${c.dim}   ${prefix} ${c.reset}${c.dim}[${num}]${c.reset} ${c.cyan}${relativePath}${c.reset}`)
+		console.log(
+			`${c.dim}   ${prefix} ${c.reset}${c.dim}[${num}]${c.reset} ${c.cyan}${relativePath}${c.reset}`,
+		)
 	}
 
 	const clientContent = `// This file is auto-generated. Do not edit manually.
@@ -91,7 +96,9 @@ export const hcWithType = (...args) => hc(...args);
 	// Warn about files missing typedApp export
 	if (skippedFiles.length > 0) {
 		console.log()
-		console.log(`${c.yellow}⚠  Missing typedApp export${c.reset} ${c.dim}(${skippedFiles.length} files)${c.reset}`)
+		console.log(
+			`${c.yellow}⚠  Missing typedApp export${c.reset} ${c.dim}(${skippedFiles.length} files)${c.reset}`,
+		)
 
 		for (const [i, file] of skippedFiles.entries()) {
 			const relativePath = `./${path.relative('src', file).replace(/\\/g, '/').replace(/\.ts$/, '')}`

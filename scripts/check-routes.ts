@@ -65,7 +65,11 @@ async function findRouteFiles(dir: string): Promise<string[]> {
 
 		if (entry.isDirectory()) {
 			files.push(...(await findRouteFiles(fullPath)))
-		} else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts') && entry.name !== 'index.ts') {
+		} else if (
+			entry.name.endsWith('.ts') &&
+			!entry.name.endsWith('.test.ts') &&
+			entry.name !== 'index.ts'
+		) {
 			files.push(fullPath)
 		}
 	}
@@ -266,7 +270,9 @@ async function main() {
 			for (const [i, file] of dup.files.entries()) {
 				const isLast = i === dup.files.length - 1
 				const prefix = isLast ? '└─' : '├─'
-				console.log(`${c.dim}   ${prefix}${c.reset} ${c.yellow}${relative(ROUTES_DIR, file)}${c.reset}`)
+				console.log(
+					`${c.dim}   ${prefix}${c.reset} ${c.yellow}${relative(ROUTES_DIR, file)}${c.reset}`,
+				)
 			}
 			console.log()
 		}
@@ -335,7 +341,9 @@ async function main() {
 	console.log(`${c.dim}Scanned ${totalFiles} files${c.reset}`)
 
 	if (!FIX_MODE && hasErrors) {
-		console.log(`\n${c.cyan}Run with ${c.bold}--fix${c.reset}${c.cyan} to auto-fix issues${c.reset}`)
+		console.log(
+			`\n${c.cyan}Run with ${c.bold}--fix${c.reset}${c.cyan} to auto-fix issues${c.reset}`,
+		)
 		if (duplicates.length > 0) {
 			console.log(`${c.dim}(after resolving duplicates)${c.reset}`)
 		}

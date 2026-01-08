@@ -15,7 +15,10 @@ const ParamSchema = createSelectSchema(guildUserStats)
 
 const QuerySchema = z
 	.object({
-		displayName: z.string().optional().openapi({ description: 'Display name (defaults to discordId)' }),
+		displayName: z
+			.string()
+			.optional()
+			.openapi({ description: 'Display name (defaults to discordId)' }),
 		avatarUrl: z.url().optional().openapi({ description: 'Avatar URL' }),
 	})
 	.openapi('GetStatsImageQuery')
@@ -99,7 +102,11 @@ export const typedApp = app.openapi(route, async (c) => {
 	}
 
 	// Get guild settings for placement games
-	const settings = await db.select().from(guildSettings).where(eq(guildSettings.guildId, guildId)).get()
+	const settings = await db
+		.select()
+		.from(guildSettings)
+		.where(eq(guildSettings.guildId, guildId))
+		.get()
 
 	const placementGamesRequired = settings?.placementGamesRequired ?? 5
 
@@ -130,7 +137,12 @@ export const typedApp = app.openapi(route, async (c) => {
 			createdAt: guildUserMatchHistory.createdAt,
 		})
 		.from(guildUserMatchHistory)
-		.where(and(eq(guildUserMatchHistory.guildId, guildId), eq(guildUserMatchHistory.discordId, discordId)))
+		.where(
+			and(
+				eq(guildUserMatchHistory.guildId, guildId),
+				eq(guildUserMatchHistory.discordId, discordId),
+			),
+		)
 		.orderBy(desc(guildUserMatchHistory.createdAt))
 		.limit(10)
 
@@ -150,7 +162,10 @@ export const typedApp = app.openapi(route, async (c) => {
 		}))
 
 	// Add current rating as the latest point if not already there
-	if (ratingHistory.length === 0 || ratingHistory[ratingHistory.length - 1]?.rating !== stats.rating) {
+	if (
+		ratingHistory.length === 0 ||
+		ratingHistory[ratingHistory.length - 1]?.rating !== stats.rating
+	) {
 		ratingHistory.push({
 			date: new Date().toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }),
 			rating: stats.rating,
@@ -171,7 +186,9 @@ export const typedApp = app.openapi(route, async (c) => {
 		.where(eq(ranks.discordId, discordId))
 		.get()
 
-	const rankString = userRank ? `${userRank.tier} ${userRank.division}` : formatRankDisplay(stats.rating)
+	const rankString = userRank
+		? `${userRank.tier} ${userRank.division}`
+		: formatRankDisplay(stats.rating)
 
 	// Convert avatar image to Base64 (satori cannot directly process external URLs)
 	const avatarDataUrl = await fetchImageAsDataUrl(avatarUrl ?? DEFAULT_AVATAR)

@@ -84,7 +84,10 @@ export const typedApp = app.openapi(route, async (c) => {
 	}
 
 	// Get current players
-	const currentPlayers = await db.select().from(guildQueuePlayers).where(eq(guildQueuePlayers.queueId, queueId))
+	const currentPlayers = await db
+		.select()
+		.from(guildQueuePlayers)
+		.where(eq(guildQueuePlayers.queueId, queueId))
 
 	// Check minimum players
 	if (currentPlayers.length < 2) {
@@ -92,7 +95,11 @@ export const typedApp = app.openapi(route, async (c) => {
 	}
 
 	// Get settings for initial rating
-	const settings = await db.select().from(guildSettings).where(eq(guildSettings.guildId, guildId)).get()
+	const settings = await db
+		.select()
+		.from(guildSettings)
+		.where(eq(guildSettings.guildId, guildId))
+		.get()
 
 	const initialRating = settings?.initialRating ?? 1200
 

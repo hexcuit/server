@@ -8,7 +8,14 @@ import { ErrorResponseSchema } from '@/utils/schemas'
 const ParamSchema = createSelectSchema(guilds).pick({ guildId: true }).openapi('CreateQueueParam')
 
 const BodySchema = createInsertSchema(guildQueues)
-	.pick({ channelId: true, messageId: true, creatorId: true, type: true, capacity: true, anonymous: true })
+	.pick({
+		channelId: true,
+		messageId: true,
+		creatorId: true,
+		type: true,
+		capacity: true,
+		anonymous: true,
+	})
 	.openapi('CreateQueueBody')
 
 const ResponseSchema = createSelectSchema(guildQueues)

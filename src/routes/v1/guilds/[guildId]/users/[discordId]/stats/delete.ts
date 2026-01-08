@@ -55,7 +55,12 @@ export const typedApp = app.openapi(route, async (c) => {
 	// Delete match history
 	await db
 		.delete(guildUserMatchHistory)
-		.where(and(eq(guildUserMatchHistory.guildId, guildId), eq(guildUserMatchHistory.discordId, discordId)))
+		.where(
+			and(
+				eq(guildUserMatchHistory.guildId, guildId),
+				eq(guildUserMatchHistory.discordId, discordId),
+			),
+		)
 
 	return c.body(null, 204)
 })

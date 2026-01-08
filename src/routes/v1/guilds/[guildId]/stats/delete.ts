@@ -5,7 +5,9 @@ import { createSelectSchema } from 'drizzle-zod'
 import { guilds, guildUserMatchHistory, guildUserStats } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
-const ParamSchema = createSelectSchema(guilds).pick({ guildId: true }).openapi('DeleteGuildStatsParam')
+const ParamSchema = createSelectSchema(guilds)
+	.pick({ guildId: true })
+	.openapi('DeleteGuildStatsParam')
 
 const route = createRoute({
 	method: 'delete',

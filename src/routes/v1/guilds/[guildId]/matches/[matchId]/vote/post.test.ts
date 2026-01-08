@@ -280,4 +280,147 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {
 			expect(data.message).toBe('Player not in match')
 		}
 	})
+
+	it('confirms match with RED winning when majority votes RED', async () => {
+		const db = drizzle(env.DB)
+		const matchId = ctx.generateMatchId()
+		await db.insert(users).values([{ discordId: ctx.discordId }, { discordId: ctx.discordId2 }])
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+		await db.insert(guildMatches).values({
+			id: matchId,
+			guildId: ctx.guildId,
+			channelId: ctx.channelId,
+			messageId: ctx.messageId,
+			status: 'voting',
+			redVotes: 1,
+		})
+		await db.insert(guildMatchPlayers).values([
+			{
+				matchId,
+				discordId: ctx.discordId,
+				team: 'BLUE',
+				role: 'MIDDLE',
+				ratingBefore: INITIAL_RATING,
+			},
+			{
+				matchId,
+				discordId: ctx.discordId2,
+				team: 'RED',
+				role: 'BOTTOM',
+				ratingBefore: INITIAL_RATING,
+			},
+		])
+		await db.insert(guildUserStats).values([
+			{
+				guildId: ctx.guildId,
+				discordId: ctx.discordId,
+				rating: INITIAL_RATING,
+				peakRating: INITIAL_RATING,
+			},
+			{
+				guildId: ctx.guildId,
+				discordId: ctx.discordId2,
+				rating: INITIAL_RATING,
+				peakRating: INITIAL_RATING,
+			},
+		])
+
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].vote.$post(
+			{
+				param: { guildId: ctx.guildId, matchId },
+				json: { discordId: ctx.discordId, vote: 'RED' },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(200)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.status).toBe('confirmed')
+			if (data.status === 'confirmed') {
+				expect(data.winningTeam).toBe('RED')
+				expect(data.ratingChanges).toHaveLength(2)
+				const redPlayerChange = data.ratingChanges.find((r) => r.team === 'RED')
+				expect(redPlayerChange?.ratingChange).toBeGreaterThan(0)
+				const bluePlayerChange = data.ratingChanges.find((r) => r.team === 'BLUE')
+				expect(bluePlayerChange?.ratingChange).toBeLessThan(0)
+			}
+		}
+
+		const match = await db.select().from(guildMatches).where(eq(guildMatches.id, matchId)).get()
+		expect(match?.status).toBe('confirmed')
+		expect(match?.winningTeam).toBe('RED')
+	})
+
+	it('confirms match with DRAW when majority votes DRAW', async () => {
+		const db = drizzle(env.DB)
+		const matchId = ctx.generateMatchId()
+		await db.insert(users).values([{ discordId: ctx.discordId }, { discordId: ctx.discordId2 }])
+		await db.insert(guilds).values({ guildId: ctx.guildId })
+		await db.insert(guildMatches).values({
+			id: matchId,
+			guildId: ctx.guildId,
+			channelId: ctx.channelId,
+			messageId: ctx.messageId,
+			status: 'voting',
+			drawVotes: 1,
+		})
+		await db.insert(guildMatchPlayers).values([
+			{
+				matchId,
+				discordId: ctx.discordId,
+				team: 'BLUE',
+				role: 'MIDDLE',
+				ratingBefore: INITIAL_RATING,
+			},
+			{
+				matchId,
+				discordId: ctx.discordId2,
+				team: 'RED',
+				role: 'BOTTOM',
+				ratingBefore: INITIAL_RATING,
+			},
+		])
+		await db.insert(guildUserStats).values([
+			{
+				guildId: ctx.guildId,
+				discordId: ctx.discordId,
+				rating: INITIAL_RATING,
+				peakRating: INITIAL_RATING,
+			},
+			{
+				guildId: ctx.guildId,
+				discordId: ctx.discordId2,
+				rating: INITIAL_RATING,
+				peakRating: INITIAL_RATING,
+			},
+		])
+
+		const res = await client.v1.guilds[':guildId'].matches[':matchId'].vote.$post(
+			{
+				param: { guildId: ctx.guildId, matchId },
+				json: { discordId: ctx.discordId, vote: 'DRAW' },
+			},
+			authHeaders,
+		)
+
+		expect(res.status).toBe(200)
+
+		if (res.ok) {
+			const data = await res.json()
+			expect(data.status).toBe('confirmed')
+			if (data.status === 'confirmed') {
+				expect(data.winningTeam).toBe('DRAW')
+				expect(data.ratingChanges).toHaveLength(2)
+				for (const change of data.ratingChanges) {
+					expect(change.ratingChange).toBe(0)
+				}
+			}
+		}
+
+		const match = await db.select().from(guildMatches).where(eq(guildMatches.id, matchId)).get()
+		expect(match?.status).toBe('confirmed')
+		expect(match?.winningTeam).toBe('DRAW')
+	})
 })

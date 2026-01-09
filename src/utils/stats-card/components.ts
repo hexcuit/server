@@ -597,7 +597,6 @@ function PlacementBanner({ games }: { games: number }) {
 
 // メインコンポーネント
 export function createStatsCard(data: StatsCardData) {
-	// biome-ignore lint/suspicious/noExplicitAny: satori の仮想 DOM 構造のため any を使用
 	const children: any[] = [
 		Header({
 			displayName: data.displayName,

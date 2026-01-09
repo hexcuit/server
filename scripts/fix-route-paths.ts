@@ -1,20 +1,22 @@
 #!/usr/bin/env bun
 /**
- * Route path/method checker/fixer
+ * Route path/filename checker/fixer
  *
- * Ensures createRoute's path and method match the file location.
- * File path is the source of truth.
+ * - path: File location is source of truth → fixes createRoute.path
+ * - method: createRoute.method is source of truth → renames file
  *
  * Usage:
  *   bun scripts/fix-route-paths.ts          # Check only (exits 1 on mismatch)
  *   bun scripts/fix-route-paths.ts --fix    # Auto-fix issues
  */
 
-import { readdir, readFile, writeFile } from 'node:fs/promises'
-import { basename, join, relative } from 'node:path'
+import { readdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { basename, dirname, join, relative } from 'node:path'
 
 const ROUTES_DIR = join(import.meta.dirname, '../src/routes')
 const FIX_MODE = process.argv.includes('--fix')
+const HTTP_METHODS = ['get', 'post', 'put', 'delete', 'patch'] as const
+type HttpMethod = (typeof HTTP_METHODS)[number]
 
 // ANSI colors
 const c = {
@@ -30,10 +32,10 @@ const c = {
 interface RouteFile {
 	filePath: string
 	relativePath: string
-	expectedPath: string
-	expectedMethod: string
-	actualPath: string | null
-	actualMethod: string | null
+	expectedPath: string // Based on file location
+	filenameMethod: string // Current filename (e.g., "get" from "get.ts")
+	actualPath: string | null // From createRoute
+	actualMethod: string | null // From createRoute
 }
 
 interface Issue {
@@ -41,6 +43,7 @@ interface Issue {
 	pathMismatch: boolean
 	methodMismatch: boolean
 	fixApplied: boolean
+	newFilePath?: string
 }
 
 async function findRouteFiles(dir: string, basePath = ''): Promise<string[]> {
@@ -81,7 +84,7 @@ function filePathToRoutePath(filePath: string, routesDir: string): string {
 	return `/${converted.join('/')}`
 }
 
-function filePathToMethod(filePath: string): string {
+function getFilenameMethod(filePath: string): string {
 	return basename(filePath, '.ts')
 }
 
@@ -89,7 +92,7 @@ async function parseRouteFile(filePath: string): Promise<RouteFile> {
 	const content = await readFile(filePath, 'utf-8')
 	const relativePath = relative(ROUTES_DIR, filePath)
 	const expectedPath = filePathToRoutePath(filePath, ROUTES_DIR)
-	const expectedMethod = filePathToMethod(filePath)
+	const filenameMethod = getFilenameMethod(filePath)
 
 	// Extract path from createRoute
 	const pathMatch = content.match(/path:\s*['"]([^'"]+)['"]/i)
@@ -99,49 +102,60 @@ async function parseRouteFile(filePath: string): Promise<RouteFile> {
 	const methodMatch = content.match(/method:\s*['"](\w+)['"]/i)
 	const actualMethod = methodMatch?.[1]?.toLowerCase() ?? null
 
-	return { filePath, relativePath, expectedPath, expectedMethod, actualPath, actualMethod }
+	return { filePath, relativePath, expectedPath, filenameMethod, actualPath, actualMethod }
 }
 
 function printTree(items: { relativePath: string }[], color: string) {
 	for (const [i, item] of items.entries()) {
 		const isLast = i === items.length - 1
 		const prefix = isLast ? '└─' : '├─'
-		console.log(`${c.dim}   ${prefix}${c.reset} ${color}${item.relativePath}${c.reset}`)
+		const num = String(i + 1).padStart(2, '0')
+		console.log(
+			`${c.dim}   ${prefix} ${c.reset}${c.dim}[${num}]${c.reset} ${color}${item.relativePath}${c.reset}`,
+		)
 	}
+}
+
+interface FixResult {
+	success: boolean
+	newFilePath?: string
 }
 
 async function fixRouteFile(
 	file: RouteFile,
 	pathMismatch: boolean,
 	methodMismatch: boolean,
-): Promise<boolean> {
-	let content = await readFile(file.filePath, 'utf-8')
-	let changed = false
+): Promise<FixResult> {
+	let currentFilePath = file.filePath
+	let success = false
 
+	// Fix path in createRoute content
 	if (pathMismatch && file.actualPath) {
+		const content = await readFile(currentFilePath, 'utf-8')
 		const newContent = content.replace(/path:\s*['"]([^'"]+)['"]/i, `path: '${file.expectedPath}'`)
 		if (content !== newContent) {
-			content = newContent
-			changed = true
+			await writeFile(currentFilePath, newContent, 'utf-8')
+			success = true
 		}
 	}
 
+	// Rename file based on createRoute.method
 	if (methodMismatch && file.actualMethod) {
-		const newContent = content.replace(
-			/method:\s*['"](\w+)['"]/i,
-			`method: '${file.expectedMethod}'`,
-		)
-		if (content !== newContent) {
-			content = newContent
-			changed = true
+		if (!HTTP_METHODS.includes(file.actualMethod as HttpMethod)) {
+			// Invalid method, can't rename
+			return { success }
 		}
+
+		const dir = dirname(currentFilePath)
+		const newFilePath = join(dir, `${file.actualMethod}.ts`)
+		await rename(currentFilePath, newFilePath)
+		currentFilePath = newFilePath
+		success = true
+
+		return { success, newFilePath }
 	}
 
-	if (changed) {
-		await writeFile(file.filePath, content, 'utf-8')
-	}
-
-	return changed
+	return { success }
 }
 
 async function main() {
@@ -152,22 +166,39 @@ async function main() {
 
 	const issues: Issue[] = []
 	const skipped: RouteFile[] = []
+	const invalidMethod: RouteFile[] = []
 
 	for (const file of files) {
+		// Skip files without createRoute
 		if (!file.actualPath && !file.actualMethod) {
 			skipped.push(file)
 			continue
 		}
 
+		// Check if filename is valid HTTP method
+		const filenameIsValid = HTTP_METHODS.includes(file.filenameMethod as HttpMethod)
+		const actualMethodIsValid =
+			file.actualMethod && HTTP_METHODS.includes(file.actualMethod as HttpMethod)
+
+		// Skip files with invalid filename and no valid actualMethod to fix to
+		if (!filenameIsValid && !actualMethodIsValid) {
+			invalidMethod.push(file)
+			continue
+		}
+
 		const pathMismatch = file.actualPath !== null && file.actualPath !== file.expectedPath
-		const methodMismatch = file.actualMethod !== null && file.actualMethod !== file.expectedMethod
+		const methodMismatch = file.actualMethod !== null && file.actualMethod !== file.filenameMethod
 
 		if (pathMismatch || methodMismatch) {
 			let fixApplied = false
+			let newFilePath: string | undefined
+
 			if (FIX_MODE) {
-				fixApplied = await fixRouteFile(file, pathMismatch, methodMismatch)
+				const result = await fixRouteFile(file, pathMismatch, methodMismatch)
+				fixApplied = result.success
+				newFilePath = result.newFilePath
 			}
-			issues.push({ file, pathMismatch, methodMismatch, fixApplied })
+			issues.push({ file, pathMismatch, methodMismatch, fixApplied, newFilePath })
 		}
 	}
 
@@ -180,6 +211,15 @@ async function main() {
 		console.log()
 	}
 
+	// Show invalid method files
+	if (invalidMethod.length > 0) {
+		console.log(
+			`${c.yellow}⚠  Invalid ${invalidMethod.length} file(s)${c.reset} ${c.dim}(not a valid HTTP method)${c.reset}`,
+		)
+		printTree(invalidMethod, c.dim)
+		console.log()
+	}
+
 	// Show issues
 	if (issues.length === 0) {
 		console.log(`${c.green}${c.bold}✅ All routes are consistent!${c.reset}`)
@@ -189,22 +229,27 @@ async function main() {
 
 	console.log(`${c.red}${c.bold}Found ${issues.length} mismatch(es)${c.reset}\n`)
 
-	for (const { file, pathMismatch, methodMismatch, fixApplied } of issues) {
+	for (const { file, pathMismatch, methodMismatch, fixApplied, newFilePath } of issues) {
 		console.log(`${c.red}●${c.reset} ${c.bold}${file.relativePath}${c.reset}`)
 
 		if (pathMismatch) {
 			console.log(
-				`${c.dim}   ├─${c.reset} path:   ${c.yellow}${file.actualPath}${c.reset} → ${c.green}${file.expectedPath}${c.reset}`,
+				`${c.dim}   ├─${c.reset} path:   ${c.yellow}${file.actualPath}${c.reset} → ${c.green}${file.expectedPath}${c.reset} ${c.dim}(fix content)${c.reset}`,
 			)
 		}
 		if (methodMismatch) {
 			console.log(
-				`${c.dim}   ├─${c.reset} method: ${c.yellow}${file.actualMethod}${c.reset} → ${c.green}${file.expectedMethod}${c.reset}`,
+				`${c.dim}   ├─${c.reset} file:   ${c.yellow}${file.filenameMethod}.ts${c.reset} → ${c.green}${file.actualMethod}.ts${c.reset} ${c.dim}(rename)${c.reset}`,
 			)
 		}
 
 		if (fixApplied) {
-			console.log(`${c.dim}   └─${c.reset} ${c.green}✅ Fixed!${c.reset}`)
+			if (newFilePath) {
+				const newRelative = relative(ROUTES_DIR, newFilePath)
+				console.log(`${c.dim}   └─${c.reset} ${c.green}✅ Fixed! → ${newRelative}${c.reset}`)
+			} else {
+				console.log(`${c.dim}   └─${c.reset} ${c.green}✅ Fixed!${c.reset}`)
+			}
 		} else if (FIX_MODE) {
 			console.log(`${c.dim}   └─${c.reset} ${c.red}⚠ Could not fix${c.reset}`)
 		} else {

@@ -6,12 +6,17 @@
 			{
 				"name": "generate-routes",
 				"glob": "src/routes/**/*.ts",
-				"run": "bun run generate:routes && git add src/routes/index.ts"
+				"run": "bun scripts/generate-routes.ts --fix && git add src/routes/index.ts"
 			},
 			{
 				"name": "generate-client",
 				"glob": "src/routes/**/*.ts",
-				"run": "bun run generate:client && git add src/client.ts"
+				"run": "bun scripts/generate-client.ts --fix && git add src/client.ts"
+			},
+			{
+				"name": "check-route-paths",
+				"glob": "src/routes/**/*.ts",
+				"run": "bun scripts/fix-route-paths.ts"
 			},
 			{
 				"name": "oxlint",

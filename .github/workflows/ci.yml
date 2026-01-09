@@ -31,6 +31,9 @@ jobs:
       - name: Check generated routes is up to date
         run: bun scripts/generate-routes.ts
 
+      - name: Check route paths consistency
+        run: bun scripts/fix-route-paths.ts
+
       - name: Check drizzle migrations are up to date
         run: |
           bun run generate:migration

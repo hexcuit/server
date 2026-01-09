@@ -1,5 +1,7 @@
 import { sqliteTable, text } from 'drizzle-orm/sqlite-core'
+
 import { LOL_DIVISIONS, LOL_TIERS } from '@/constants'
+
 import { currentTimestamp, timestamp } from './common'
 
 export const users = sqliteTable('users', {

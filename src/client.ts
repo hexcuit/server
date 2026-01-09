@@ -3,6 +3,7 @@
 
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { hc } from 'hono/client'
+
 import { typedApp as app0 } from './routes/v1/guilds/[guildId]/matches/[matchId]/vote/post'
 import { typedApp as app1 } from './routes/v1/guilds/[guildId]/queues/[queueId]/delete'
 import { typedApp as app2 } from './routes/v1/guilds/[guildId]/queues/[queueId]/join/post'

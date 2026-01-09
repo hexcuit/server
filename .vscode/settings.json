@@ -1,5 +1,10 @@
 {
 	"cSpell.words": ["unranked"],
+	"editor.defaultFormatter": "oxc.oxc-vscode",
+	"editor.codeActionsOnSave": {
+		"source.fixAll.oxc": "always"
+	},
+	"oxc.typeAware": true,
 	"files.watcherExclude": {
 		"**/client.ts": true
 	},

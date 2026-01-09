@@ -73,6 +73,7 @@ async function main() {
 
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { hc } from 'hono/client'
+
 ${imports.join('\n')}
 
 const app = new OpenAPIHono()

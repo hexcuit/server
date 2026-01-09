@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
+
 import get from './get'
 import rank from './rank'
 

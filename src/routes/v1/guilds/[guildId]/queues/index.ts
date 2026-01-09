@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
+
 import queueId from './[queueId]'
 import post from './post'
 

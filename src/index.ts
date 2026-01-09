@@ -1,6 +1,8 @@
 import { swaggerUI } from '@hono/swagger-ui'
 import { OpenAPIHono } from '@hono/zod-openapi'
+
 import v1 from '@/routes/v1'
+
 import version from '../package.json'
 
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()

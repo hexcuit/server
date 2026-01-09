@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { createStatsCard } from './components'
+
 import type { StatsCardData } from './types'
+
+import { createStatsCard } from './components'
 
 describe('createStatsCard', () => {
 	const baseData: StatsCardData = {

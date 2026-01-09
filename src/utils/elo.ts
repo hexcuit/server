@@ -1,4 +1,5 @@
 import type { LolDivision, LolTier } from '@/constants/lol'
+
 import {
 	INITIAL_RATING,
 	K_FACTOR_NORMAL,

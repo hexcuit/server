@@ -1,5 +1,6 @@
-import { readdirSync } from 'node:fs'
 import type { Config } from 'drizzle-kit'
+
+import { readdirSync } from 'node:fs'
 
 const fileNames = readdirSync('.wrangler/state/v3/d1/miniflare-D1DatabaseObject')
 

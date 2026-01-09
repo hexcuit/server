@@ -1,6 +1,6 @@
+import Database from 'better-sqlite3'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import Database from 'better-sqlite3'
 // Ensure @hono/zod-openapi extends Zod before any schemas are loaded
 import '@hono/zod-openapi'
 import { D1DatabaseAdapter } from './d1-adapter'

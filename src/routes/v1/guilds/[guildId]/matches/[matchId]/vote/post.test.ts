@@ -4,8 +4,10 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
+
 import { INITIAL_RATING } from '@/constants/rating'
 import { guildMatches, guildMatchPlayers, guilds, guildUserStats, users } from '@/db/schema'
+
 import { typedApp } from './post'
 
 describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {

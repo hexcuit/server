@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
+
 import matches from './matches'
 import queues from './queues'
 import rankings from './rankings'

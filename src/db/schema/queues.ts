@@ -1,5 +1,7 @@
 import { index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+
 import { LOL_ROLES, QUEUE_STATUSES, QUEUE_TYPES } from '@/constants'
+
 import { currentTimestamp, timestamp } from './common'
 import { guilds } from './guilds'
 import { users } from './users'

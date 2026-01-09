@@ -2,6 +2,7 @@ import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { createSelectSchema } from 'drizzle-zod'
+
 import { ranks, users } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 

@@ -1,4 +1,5 @@
 import type { DrizzleD1Database } from 'drizzle-orm/d1'
+
 import { guilds, users } from '@/db/schema'
 
 /**

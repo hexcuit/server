@@ -1,6 +1,8 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
+
 import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
 import { corsMiddleware } from '@/middlewares/corsMiddleware'
+
 import guilds from './guilds'
 import users from './users'
 

@@ -1,17 +1,25 @@
 {
 	"$schema": "./node_modules/lefthook/schema.json",
 	"pre-commit": {
-		"parallel": true,
-		"commands": {
-			"check": {
-				"glob": "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}",
-				"run": "bun biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}",
-				"stage_fixed": true
-			},
-			"generate-client": {
+		"piped": true,
+		"jobs": [
+			{
+				"name": "generate-client",
 				"glob": "src/routes/**/*.ts",
 				"run": "bun run generate:client && git add src/client.ts"
+			},
+			{
+				"name": "oxlint",
+				"glob": "*.{js,ts,cjs,mjs,jsx,tsx}",
+				"run": "bun oxlint --fix --max-warnings=0 --type-aware --type-check {staged_files}",
+				"stage_fixed": true
+			},
+			{
+				"name": "oxfmt",
+				"glob": "*",
+				"run": "bun oxfmt --no-error-on-unmatched-pattern {staged_files}",
+				"stage_fixed": true
 			}
-		}
+		]
 	}
 }

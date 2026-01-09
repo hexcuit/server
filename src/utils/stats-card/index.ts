@@ -1,6 +1,7 @@
+import type { StatsCardData } from './types'
+
 import { createStatsCard } from './components'
 import { satori, svgToPng } from './init'
-import type { StatsCardData } from './types'
 
 // フォントキャッシュ
 let fontCache: ArrayBuffer | null = null

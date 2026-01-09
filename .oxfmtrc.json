@@ -1,0 +1,11 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"experimentalSortPackageJson": true,
+	"experimentalSortImports": {
+		"order": "asc"
+	},
+	"semi": false,
+	"singleQuote": true,
+	"useTabs": true,
+	"ignorePatterns": ["node_modules/**", "dist/**", "CHANGELOG.md"]
+}

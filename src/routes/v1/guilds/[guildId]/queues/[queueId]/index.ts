@@ -1,4 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
+
 import del from './delete'
 import join from './join'
 import leave from './leave'

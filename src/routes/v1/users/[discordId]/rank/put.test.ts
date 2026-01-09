@@ -2,6 +2,7 @@ import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
+
 import { typedApp } from './put'
 
 describe('PUT /v1/users/:discordId/rank', () => {

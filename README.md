@@ -22,7 +22,7 @@ const client = hcWithType('https://your-api.com')
 
 // Type-safe API calls
 const result = await client.rank.$get({
-  query: { discordIds: ['123', '456'] }
+	query: { discordIds: ['123', '456'] },
 })
 
 // Type inference works automatically

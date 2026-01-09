@@ -23,97 +23,107 @@ const c = {
 	cyan: '\x1b[36m',
 } as const
 
-async function main() {
-	console.log(`\n${c.bold}${c.cyan}🔧 Client Generator${c.reset}\n`)
+interface RouteFile {
+	filePath: string
+	relativePath: string
+}
 
-	// Find files exporting typedApp (exclude index.ts, test.ts, schemas.ts)
+const toRelativePath = (file: string) =>
+	`./${path.relative('src', file).replace(/\\/g, '/').replace(/\.ts$/, '')}`
+
+async function findRouteFiles(): Promise<{ routes: RouteFile[]; skipped: RouteFile[] }> {
 	const allFiles = (await Array.fromAsync(glob('src/routes/**/*.ts'))).sort()
 	const files = allFiles.filter(
 		(file) =>
 			!file.endsWith('index.ts') && !file.endsWith('.test.ts') && !file.endsWith('schemas.ts'),
 	)
 
-	// Filter files that export typedApp
-	const routeFiles: string[] = []
-	const skippedFiles: string[] = []
+	const routes: RouteFile[] = []
+	const skipped: RouteFile[] = []
 
 	for (const file of files) {
 		const content = readFileSync(file, 'utf-8')
+		const routeFile = { filePath: file, relativePath: toRelativePath(file) }
+
 		if (content.includes('export const typedApp')) {
-			routeFiles.push(file)
+			routes.push(routeFile)
 		} else {
-			skippedFiles.push(file)
+			skipped.push(routeFile)
 		}
 	}
 
-	// Generate imports and chains
-	const imports: string[] = []
-	const chains: string[] = []
+	return { routes, skipped }
+}
 
-	console.log(
-		`${c.green}${c.bold}Registered endpoints${c.reset} ${c.dim}(${routeFiles.length} routes)${c.reset}`,
-	)
+function generateClientContent(routes: RouteFile[]): string {
+	const imports = routes
+		.map((r, i) => `import { typedApp as app${i} } from '${r.relativePath}'`)
+		.join('\n')
 
-	for (const [i, file] of routeFiles.entries()) {
-		const relativePath = `./${path.relative('src', file).replace(/\\/g, '/').replace(/\.ts$/, '')}`
-		const varName = `app${i}`
-		imports.push(`import { typedApp as ${varName} } from '${relativePath}'`)
-		chains.push(`.route('/', ${varName})`)
+	const chains = routes.map((_, i) => `.route('/', app${i})`).join('\n\t')
 
-		const isLast = i === routeFiles.length - 1
-		const prefix = isLast ? '└─' : '├─'
-		const num = String(i + 1).padStart(2, '0')
-		console.log(
-			`${c.dim}   ${prefix} ${c.reset}${c.dim}[${num}]${c.reset} ${c.cyan}${relativePath}${c.reset}`,
-		)
-	}
-
-	const clientContent = `// This file is auto-generated. Do not edit manually.
+	return `// This file is auto-generated. Do not edit manually.
 // Run "bun run generate:client" to regenerate.
 
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { hc } from 'hono/client'
 
-${imports.join('\n')}
+${imports}
 
 const app = new OpenAPIHono()
-	${chains.join('\n\t')}
+	${chains}
 
 export type AppType = typeof app
 
 export const hcWithType = (...args: Parameters<typeof hc>): ReturnType<typeof hc<AppType>> =>
 	hc<AppType>(...args)
 `
+}
 
-	writeFileSync('src/client.ts', clientContent)
-
-	// Generate dist/client.js (minimal runtime code)
-	mkdirSync('dist', { recursive: true })
-	const distClientContent = `import { hc } from 'hono/client';
+function generateDistClient(): string {
+	return `import { hc } from 'hono/client';
 export const hcWithType = (...args) => hc(...args);
 `
-	writeFileSync('dist/client.js', distClientContent)
+}
 
-	// Warn about files missing typedApp export
-	if (skippedFiles.length > 0) {
+function printTree(items: RouteFile[], color: string) {
+	for (const [i, item] of items.entries()) {
+		const isLast = i === items.length - 1
+		const prefix = isLast ? '└─' : '├─'
+		const num = String(i + 1).padStart(2, '0')
+		console.log(
+			`${c.dim}   ${prefix} ${c.reset}${c.dim}[${num}]${c.reset} ${color}${item.relativePath}${c.reset}`,
+		)
+	}
+}
+
+async function main() {
+	console.log(`\n${c.bold}${c.cyan}🔧 Client Generator${c.reset}\n`)
+
+	const { routes, skipped } = await findRouteFiles()
+
+	console.log(
+		`${c.green}${c.bold}Registered endpoints${c.reset} ${c.dim}(${routes.length} routes)${c.reset}`,
+	)
+	printTree(routes, c.cyan)
+
+	writeFileSync('src/client.ts', generateClientContent(routes))
+
+	mkdirSync('dist', { recursive: true })
+	writeFileSync('dist/client.js', generateDistClient())
+
+	if (skipped.length > 0) {
 		console.log()
 		console.log(
-			`${c.yellow}⚠  Missing typedApp export${c.reset} ${c.dim}(${skippedFiles.length} files)${c.reset}`,
+			`${c.yellow}⚠  Missing typedApp export${c.reset} ${c.dim}(${skipped.length} files)${c.reset}`,
 		)
-
-		for (const [i, file] of skippedFiles.entries()) {
-			const relativePath = `./${path.relative('src', file).replace(/\\/g, '/').replace(/\.ts$/, '')}`
-			const isLast = i === skippedFiles.length - 1
-			const prefix = isLast ? '└─' : '├─'
-			console.log(`${c.dim}   ${prefix} ${c.yellow}${relativePath}${c.reset}`)
-		}
+		printTree(skipped, c.yellow)
 	}
 
-	// Summary
 	console.log()
 	console.log(`${c.dim}─────────────────────────────────${c.reset}`)
 	console.log(`${c.green}${c.bold}✅ Generated src/client.ts${c.reset}`)
-	console.log(`${c.dim}   ${routeFiles.length} routes registered${c.reset}\n`)
+	console.log(`${c.dim}   ${routes.length} routes registered${c.reset}\n`)
 }
 
 main()

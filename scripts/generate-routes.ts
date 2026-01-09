@@ -5,17 +5,21 @@
  * Scans route files and generates src/routes/index.ts
  *
  * Usage:
- *   bun scripts/generate-routes.ts
+ *   bun scripts/generate-routes.ts          # Check only (exits 1 if out of date)
+ *   bun scripts/generate-routes.ts --fix    # Generate and write file
  */
 
-import { readdir, writeFile } from 'node:fs/promises'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { join, relative } from 'node:path'
+
+const FIX_MODE = process.argv.includes('--fix')
 
 // ANSI colors
 const c = {
 	reset: '\x1b[0m',
 	bold: '\x1b[1m',
 	dim: '\x1b[2m',
+	red: '\x1b[31m',
 	green: '\x1b[32m',
 	cyan: '\x1b[36m',
 } as const
@@ -74,6 +78,17 @@ function convertToRoutePath(filePath: string): string {
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
+function printTree(items: RouteInfo[], color: string) {
+	for (const [i, item] of items.entries()) {
+		const isLast = i === items.length - 1
+		const prefix = isLast ? '└─' : '├─'
+		const num = String(i + 1).padStart(2, '0')
+		console.log(
+			`${c.dim}   ${prefix} ${c.reset}${c.dim}[${num}]${c.reset} ${color}${item.routePath}${c.reset}`,
+		)
+	}
+}
+
 function generateImportName(dirPath: string, method: string): string {
 	const segments = dirPath.split(/[/\\]/).filter(Boolean)
 	const parts = segments.map((seg) =>
@@ -116,25 +131,39 @@ async function main() {
 	console.log(
 		`${c.green}${c.bold}Registered routes${c.reset} ${c.dim}(${sortedRoutes.length} endpoints)${c.reset}`,
 	)
+	printTree(sortedRoutes, c.cyan)
 
-	for (const [i, route] of sortedRoutes.entries()) {
-		const isLast = i === sortedRoutes.length - 1
-		const prefix = isLast ? '└─' : '├─'
-		const num = String(i + 1).padStart(2, '0')
-		console.log(
-			`${c.dim}   ${prefix} ${c.reset}${c.dim}[${num}]${c.reset} ${c.cyan}${route.routePath}${c.reset}`,
-		)
+	const content = generateIndexFile(sortedRoutes)
+	const outputRelative = relative(process.cwd(), OUTPUT_FILE)
+
+	// Read existing file
+	let existing = ''
+	try {
+		existing = await readFile(OUTPUT_FILE, 'utf-8')
+	} catch {
+		// File doesn't exist
 	}
 
-	const content = generateIndexFile(routes)
-	await writeFile(OUTPUT_FILE, content, 'utf-8')
-
-	const outputRelative = relative(process.cwd(), OUTPUT_FILE)
+	const isUpToDate = existing === content
 
 	console.log()
 	console.log(`${c.dim}─────────────────────────────────${c.reset}`)
-	console.log(`${c.green}${c.bold}✅ Generated ${outputRelative}${c.reset}`)
-	console.log(`${c.dim}   ${sortedRoutes.length} routes registered${c.reset}\n`)
+
+	if (isUpToDate) {
+		console.log(`${c.green}${c.bold}✅ ${outputRelative} is up to date${c.reset}`)
+		console.log(`${c.dim}   ${sortedRoutes.length} routes registered${c.reset}\n`)
+		return
+	}
+
+	if (FIX_MODE) {
+		await writeFile(OUTPUT_FILE, content, 'utf-8')
+		console.log(`${c.green}${c.bold}✅ Generated ${outputRelative}${c.reset}`)
+		console.log(`${c.dim}   ${sortedRoutes.length} routes registered${c.reset}\n`)
+	} else {
+		console.log(`${c.red}${c.bold}❌ ${outputRelative} is out of date${c.reset}`)
+		console.log(`${c.dim}   Run with --fix to regenerate${c.reset}\n`)
+		process.exit(1)
+	}
 }
 
 main().catch(console.error)

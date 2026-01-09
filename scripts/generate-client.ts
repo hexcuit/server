@@ -6,18 +6,22 @@
  * Scans for files exporting `typedApp` and creates src/client.ts
  *
  * Usage:
- *   bun scripts/generate-client.ts
+ *   bun scripts/generate-client.ts          # Check only (exits 1 if out of date)
+ *   bun scripts/generate-client.ts --fix    # Generate and write file
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { glob } from 'node:fs/promises'
 import path from 'node:path'
+
+const FIX_MODE = process.argv.includes('--fix')
 
 // ANSI colors
 const c = {
 	reset: '\x1b[0m',
 	bold: '\x1b[1m',
 	dim: '\x1b[2m',
+	red: '\x1b[31m',
 	green: '\x1b[32m',
 	yellow: '\x1b[33m',
 	cyan: '\x1b[36m',
@@ -42,7 +46,7 @@ async function findRouteFiles(): Promise<{ routes: RouteFile[]; skipped: RouteFi
 	const skipped: RouteFile[] = []
 
 	for (const file of files) {
-		const content = readFileSync(file, 'utf-8')
+		const content = await readFile(file, 'utf-8')
 		const routeFile = { filePath: file, relativePath: toRelativePath(file) }
 
 		if (content.includes('export const typedApp')) {
@@ -107,11 +111,6 @@ async function main() {
 	)
 	printTree(routes, c.cyan)
 
-	writeFileSync('src/client.ts', generateClientContent(routes))
-
-	mkdirSync('dist', { recursive: true })
-	writeFileSync('dist/client.js', generateDistClient())
-
 	if (skipped.length > 0) {
 		console.log()
 		console.log(
@@ -120,10 +119,45 @@ async function main() {
 		printTree(skipped, c.yellow)
 	}
 
+	const clientContent = generateClientContent(routes)
+	const distContent = generateDistClient()
+
+	// Read existing files
+	let existingClient = ''
+	let existingDist = ''
+	try {
+		existingClient = await readFile('src/client.ts', 'utf-8')
+	} catch {
+		// File doesn't exist
+	}
+	try {
+		existingDist = await readFile('dist/client.js', 'utf-8')
+	} catch {
+		// File doesn't exist
+	}
+
+	const isUpToDate = existingClient === clientContent && existingDist === distContent
+
 	console.log()
 	console.log(`${c.dim}─────────────────────────────────${c.reset}`)
-	console.log(`${c.green}${c.bold}✅ Generated src/client.ts${c.reset}`)
-	console.log(`${c.dim}   ${routes.length} routes registered${c.reset}\n`)
+
+	if (isUpToDate) {
+		console.log(`${c.green}${c.bold}✅ src/client.ts is up to date${c.reset}`)
+		console.log(`${c.dim}   ${routes.length} routes registered${c.reset}\n`)
+		return
+	}
+
+	if (FIX_MODE) {
+		await writeFile('src/client.ts', clientContent)
+		await mkdir('dist', { recursive: true })
+		await writeFile('dist/client.js', distContent)
+		console.log(`${c.green}${c.bold}✅ Generated src/client.ts${c.reset}`)
+		console.log(`${c.dim}   ${routes.length} routes registered${c.reset}\n`)
+	} else {
+		console.log(`${c.red}${c.bold}❌ src/client.ts is out of date${c.reset}`)
+		console.log(`${c.dim}   Run with --fix to regenerate${c.reset}\n`)
+		process.exit(1)
+	}
 }
 
-main()
+main().catch(console.error)

@@ -4,11 +4,11 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
 
 import v1GuildsGuildIdMatchesMatchIdVotePost from './v1/guilds/[guildId]/matches/[matchId]/vote/post'
-import v1GuildsGuildIdQueuesPost from './v1/guilds/[guildId]/queues/post'
 import v1GuildsGuildIdQueuesQueueIdDelete from './v1/guilds/[guildId]/queues/[queueId]/delete'
 import v1GuildsGuildIdQueuesQueueIdJoinPost from './v1/guilds/[guildId]/queues/[queueId]/join/post'
 import v1GuildsGuildIdQueuesQueueIdLeavePost from './v1/guilds/[guildId]/queues/[queueId]/leave/post'
 import v1GuildsGuildIdQueuesQueueIdStartPost from './v1/guilds/[guildId]/queues/[queueId]/start/post'
+import v1GuildsGuildIdQueuesPost from './v1/guilds/[guildId]/queues/post'
 import v1GuildsGuildIdRankingsGet from './v1/guilds/[guildId]/rankings/get'
 import v1GuildsGuildIdStatsDelete from './v1/guilds/[guildId]/stats/delete'
 import v1GuildsGuildIdUsersDiscordIdHistoryGet from './v1/guilds/[guildId]/users/[discordId]/history/get'
@@ -21,11 +21,11 @@ import v1UsersDiscordIdRankPut from './v1/users/[discordId]/rank/put'
 const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 app.route('/v1/guilds/:guildId/matches/:matchId/vote', v1GuildsGuildIdMatchesMatchIdVotePost)
-app.route('/v1/guilds/:guildId/queues', v1GuildsGuildIdQueuesPost)
 app.route('/v1/guilds/:guildId/queues/:queueId', v1GuildsGuildIdQueuesQueueIdDelete)
 app.route('/v1/guilds/:guildId/queues/:queueId/join', v1GuildsGuildIdQueuesQueueIdJoinPost)
 app.route('/v1/guilds/:guildId/queues/:queueId/leave', v1GuildsGuildIdQueuesQueueIdLeavePost)
 app.route('/v1/guilds/:guildId/queues/:queueId/start', v1GuildsGuildIdQueuesQueueIdStartPost)
+app.route('/v1/guilds/:guildId/queues', v1GuildsGuildIdQueuesPost)
 app.route('/v1/guilds/:guildId/rankings', v1GuildsGuildIdRankingsGet)
 app.route('/v1/guilds/:guildId/stats', v1GuildsGuildIdStatsDelete)
 app.route('/v1/guilds/:guildId/users/:discordId/history', v1GuildsGuildIdUsersDiscordIdHistoryGet)

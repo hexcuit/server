@@ -26,14 +26,10 @@ jobs:
         run: bun run check
 
       - name: Check generated client is up to date
-        run: |
-          bun run generate:client
-          git diff --exit-code src/client.ts
+        run: bun scripts/generate-client.ts
 
       - name: Check generated routes is up to date
-        run: |
-          bun run generate:routes
-          git diff --exit-code src/routes/index.ts
+        run: bun scripts/generate-routes.ts
 
       - name: Check drizzle migrations are up to date
         run: |

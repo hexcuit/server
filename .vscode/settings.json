@@ -6,12 +6,18 @@
 	},
 	"oxc.typeAware": true,
 	"files.watcherExclude": {
-		"**/client.ts": true
+		"**/worker-configuration.d.ts": true,
+		"**/src/client.ts": true,
+		"**/src/routes/index.ts": true
 	},
 	"search.exclude": {
-		"**/client.ts": true
+		"**/worker-configuration.d.ts": true,
+		"**/src/client.ts": true,
+		"**/src/routes/index.ts": true
 	},
 	"files.readonlyInclude": {
-		"**/client.ts": true
+		"**/worker-configuration.d.ts": true,
+		"**/src/client.ts": true,
+		"**/src/routes/index.ts": true
 	}
 }

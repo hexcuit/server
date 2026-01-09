@@ -32,8 +32,11 @@ jobs:
 
       - name: Check drizzle migrations are up to date
         run: |
-          bun run generate
+          bun run generate:migration
           git diff --exit-code drizzle/
+
+      - name: Build
+        run: bun run build
 
   test:
     runs-on: ubuntu-latest

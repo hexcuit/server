@@ -5,7 +5,7 @@ database:
   - changed-files:
       - any-glob-to-any-file:
           - src/db/**
-          - drizzle.config.ts
+          - drizzle.config*.ts
           - drizzle/**
 
 middleware:
@@ -46,6 +46,11 @@ utils:
       - any-glob-to-any-file:
           - src/utils/**
 
+services:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/services/**
+
 tests:
   - changed-files:
       - any-glob-to-any-file:
@@ -68,6 +73,7 @@ configuration:
           - '*.config.*'
           - '*.jsonc'
           - tsconfig.json
-          - biome.jsonc
           - wrangler.jsonc
           - lefthook.json
+          - .oxlintrc.json
+          - .oxfmtrc.json

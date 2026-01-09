@@ -30,6 +30,11 @@ jobs:
           bun run generate:client
           git diff --exit-code src/client.ts
 
+      - name: Check generated routes is up to date
+        run: |
+          bun run generate:routes
+          git diff --exit-code src/routes/index.ts
+
       - name: Check drizzle migrations are up to date
         run: |
           bun run generate:migration

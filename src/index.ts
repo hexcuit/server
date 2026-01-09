@@ -1,7 +1,9 @@
 import { swaggerUI } from '@hono/swagger-ui'
 import { OpenAPIHono } from '@hono/zod-openapi'
 
-import v1 from '@/routes/v1'
+import { apiKeyMiddleware } from '@/middlewares/apiKeyMiddleware'
+import { corsMiddleware } from '@/middlewares/corsMiddleware'
+import routes from '@/routes'
 
 import version from '../package.json'
 
@@ -25,6 +27,8 @@ app.doc('/docs.json', {
 
 app.get('/docs', swaggerUI({ url: '/docs.json' }))
 
-app.route('/', v1)
+app.use(corsMiddleware)
+app.use(apiKeyMiddleware)
+app.route('/', routes)
 
 export default app

@@ -7,5 +7,12 @@
 	"semi": false,
 	"singleQuote": true,
 	"useTabs": true,
-	"ignorePatterns": ["node_modules/**", "dist/**", "CHANGELOG.md"]
+	"ignorePatterns": [
+		"node_modules/**",
+		"dist/**",
+		"CHANGELOG.md",
+		"worker-configuration.d.ts",
+		"src/routes/index.ts",
+		"src/client.ts"
+	]
 }

@@ -32,6 +32,7 @@
 		"changeset": "changeset",
 		"generate:migration": "drizzle-kit generate",
 		"generate:client": "bun scripts/generate-client.ts",
+		"generate:routes": "bun scripts/generate-routes.ts",
 		"generate:types": "wrangler types --env-interface CloudflareBindings",
 		"db:migrate:dev": "wrangler d1 migrations apply hexcuit --local",
 		"db:studio": "drizzle-kit studio --config drizzle.config.local.ts"

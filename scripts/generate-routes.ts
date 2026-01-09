@@ -72,33 +72,23 @@ function convertToRoutePath(filePath: string): string {
 	return `/${converted.join('/')}`
 }
 
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
 function generateImportName(dirPath: string, method: string): string {
 	const segments = dirPath.split(/[/\\]/).filter(Boolean)
-	const parts: string[] = []
-
-	for (const seg of segments) {
-		if (seg.startsWith('[') && seg.endsWith(']')) {
-			const param = seg.slice(1, -1)
-			parts.push(param.charAt(0).toUpperCase() + param.slice(1))
-		} else {
-			parts.push(seg.charAt(0).toUpperCase() + seg.slice(1))
-		}
-	}
-
-	parts.push(method.charAt(0).toUpperCase() + method.slice(1))
+	const parts = segments.map((seg) =>
+		seg.startsWith('[') && seg.endsWith(']') ? capitalize(seg.slice(1, -1)) : capitalize(seg),
+	)
+	parts.push(capitalize(method))
 
 	const result = parts.join('')
 	return result.charAt(0).toLowerCase() + result.slice(1)
 }
 
 function generateIndexFile(routes: RouteInfo[]): string {
-	const sortedRoutes = [...routes].sort((a, b) => a.filePath.localeCompare(b.filePath))
+	const imports = routes.map((r) => `import ${r.importName} from './${r.filePath}'`).join('\n')
 
-	const imports = sortedRoutes
-		.map((r) => `import ${r.importName} from './${r.filePath}'`)
-		.join('\n')
-
-	const routeRegistrations = sortedRoutes
+	const routeRegistrations = routes
 		.map((r) => `app.route('${r.routePath}', ${r.importName})`)
 		.join('\n')
 

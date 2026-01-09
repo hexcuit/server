@@ -9,14 +9,15 @@ import { D1DatabaseAdapter } from './d1-adapter'
 const db = new Database(':memory:')
 const d1 = new D1DatabaseAdapter(db)
 
-// Read and apply migration SQL files
+// Read and apply migration SQL files (new drizzle-kit directory format)
 const migrationsDir = join(import.meta.dirname, '..', 'drizzle')
-const migrationFiles = readdirSync(migrationsDir)
-	.filter((f) => f.endsWith('.sql'))
+const migrationDirs = readdirSync(migrationsDir, { withFileTypes: true })
+	.filter((d) => d.isDirectory())
+	.map((d) => d.name)
 	.sort()
 
-for (const file of migrationFiles) {
-	const sql = readFileSync(join(migrationsDir, file), 'utf-8')
+for (const dir of migrationDirs) {
+	const sql = readFileSync(join(migrationsDir, dir, 'migration.sql'), 'utf-8')
 	// Split by statement breakpoint and execute each statement
 	const statements = sql.split('--> statement-breakpoint').map((s) => s.trim())
 	for (const statement of statements) {

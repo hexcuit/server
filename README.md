@@ -1,5 +1,9 @@
 # @hexcuit/server
 
+[![npm version](https://img.shields.io/npm/v/@hexcuit/server)](https://www.npmjs.com/package/@hexcuit/server)
+[![CI](https://github.com/hexcuit/server/actions/workflows/ci.yml/badge.svg)](https://github.com/hexcuit/server/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/hexcuit/server/graph/badge.svg)](https://codecov.io/gh/hexcuit/server)
+
 Hono RPC type-safe client for Project LoL Server
 
 ## Installation

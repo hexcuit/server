@@ -1,0 +1,1144 @@
+{
+	"dialect": "sqlite",
+	"id": "db88e3e8-4c8e-43c3-b04a-b6608f2d2594",
+	"prevIds": ["6e4f8801-afa7-448c-a274-a1ba43dffc54"],
+	"version": "7",
+	"ddl": [
+		{
+			"name": "guild_match_players",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "match_id",
+			"table": "guild_match_players",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "discord_id",
+			"table": "guild_match_players",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "team",
+			"table": "guild_match_players",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "role",
+			"table": "guild_match_players",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "rating_before",
+			"table": "guild_match_players",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["match_id", "discord_id"],
+			"nameExplicit": false,
+			"name": "guild_match_players_match_id_discord_id_pk",
+			"table": "guild_match_players",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				{
+					"value": "discord_id",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "guild_match_players_discord_idx",
+			"table": "guild_match_players",
+			"entityType": "indexes"
+		},
+		{
+			"columns": ["match_id"],
+			"tableTo": "guild_matches",
+			"columnsTo": ["id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_match_players_match_id_guild_matches_id_fk",
+			"table": "guild_match_players",
+			"entityType": "fks"
+		},
+		{
+			"columns": ["discord_id"],
+			"tableTo": "users",
+			"columnsTo": ["discord_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_match_players_discord_id_users_discord_id_fk",
+			"table": "guild_match_players",
+			"entityType": "fks"
+		},
+		{
+			"name": "guild_match_votes",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "match_id",
+			"table": "guild_match_votes",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "discord_id",
+			"table": "guild_match_votes",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "vote",
+			"table": "guild_match_votes",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["match_id", "discord_id"],
+			"nameExplicit": false,
+			"name": "guild_match_votes_match_id_discord_id_pk",
+			"table": "guild_match_votes",
+			"entityType": "pks"
+		},
+		{
+			"columns": ["match_id"],
+			"tableTo": "guild_matches",
+			"columnsTo": ["id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_match_votes_match_id_guild_matches_id_fk",
+			"table": "guild_match_votes",
+			"entityType": "fks"
+		},
+		{
+			"columns": ["discord_id"],
+			"tableTo": "users",
+			"columnsTo": ["discord_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_match_votes_discord_id_users_discord_id_fk",
+			"table": "guild_match_votes",
+			"entityType": "fks"
+		},
+		{
+			"name": "guild_matches",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "id",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "guild_matches_pk",
+			"table": "guild_matches",
+			"entityType": "pks"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "guild_id",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "channel_id",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "message_id",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "status",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "winning_team",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "0",
+			"generated": null,
+			"name": "blue_votes",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "0",
+			"generated": null,
+			"name": "red_votes",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "0",
+			"generated": null,
+			"name": "draw_votes",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "created_at",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "confirmed_at",
+			"table": "guild_matches",
+			"entityType": "columns"
+		},
+		{
+			"columns": [
+				{
+					"value": "guild_id",
+					"isExpression": false
+				},
+				{
+					"value": "created_at",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "guild_matches_guild_created_idx",
+			"table": "guild_matches",
+			"entityType": "indexes"
+		},
+		{
+			"columns": [
+				{
+					"value": "message_id",
+					"isExpression": false
+				}
+			],
+			"isUnique": true,
+			"where": null,
+			"origin": "manual",
+			"name": "guild_matches_message_id_unique",
+			"table": "guild_matches",
+			"entityType": "indexes"
+		},
+		{
+			"columns": ["guild_id"],
+			"tableTo": "guilds",
+			"columnsTo": ["guild_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_matches_guild_id_guilds_guild_id_fk",
+			"table": "guild_matches",
+			"entityType": "fks"
+		},
+		{
+			"name": "guild_queue_players",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "queue_id",
+			"table": "guild_queue_players",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "discord_id",
+			"table": "guild_queue_players",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "main_role",
+			"table": "guild_queue_players",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "sub_role",
+			"table": "guild_queue_players",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "joined_at",
+			"table": "guild_queue_players",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["queue_id", "discord_id"],
+			"nameExplicit": false,
+			"name": "guild_queue_players_queue_id_discord_id_pk",
+			"table": "guild_queue_players",
+			"entityType": "pks"
+		},
+		{
+			"columns": ["queue_id"],
+			"tableTo": "guild_queues",
+			"columnsTo": ["id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_queue_players_queue_id_guild_queues_id_fk",
+			"table": "guild_queue_players",
+			"entityType": "fks"
+		},
+		{
+			"columns": ["discord_id"],
+			"tableTo": "users",
+			"columnsTo": ["discord_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_queue_players_discord_id_users_discord_id_fk",
+			"table": "guild_queue_players",
+			"entityType": "fks"
+		},
+		{
+			"name": "guild_queues",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "id",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "guild_queues_pk",
+			"table": "guild_queues",
+			"entityType": "pks"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "guild_id",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "channel_id",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "message_id",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "creator_id",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "type",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "anonymous",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "capacity",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "status",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "created_at",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "updated_at",
+			"table": "guild_queues",
+			"entityType": "columns"
+		},
+		{
+			"columns": [
+				{
+					"value": "guild_id",
+					"isExpression": false
+				},
+				{
+					"value": "status",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "guild_queues_guild_status_idx",
+			"table": "guild_queues",
+			"entityType": "indexes"
+		},
+		{
+			"columns": [
+				{
+					"value": "message_id",
+					"isExpression": false
+				}
+			],
+			"isUnique": true,
+			"where": null,
+			"origin": "manual",
+			"name": "guild_queues_message_id_unique",
+			"table": "guild_queues",
+			"entityType": "indexes"
+		},
+		{
+			"columns": ["guild_id"],
+			"tableTo": "guilds",
+			"columnsTo": ["guild_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_queues_guild_id_guilds_guild_id_fk",
+			"table": "guild_queues",
+			"entityType": "fks"
+		},
+		{
+			"columns": ["creator_id"],
+			"tableTo": "users",
+			"columnsTo": ["discord_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "SET NULL",
+			"nameExplicit": false,
+			"name": "guild_queues_creator_id_users_discord_id_fk",
+			"table": "guild_queues",
+			"entityType": "fks"
+		},
+		{
+			"name": "guild_settings",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "guild_id",
+			"table": "guild_settings",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["guild_id"],
+			"nameExplicit": false,
+			"name": "guild_settings_pk",
+			"table": "guild_settings",
+			"entityType": "pks"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "1200",
+			"generated": null,
+			"name": "initial_rating",
+			"table": "guild_settings",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "32",
+			"generated": null,
+			"name": "k_factor",
+			"table": "guild_settings",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "64",
+			"generated": null,
+			"name": "k_factor_placement",
+			"table": "guild_settings",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "5",
+			"generated": null,
+			"name": "placement_games_required",
+			"table": "guild_settings",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "updated_at",
+			"table": "guild_settings",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["guild_id"],
+			"tableTo": "guilds",
+			"columnsTo": ["guild_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_settings_guild_id_guilds_guild_id_fk",
+			"table": "guild_settings",
+			"entityType": "fks"
+		},
+		{
+			"name": "guild_user_match_history",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "guild_id",
+			"table": "guild_user_match_history",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "discord_id",
+			"table": "guild_user_match_history",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "match_id",
+			"table": "guild_user_match_history",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "result",
+			"table": "guild_user_match_history",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "rating_change",
+			"table": "guild_user_match_history",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "rating_after",
+			"table": "guild_user_match_history",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "created_at",
+			"table": "guild_user_match_history",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["guild_id", "discord_id", "match_id"],
+			"nameExplicit": false,
+			"name": "guild_user_match_history_guild_id_discord_id_match_id_pk",
+			"table": "guild_user_match_history",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				{
+					"value": "guild_id",
+					"isExpression": false
+				},
+				{
+					"value": "discord_id",
+					"isExpression": false
+				},
+				{
+					"value": "created_at",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "guild_user_match_history_idx",
+			"table": "guild_user_match_history",
+			"entityType": "indexes"
+		},
+		{
+			"columns": ["guild_id"],
+			"tableTo": "guilds",
+			"columnsTo": ["guild_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_user_match_history_guild_id_guilds_guild_id_fk",
+			"table": "guild_user_match_history",
+			"entityType": "fks"
+		},
+		{
+			"columns": ["discord_id"],
+			"tableTo": "users",
+			"columnsTo": ["discord_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_user_match_history_discord_id_users_discord_id_fk",
+			"table": "guild_user_match_history",
+			"entityType": "fks"
+		},
+		{
+			"columns": ["match_id"],
+			"tableTo": "guild_matches",
+			"columnsTo": ["id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_user_match_history_match_id_guild_matches_id_fk",
+			"table": "guild_user_match_history",
+			"entityType": "fks"
+		},
+		{
+			"name": "guild_user_stats",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "guild_id",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "discord_id",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "rating",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "0",
+			"generated": null,
+			"name": "wins",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "0",
+			"generated": null,
+			"name": "losses",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "0",
+			"generated": null,
+			"name": "placement_games",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "peak_rating",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "0",
+			"generated": null,
+			"name": "current_streak",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "last_played_at",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "created_at",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "updated_at",
+			"table": "guild_user_stats",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["guild_id", "discord_id"],
+			"nameExplicit": false,
+			"name": "guild_user_stats_guild_id_discord_id_pk",
+			"table": "guild_user_stats",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				{
+					"value": "guild_id",
+					"isExpression": false
+				},
+				{
+					"value": "rating",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "guild_user_stats_rating_idx",
+			"table": "guild_user_stats",
+			"entityType": "indexes"
+		},
+		{
+			"columns": ["guild_id"],
+			"tableTo": "guilds",
+			"columnsTo": ["guild_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_user_stats_guild_id_guilds_guild_id_fk",
+			"table": "guild_user_stats",
+			"entityType": "fks"
+		},
+		{
+			"columns": ["discord_id"],
+			"tableTo": "users",
+			"columnsTo": ["discord_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "guild_user_stats_discord_id_users_discord_id_fk",
+			"table": "guild_user_stats",
+			"entityType": "fks"
+		},
+		{
+			"name": "guilds",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "guild_id",
+			"table": "guilds",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["guild_id"],
+			"nameExplicit": false,
+			"name": "guilds_pk",
+			"table": "guilds",
+			"entityType": "pks"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "'free'",
+			"generated": null,
+			"name": "plan",
+			"table": "guilds",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "plan_expires_at",
+			"table": "guilds",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "created_at",
+			"table": "guilds",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "updated_at",
+			"table": "guilds",
+			"entityType": "columns"
+		},
+		{
+			"name": "ranks",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "discord_id",
+			"table": "ranks",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["discord_id"],
+			"nameExplicit": false,
+			"name": "ranks_pk",
+			"table": "ranks",
+			"entityType": "pks"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "tier",
+			"table": "ranks",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "division",
+			"table": "ranks",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "created_at",
+			"table": "ranks",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "updated_at",
+			"table": "ranks",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["discord_id"],
+			"tableTo": "users",
+			"columnsTo": ["discord_id"],
+			"onUpdate": "CASCADE",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "ranks_discord_id_users_discord_id_fk",
+			"table": "ranks",
+			"entityType": "fks"
+		},
+		{
+			"name": "users",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "discord_id",
+			"table": "users",
+			"entityType": "columns"
+		},
+		{
+			"columns": ["discord_id"],
+			"nameExplicit": false,
+			"name": "users_pk",
+			"table": "users",
+			"entityType": "pks"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "created_at",
+			"table": "users",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+			"generated": null,
+			"name": "updated_at",
+			"table": "users",
+			"entityType": "columns"
+		}
+	],
+	"renames": []
+}

@@ -1,34 +1,29 @@
+import { readdirSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import Database from 'better-sqlite3'
 // Ensure @hono/zod-openapi extends Zod before any schemas are loaded
 import '@hono/zod-openapi'
-import { generateSQLiteDrizzleJson, generateSQLiteMigration } from 'drizzle-kit/api'
-import * as schema from '@/db/schema'
 import { D1DatabaseAdapter } from './d1-adapter'
 
 // Create in-memory SQLite database
 const db = new Database(':memory:')
 const d1 = new D1DatabaseAdapter(db)
 
-// Generate and apply schema from Drizzle schema definitions
-const emptySnapshot = {
-	id: '0000',
-	prevId: '',
-	version: '6',
-	dialect: 'sqlite',
-	tables: {},
-	views: {},
-	enums: {},
-	_meta: { tables: {}, columns: {} },
-} as const
+// Read and apply migration SQL files
+const migrationsDir = join(import.meta.dirname, '..', 'drizzle')
+const migrationFiles = readdirSync(migrationsDir)
+	.filter((f) => f.endsWith('.sql'))
+	.sort()
 
-const currentSnapshot = await generateSQLiteDrizzleJson(schema)
-const statements = await generateSQLiteMigration(
-	emptySnapshot,
-	currentSnapshot as typeof emptySnapshot,
-)
-
-for (const statement of statements) {
-	db.exec(statement)
+for (const file of migrationFiles) {
+	const sql = readFileSync(join(migrationsDir, file), 'utf-8')
+	// Split by statement breakpoint and execute each statement
+	const statements = sql.split('--> statement-breakpoint').map((s) => s.trim())
+	for (const statement of statements) {
+		if (statement) {
+			db.exec(statement)
+		}
+	}
 }
 
 // Export test environment

@@ -52,7 +52,7 @@
 		"drizzle-kit": "0.31.8",
 		"drizzle-orm": "0.45.1",
 		"drizzle-zod": "0.8.3",
-		"knip": "5.79.0",
+		"knip": "5.80.2",
 		"lefthook": "2.0.13",
 		"tsup": "8.5.1",
 		"typescript": "5.9.3",

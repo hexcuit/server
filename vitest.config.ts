@@ -15,7 +15,7 @@ export default defineConfig({
 				'src/**/*.test.ts',
 				'src/**/*.d.ts',
 				'src/db/schema/**',
-				'src/routes/**/index.ts',
+				'src/routes/index.ts',
 				'src/client.ts',
 			],
 			reporter: ['text', 'lcov'],

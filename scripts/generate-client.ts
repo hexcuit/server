@@ -36,7 +36,9 @@ const toRelativePath = (file: string) =>
 	`./${path.relative('src', file).replace(/\\/g, '/').replace(/\.ts$/, '')}`
 
 async function findRouteFiles(): Promise<{ routes: RouteFile[]; skipped: RouteFile[] }> {
-	const allFiles = (await Array.fromAsync(glob('src/routes/**/*.ts'))).sort()
+	const allFiles = (await Array.fromAsync(glob('src/routes/**/*.ts')))
+		.map((f) => f.replace(/\\/g, '/'))
+		.sort()
 	const files = allFiles.filter(
 		(file) =>
 			!file.endsWith('index.ts') && !file.endsWith('.test.ts') && !file.endsWith('schemas.ts'),

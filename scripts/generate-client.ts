@@ -124,24 +124,22 @@ async function main() {
 	const clientContent = generateClientContent(routes)
 	const distContent = generateDistClient()
 
-	// Read existing files
+	// Read existing file
 	let existingClient = ''
-	let existingDist = ''
 	try {
 		existingClient = await readFile('src/client.ts', 'utf-8')
 	} catch {
 		// File doesn't exist
 	}
-	try {
-		existingDist = await readFile('dist/client.js', 'utf-8')
-	} catch {
-		// File doesn't exist
-	}
 
-	const isUpToDate = existingClient === clientContent && existingDist === distContent
+	const isUpToDate = existingClient === clientContent
 
 	console.log()
 	console.log(`${c.dim}─────────────────────────────────${c.reset}`)
+
+	// Always generate dist/client.js (not tracked in git)
+	await mkdir('dist', { recursive: true })
+	await writeFile('dist/client.js', distContent)
 
 	if (isUpToDate) {
 		console.log(`${c.green}${c.bold}✅ src/client.ts is up to date${c.reset}`)
@@ -151,8 +149,6 @@ async function main() {
 
 	if (FIX_MODE) {
 		await writeFile('src/client.ts', clientContent)
-		await mkdir('dist', { recursive: true })
-		await writeFile('dist/client.js', distContent)
 		console.log(`${c.green}${c.bold}✅ Generated src/client.ts${c.reset}`)
 		console.log(`${c.dim}   ${routes.length} routes registered${c.reset}\n`)
 	} else {

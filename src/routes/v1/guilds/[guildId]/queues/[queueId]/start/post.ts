@@ -68,101 +68,105 @@ export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, queueId } = c.req.valid('param')
 	const db = drizzle(c.env.DB)
 
-	// Check if queue exists
-	const queue = await db
-		.select()
-		.from(guildQueues)
-		.where(and(eq(guildQueues.id, queueId), eq(guildQueues.guildId, guildId)))
-		.get()
+	return await db.transaction(async (tx) => {
+		// Check if queue exists
+		const queue = await tx
+			.select()
+			.from(guildQueues)
+			.where(and(eq(guildQueues.id, queueId), eq(guildQueues.guildId, guildId)))
+			.get()
 
-	if (!queue) {
-		return c.json({ message: 'Queue not found' }, 404)
-	}
+		if (!queue) {
+			return c.json({ message: 'Queue not found' }, 404)
+		}
 
-	// Check status
-	if (queue.status !== 'open') {
-		return c.json({ message: 'Queue is closed' }, 400)
-	}
+		// Check status
+		if (queue.status !== 'open') {
+			return c.json({ message: 'Queue is closed' }, 400)
+		}
 
-	// Get current players
-	const currentPlayers = await db
-		.select()
-		.from(guildQueuePlayers)
-		.where(eq(guildQueuePlayers.queueId, queueId))
+		// Get current players
+		const currentPlayers = await tx
+			.select()
+			.from(guildQueuePlayers)
+			.where(eq(guildQueuePlayers.queueId, queueId))
 
-	// Check minimum players
-	if (currentPlayers.length < 2) {
-		return c.json({ message: 'Not enough players (minimum 2)' }, 400)
-	}
+		// Check minimum players
+		if (currentPlayers.length < 2) {
+			return c.json({ message: 'Not enough players (minimum 2)' }, 400)
+		}
 
-	// Get settings for initial rating
-	const settings = await db
-		.select()
-		.from(guildSettings)
-		.where(eq(guildSettings.guildId, guildId))
-		.get()
+		// Get settings for initial rating
+		const settings = await tx
+			.select()
+			.from(guildSettings)
+			.where(eq(guildSettings.guildId, guildId))
+			.get()
 
-	const initialRating = settings?.initialRating ?? 1200
+		const initialRating = settings?.initialRating ?? 1200
 
-	// Get stats for all players
-	const playerStats = await Promise.all(
-		currentPlayers.map(async (p) => {
-			const stats = await db
-				.select()
-				.from(guildUserStats)
-				.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, p.discordId)))
-				.get()
+		// Get stats for all players
+		const playerStats = await Promise.all(
+			currentPlayers.map(async (p) => {
+				const stats = await tx
+					.select()
+					.from(guildUserStats)
+					.where(
+						and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, p.discordId)),
+					)
+					.get()
 
-			return {
-				discordId: p.discordId,
-				mainRole: p.mainRole,
-				subRole: p.subRole,
-				rating: stats?.rating ?? initialRating,
-			}
-		}),
-	)
+				return {
+					discordId: p.discordId,
+					mainRole: p.mainRole,
+					subRole: p.subRole,
+					rating: stats?.rating ?? initialRating,
+				}
+			}),
+		)
 
-	// Balance teams
-	const teamAssignments = balanceTeamsByElo(playerStats)
+		// Balance teams
+		const teamAssignments = balanceTeamsByElo(playerStats)
 
-	// Create match
-	const [match] = await db
-		.insert(guildMatches)
-		.values({
-			guildId,
-			channelId: queue.channelId,
-			messageId: queue.messageId,
-			status: 'voting',
-		})
-		.returning({ id: guildMatches.id })
+		// Create match
+		const [match] = await tx
+			.insert(guildMatches)
+			.values({
+				guildId,
+				channelId: queue.channelId,
+				messageId: queue.messageId,
+				status: 'voting',
+			})
+			.returning({ id: guildMatches.id })
 
-	if (!match) {
-		return c.json({ message: 'Failed to create match' }, 400)
-	}
+		if (!match) {
+			return c.json({ message: 'Failed to create match' }, 400)
+		}
 
-	// Add match players
-	await db.insert(guildMatchPlayers).values(
-		Object.entries(teamAssignments).map(([discordId, assignment]) => ({
-			matchId: match.id,
-			discordId,
-			team: assignment.team,
-			role: assignment.role,
-			ratingBefore: assignment.rating,
-		})),
-	)
+		// Add match players
+		await tx.insert(guildMatchPlayers).values(
+			Object.entries(teamAssignments).map(([discordId, assignment]) => ({
+				matchId: match.id,
+				discordId,
+				team: assignment.team,
+				role: assignment.role,
+				ratingBefore: assignment.rating,
+			})),
+		)
 
-	// Delete queue (cascade deletes queue players)
-	await db.delete(guildQueues).where(eq(guildQueues.id, queueId))
+		// Delete queue (cascade deletes queue players)
+		await tx.delete(guildQueues).where(eq(guildQueues.id, queueId))
 
-	return c.json(
-		{
-			match: {
-				id: match.id,
-				teamAssignments,
+		return c.json(
+			{
+				match: {
+					id: match.id,
+					teamAssignments,
+				},
 			},
-		},
-		200,
-	)
+			200,
+		)
+	})
 })
 
 export default app

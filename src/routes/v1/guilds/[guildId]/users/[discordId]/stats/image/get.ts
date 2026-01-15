@@ -189,7 +189,9 @@ export const typedApp = app.openapi(route, async (c) => {
 		.get()
 
 	const rankString = userRank
-		? `${userRank.tier} ${userRank.division}`
+		? userRank.division
+			? `${userRank.tier} ${userRank.division}`
+			: userRank.tier
 		: formatRankDisplay(stats.rating)
 
 	// Convert avatar image to Base64 (satori cannot directly process external URLs)

@@ -10,7 +10,7 @@
  *   bun scripts/fix-route-paths.ts --fix    # Auto-fix issues
  */
 
-import { readdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { access, readdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, relative } from 'node:path'
 
 const ROUTES_DIR = join(import.meta.dirname, '../src/routes')
@@ -44,6 +44,7 @@ interface Issue {
 	methodMismatch: boolean
 	fixApplied: boolean
 	newFilePath?: string
+	error?: string
 }
 
 async function findRouteFiles(dir: string, basePath = ''): Promise<string[]> {
@@ -119,6 +120,7 @@ function printTree(items: { relativePath: string }[], color: string) {
 interface FixResult {
 	success: boolean
 	newFilePath?: string
+	error?: string
 }
 
 async function fixRouteFile(
@@ -148,6 +150,19 @@ async function fixRouteFile(
 
 		const dir = dirname(currentFilePath)
 		const newFilePath = join(dir, `${file.actualMethod}.ts`)
+
+		// Check if target file already exists to avoid data loss
+		try {
+			await access(newFilePath)
+			// File exists - abort to prevent overwriting
+			return {
+				success: false,
+				error: `Target file already exists: ${basename(newFilePath)}`,
+			}
+		} catch {
+			// File doesn't exist - safe to rename
+		}
+
 		await rename(currentFilePath, newFilePath)
 		currentFilePath = newFilePath
 		success = true
@@ -193,12 +208,14 @@ async function main() {
 			let fixApplied = false
 			let newFilePath: string | undefined
 
+			let error: string | undefined
 			if (FIX_MODE) {
 				const result = await fixRouteFile(file, pathMismatch, methodMismatch)
 				fixApplied = result.success
 				newFilePath = result.newFilePath
+				error = result.error
 			}
-			issues.push({ file, pathMismatch, methodMismatch, fixApplied, newFilePath })
+			issues.push({ file, pathMismatch, methodMismatch, fixApplied, newFilePath, error })
 		}
 	}
 
@@ -229,7 +246,7 @@ async function main() {
 
 	console.log(`${c.red}${c.bold}Found ${issues.length} mismatch(es)${c.reset}\n`)
 
-	for (const { file, pathMismatch, methodMismatch, fixApplied, newFilePath } of issues) {
+	for (const { file, pathMismatch, methodMismatch, fixApplied, newFilePath, error } of issues) {
 		console.log(`${c.red}●${c.reset} ${c.bold}${file.relativePath}${c.reset}`)
 
 		if (pathMismatch) {
@@ -251,7 +268,8 @@ async function main() {
 				console.log(`${c.dim}   └─${c.reset} ${c.green}✅ Fixed!${c.reset}`)
 			}
 		} else if (FIX_MODE) {
-			console.log(`${c.dim}   └─${c.reset} ${c.red}⚠ Could not fix${c.reset}`)
+			const errorMsg = error ? `: ${error}` : ''
+			console.log(`${c.dim}   └─${c.reset} ${c.red}⚠ Could not fix${errorMsg}${c.reset}`)
 		} else {
 			console.log(`${c.dim}   └─${c.reset} ${c.dim}Run with --fix to auto-fix${c.reset}`)
 		}

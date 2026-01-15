@@ -1,6 +1,6 @@
 import { index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 
-import { LOL_ROLES, QUEUE_STATUSES, QUEUE_TYPES } from '@/constants'
+import { QUEUE_STATUSES, QUEUE_TYPES, ROLE_PREFERENCES } from '@/constants'
 
 import { currentTimestamp, timestamp } from './common'
 import { guilds } from './guilds'
@@ -55,8 +55,8 @@ export const guildQueuePlayers = sqliteTable(
 				onDelete: 'cascade',
 				onUpdate: 'cascade',
 			}),
-		mainRole: text('main_role', { enum: LOL_ROLES }).notNull(),
-		subRole: text('sub_role', { enum: LOL_ROLES }).notNull(),
+		mainRole: text('main_role', { enum: ROLE_PREFERENCES }).notNull(),
+		subRole: text('sub_role', { enum: ROLE_PREFERENCES }).notNull(),
 		joinedAt: timestamp('joined_at').notNull().default(currentTimestamp),
 	},
 	(table) => [primaryKey({ columns: [table.queueId, table.discordId] })],

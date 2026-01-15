@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { z } from 'zod'
 
-import { LOL_ROLES } from '@/constants'
+import { LOL_ROLES, ROLE_PREFERENCES } from '@/constants'
 import {
 	guildMatches,
 	guildMatchPlayers,
@@ -26,15 +26,15 @@ const ParamSchema = z
 const BodySchema = z
 	.object({
 		discordId: z.string(),
-		mainRole: z.enum(LOL_ROLES).optional().default('FILL'),
-		subRole: z.enum(LOL_ROLES).optional().default('FILL'),
+		mainRole: z.enum(ROLE_PREFERENCES).optional().default('FILL'),
+		subRole: z.enum(ROLE_PREFERENCES).optional().default('FILL'),
 	})
 	.openapi('JoinQueueBody')
 
 const PlayerSchema = z.object({
 	discordId: z.string(),
-	mainRole: z.enum(LOL_ROLES),
-	subRole: z.enum(LOL_ROLES),
+	mainRole: z.enum(ROLE_PREFERENCES),
+	subRole: z.enum(ROLE_PREFERENCES),
 })
 
 const TeamAssignmentSchema = z.object({

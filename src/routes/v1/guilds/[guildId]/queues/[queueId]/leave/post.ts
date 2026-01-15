@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/d1'
 import { z } from 'zod'
 
-import { LOL_ROLES } from '@/constants'
+import { ROLE_PREFERENCES } from '@/constants'
 import { guildQueuePlayers, guildQueues } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
@@ -22,8 +22,8 @@ const BodySchema = z
 
 const PlayerSchema = z.object({
 	discordId: z.string(),
-	mainRole: z.enum(LOL_ROLES),
-	subRole: z.enum(LOL_ROLES),
+	mainRole: z.enum(ROLE_PREFERENCES),
+	subRole: z.enum(ROLE_PREFERENCES),
 })
 
 const ResponseSchema = z

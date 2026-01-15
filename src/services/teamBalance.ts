@@ -4,12 +4,12 @@
  * スネークドラフト方式でEloレーティングに基づいてチームをバランスよく分配
  */
 
-import { LOL_ROLES, type LolRole, type LolTeam } from '@/constants'
+import { LOL_ROLES, type LolRole, type LolTeam, type RolePreference } from '@/constants'
 
 type PlayerWithRating = {
 	discordId: string
-	mainRole?: LolRole | null
-	subRole?: LolRole | null
+	mainRole: RolePreference
+	subRole: RolePreference
 	rating: number
 }
 
@@ -20,6 +20,9 @@ type TeamAssignment = {
 }
 
 type TeamAssignments = Record<string, TeamAssignment>
+
+// FILL でない実際のゲームロールかチェック
+const isGameRole = (role: RolePreference): role is LolRole => role !== 'FILL'
 
 /**
  * Eloレーティングに基づいてチームをバランス良く分配する
@@ -51,26 +54,26 @@ export const balanceTeamsByElo = (players: PlayerWithRating[]): TeamAssignments 
 		const assigned: Array<{ discordId: string; role: LolRole; rating: number }> = []
 		const usedRoles = new Set<LolRole>()
 
-		// まずメインロールで割り当て
+		// まずメインロールで割り当て（FILL 以外）
 		for (const p of team) {
-			if (p.mainRole && !usedRoles.has(p.mainRole)) {
+			if (isGameRole(p.mainRole) && !usedRoles.has(p.mainRole)) {
 				assigned.push({ discordId: p.discordId, role: p.mainRole, rating: p.rating })
 				usedRoles.add(p.mainRole)
 			}
 		}
 
-		// サブロールで割り当て
+		// サブロールで割り当て（FILL 以外）
 		for (const p of team) {
 			if (!assigned.find((a) => a.discordId === p.discordId)) {
-				if (p.subRole && !usedRoles.has(p.subRole)) {
+				if (isGameRole(p.subRole) && !usedRoles.has(p.subRole)) {
 					assigned.push({ discordId: p.discordId, role: p.subRole, rating: p.rating })
 					usedRoles.add(p.subRole)
 				}
 			}
 		}
 
-		// 残りは空いているロールを割り当て
-		const remainingRoles = LOL_ROLES.filter((r) => !usedRoles.has(r))
+		// 残りは空いているロールを割り当て（FILL の人もここで割り当て）
+		const remainingRoles = [...LOL_ROLES].filter((r) => !usedRoles.has(r))
 		for (const p of team) {
 			if (!assigned.find((a) => a.discordId === p.discordId)) {
 				const role = remainingRoles.shift() || 'MIDDLE'

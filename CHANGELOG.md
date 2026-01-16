@@ -1,5 +1,11 @@
 # @hexcuit/server
 
+## 0.12.2
+
+### Patch Changes
+
+- [#114](https://github.com/hexcuit/server/pull/114) [`30ebfd2`](https://github.com/hexcuit/server/commit/30ebfd2f4019f244a272ad91cb3cf9f931a385c8) Thanks [@11gather11](https://github.com/11gather11)! - Fix route registration to mount all routes at root path since each route file already defines its full path
+
 ## 0.12.1
 
 ### Patch Changes

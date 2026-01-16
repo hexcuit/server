@@ -1,5 +1,38 @@
 # @hexcuit/server
 
+## 0.12.0
+
+### Minor Changes
+
+- [#106](https://github.com/hexcuit/server/pull/106) [`7ad69c8`](https://github.com/hexcuit/server/commit/7ad69c8c4a9167179cf633dcfbae78af33893425) Thanks [@11gather11](https://github.com/11gather11)! - Migrate from Cloudflare D1 (SQLite) to PostgreSQL with Hyperdrive
+
+  - Replace D1 database with PostgreSQL via Cloudflare Hyperdrive
+  - Update all schema files from drizzle-orm/sqlite-core to drizzle-orm/pg-core
+  - Convert D1-specific APIs (.get(), .all(), .batch()) to standard drizzle patterns
+  - Use PGlite for in-memory test database instead of D1 adapter
+  - Update CI/CD workflows for SSH tunnel-based PostgreSQL migrations
+  - Remove d1_databases from wrangler.jsonc
+
+- [#106](https://github.com/hexcuit/server/pull/106) [`7ad69c8`](https://github.com/hexcuit/server/commit/7ad69c8c4a9167179cf633dcfbae78af33893425) Thanks [@11gather11](https://github.com/11gather11)! - Restructure API routes to follow RESTful conventions
+
+  - `/guilds/queues/create` → `POST /guilds/{guildId}/queues`
+  - `/guilds/queues/get` → `GET /guilds/{guildId}/queues/{queueId}`
+  - `/guilds/users/stats/get` → `GET /guilds/{guildId}/users/{discordId}/stats`
+  - `/guilds/matches/votes/create` → `POST /guilds/{guildId}/matches/{matchId}/vote`
+  - All routes now include `guildId` as a path parameter
+
+### Patch Changes
+
+- [#106](https://github.com/hexcuit/server/pull/106) [`7ad69c8`](https://github.com/hexcuit/server/commit/7ad69c8c4a9167179cf633dcfbae78af33893425) Thanks [@11gather11](https://github.com/11gather11)! - Improve development tooling and CI/CD
+
+  - Migrate from Biome to oxlint + oxfmt
+  - Add composite action for CI setup
+  - Improve lefthook pre-commit/pre-push hooks
+  - Add comprehensive test coverage
+  - Add team balance service
+  - Add auto-generated routes index (scripts/generate-routes.ts)
+  - Remove 21 redundant index.ts files from routes
+
 ## 0.11.1
 
 ### Patch Changes

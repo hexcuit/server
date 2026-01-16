@@ -1,9 +1,9 @@
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { createDb } from '@/db'
 import { guilds, guildUserStats, users } from '@/db/schema'
 
 import { typedApp } from './get'
@@ -33,7 +33,7 @@ describe('GET /v1/guilds/:guildId/users/:discordId/stats/image', () => {
 	})
 
 	it('returns stats card image', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildUserStats).values({
@@ -57,7 +57,7 @@ describe('GET /v1/guilds/:guildId/users/:discordId/stats/image', () => {
 	})
 
 	it('returns stats card with displayName and avatarUrl', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildUserStats).values({
@@ -102,7 +102,7 @@ describe('GET /v1/guilds/:guildId/users/:discordId/stats/image', () => {
 	})
 
 	it('returns 404 when stats not found', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 
 		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.image.$get(
@@ -121,7 +121,7 @@ describe('GET /v1/guilds/:guildId/users/:discordId/stats/image', () => {
 	})
 
 	it('returns stats card for placement player', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildUserStats).values({

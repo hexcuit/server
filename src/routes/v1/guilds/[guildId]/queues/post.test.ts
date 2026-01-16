@@ -1,10 +1,10 @@
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
 import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { createDb } from '@/db'
 import { guildQueues, guilds, users } from '@/db/schema'
 
 import { typedApp } from './post'
@@ -42,8 +42,8 @@ describe('POST /v1/guilds/:guildId/queues', () => {
 		}
 
 		// Verify guild was auto-created
-		const db = drizzle(env.DB)
-		const guild = await db.select().from(guilds).where(eq(guilds.guildId, ctx.guildId)).get()
+		const db = createDb(env.HYPERDRIVE.connectionString)
+		const [guild] = await db.select().from(guilds).where(eq(guilds.guildId, ctx.guildId))
 		expect(guild).toBeDefined()
 	})
 
@@ -66,8 +66,8 @@ describe('POST /v1/guilds/:guildId/queues', () => {
 		expect(res.status).toBe(201)
 
 		// Verify user was auto-created
-		const db = drizzle(env.DB)
-		const user = await db.select().from(users).where(eq(users.discordId, ctx.discordId)).get()
+		const db = createDb(env.HYPERDRIVE.connectionString)
+		const [user] = await db.select().from(users).where(eq(users.discordId, ctx.discordId))
 		expect(user).toBeDefined()
 	})
 
@@ -89,12 +89,11 @@ describe('POST /v1/guilds/:guildId/queues', () => {
 		expect(res.status).toBe(201)
 
 		// Verify queue is anonymous
-		const db = drizzle(env.DB)
-		const queue = await db
+		const db = createDb(env.HYPERDRIVE.connectionString)
+		const [queue] = await db
 			.select()
 			.from(guildQueues)
 			.where(eq(guildQueues.messageId, ctx.messageId))
-			.get()
 		expect(queue?.anonymous).toBe(true)
 	})
 

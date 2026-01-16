@@ -1,9 +1,9 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { z } from 'zod'
 
 import { LOL_ROLES } from '@/constants'
+import { createDb } from '@/db'
 import {
 	guildMatches,
 	guildMatchPlayers,
@@ -66,15 +66,14 @@ const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, queueId } = c.req.valid('param')
-	const db = drizzle(c.env.DB)
+	const db = createDb(c.env.HYPERDRIVE.connectionString)
 
 	return await db.transaction(async (tx) => {
 		// Check if queue exists
-		const queue = await tx
+		const [queue] = await tx
 			.select()
 			.from(guildQueues)
 			.where(and(eq(guildQueues.id, queueId), eq(guildQueues.guildId, guildId)))
-			.get()
 
 		if (!queue) {
 			return c.json({ message: 'Queue not found' }, 404)
@@ -97,24 +96,22 @@ export const typedApp = app.openapi(route, async (c) => {
 		}
 
 		// Get settings for initial rating
-		const settings = await tx
+		const [settings] = await tx
 			.select()
 			.from(guildSettings)
 			.where(eq(guildSettings.guildId, guildId))
-			.get()
 
 		const initialRating = settings?.initialRating ?? 1200
 
 		// Get stats for all players
 		const playerStats = await Promise.all(
 			currentPlayers.map(async (p) => {
-				const stats = await tx
+				const [stats] = await tx
 					.select()
 					.from(guildUserStats)
 					.where(
 						and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, p.discordId)),
 					)
-					.get()
 
 				return {
 					discordId: p.discordId,

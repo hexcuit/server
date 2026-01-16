@@ -1,10 +1,10 @@
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
 import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { createDb } from '@/db'
 import { guildQueuePlayers, guildQueues, guilds, users } from '@/db/schema'
 
 import { typedApp } from './post'
@@ -18,7 +18,7 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/leave', () => {
 	})
 
 	it('leaves queue successfully', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		await db.insert(users).values([{ discordId: ctx.discordId }, { discordId: ctx.discordId2 }])
 		await db.insert(guilds).values({ guildId: ctx.guildId })
@@ -70,13 +70,12 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/leave', () => {
 			.select()
 			.from(guildQueuePlayers)
 			.where(eq(guildQueuePlayers.queueId, queueId))
-			.all()
 		expect(players).toHaveLength(1)
 		expect(players.at(0)?.discordId).toBe(ctx.discordId2)
 	})
 
 	it('returns empty players list when last player leaves', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(guilds).values({ guildId: ctx.guildId })
@@ -115,7 +114,7 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/leave', () => {
 	})
 
 	it('returns 404 when queue not found', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 
 		const res = await client.v1.guilds[':guildId'].queues[':queueId'].leave.$post(
@@ -135,7 +134,7 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/leave', () => {
 	})
 
 	it('returns 404 when not in queue', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildQueues).values({

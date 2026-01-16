@@ -1,9 +1,9 @@
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { createDb } from '@/db'
 import { guilds, guildUserStats, users } from '@/db/schema'
 
 import { typedApp } from './get'
@@ -17,7 +17,7 @@ describe('GET /v1/guilds/:guildId/rankings', () => {
 	})
 
 	it('returns rankings ordered by rating', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const user3Id = ctx.generateUserId()
 		await db
 			.insert(users)
@@ -75,7 +75,7 @@ describe('GET /v1/guilds/:guildId/rankings', () => {
 	})
 
 	it('returns paginated rankings with limit and offset', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const user3Id = ctx.generateUserId()
 		await db
 			.insert(users)
@@ -122,7 +122,7 @@ describe('GET /v1/guilds/:guildId/rankings', () => {
 	})
 
 	it('returns empty rankings when no stats exist', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 
 		const res = await client.v1.guilds[':guildId'].rankings.$get(

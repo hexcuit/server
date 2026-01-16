@@ -1,9 +1,9 @@
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { createDb } from '@/db'
 import { ranks, users } from '@/db/schema'
 
 import { typedApp } from './get'
@@ -17,7 +17,7 @@ describe('GET /v1/users/:discordId', () => {
 	})
 
 	it('returns user without rank', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(users).values({ discordId: ctx.discordId })
 
 		const res = await client.v1.users[':discordId'].$get(
@@ -35,7 +35,7 @@ describe('GET /v1/users/:discordId', () => {
 	})
 
 	it('returns user with rank', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(ranks).values({ discordId: ctx.discordId, tier: 'GOLD', division: 'II' })
 

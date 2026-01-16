@@ -8,7 +8,7 @@ on:
         type: string
         default: ''
       run_migrations:
-        description: 'Run D1 migrations'
+        description: 'Run PostgreSQL migrations'
         type: boolean
         default: false
 
@@ -48,16 +48,20 @@ jobs:
       - name: Build
         run: bun run build
 
-      - name: Generate Drizzle kit
+      - name: Run PostgreSQL Migrations
         if: ${{ inputs.run_migrations }}
-        run: bun run generate:migration
-
-      - name: D1 Migrations
-        if: ${{ inputs.run_migrations }}
-        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: d1 migrations apply hexcuit --remote
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+          ssh -f -N -L 5432:localhost:5432 $SSH_USER@$SSH_HOST
+          bunx drizzle-kit migrate
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1

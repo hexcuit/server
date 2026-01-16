@@ -1,4 +1,4 @@
-import { index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+import { index, integer, pgTable, primaryKey, text, timestamp, unique } from 'drizzle-orm/pg-core'
 
 import {
 	LOL_ROLES,
@@ -9,11 +9,10 @@ import {
 	VOTE_OPTIONS,
 } from '@/constants'
 
-import { currentTimestamp, timestamp } from './common'
 import { guilds } from './guilds'
 import { users } from './users'
 
-export const guildMatches = sqliteTable(
+export const guildMatches = pgTable(
 	'guild_matches',
 	{
 		id: text('id')
@@ -32,7 +31,7 @@ export const guildMatches = sqliteTable(
 		blueVotes: integer('blue_votes').notNull().default(0),
 		redVotes: integer('red_votes').notNull().default(0),
 		drawVotes: integer('draw_votes').notNull().default(0),
-		createdAt: timestamp('created_at').notNull().default(currentTimestamp),
+		createdAt: timestamp('created_at').notNull().defaultNow(),
 		confirmedAt: timestamp('confirmed_at'), // nullable: 確定日時
 	},
 	(table) => [
@@ -42,7 +41,7 @@ export const guildMatches = sqliteTable(
 )
 
 // 試合参加者（試合視点）
-export const guildMatchPlayers = sqliteTable(
+export const guildMatchPlayers = pgTable(
 	'guild_match_players',
 	{
 		matchId: text('match_id')
@@ -68,7 +67,7 @@ export const guildMatchPlayers = sqliteTable(
 )
 
 // 投票詳細
-export const guildMatchVotes = sqliteTable(
+export const guildMatchVotes = pgTable(
 	'guild_match_votes',
 	{
 		matchId: text('match_id')
@@ -89,7 +88,7 @@ export const guildMatchVotes = sqliteTable(
 )
 
 // ユーザー履歴（ユーザー視点）
-export const guildUserMatchHistory = sqliteTable(
+export const guildUserMatchHistory = pgTable(
 	'guild_user_match_history',
 	{
 		guildId: text('guild_id')
@@ -113,7 +112,7 @@ export const guildUserMatchHistory = sqliteTable(
 		result: text('result', { enum: PLAYER_RESULTS }).notNull(),
 		ratingChange: integer('rating_change').notNull(), // +15, -12 など
 		ratingAfter: integer('rating_after').notNull(),
-		createdAt: timestamp('created_at').notNull().default(currentTimestamp),
+		createdAt: timestamp('created_at').notNull().defaultNow(),
 	},
 	(table) => [
 		primaryKey({ columns: [table.guildId, table.discordId, table.matchId] }),

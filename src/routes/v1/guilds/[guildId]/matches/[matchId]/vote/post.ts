@@ -1,6 +1,5 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, count, eq, sql } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { z } from 'zod'
 
 import {
@@ -11,6 +10,7 @@ import {
 	VOTE_OPTIONS,
 } from '@/constants'
 import { K_FACTOR_NORMAL, K_FACTOR_PLACEMENT, PLACEMENT_GAMES } from '@/constants/rating'
+import { createDb } from '@/db'
 import {
 	guildMatches,
 	guildMatchPlayers,
@@ -100,18 +100,17 @@ const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, matchId } = c.req.valid('param')
 	const { discordId, vote } = c.req.valid('json')
-	const db = drizzle(c.env.DB)
+	const db = createDb(c.env.HYPERDRIVE.connectionString)
 
 	// Ensure guild and user exist
 	await ensureGuild(db, guildId)
 	await ensureUser(db, discordId)
 
 	// Get match
-	const match = await db
+	const [match] = await db
 		.select()
 		.from(guildMatches)
 		.where(and(eq(guildMatches.id, matchId), eq(guildMatches.guildId, guildId)))
-		.get()
 
 	if (!match) {
 		return c.json({ message: 'Match not found' }, 404)
@@ -122,22 +121,20 @@ export const typedApp = app.openapi(route, async (c) => {
 	}
 
 	// Check if player is in match
-	const player = await db
+	const [player] = await db
 		.select()
 		.from(guildMatchPlayers)
 		.where(and(eq(guildMatchPlayers.matchId, matchId), eq(guildMatchPlayers.discordId, discordId)))
-		.get()
 
 	if (!player) {
 		return c.json({ message: 'Player not in match' }, 404)
 	}
 
 	// Get existing vote
-	const existingVote = await db
+	const [existingVote] = await db
 		.select()
 		.from(guildMatchVotes)
 		.where(and(eq(guildMatchVotes.matchId, matchId), eq(guildMatchVotes.discordId, discordId)))
-		.get()
 
 	if (existingVote) {
 		if (existingVote.vote !== vote) {
@@ -146,45 +143,46 @@ export const typedApp = app.openapi(route, async (c) => {
 			const redAdjust = (vote === 'RED' ? 1 : 0) - (existingVote.vote === 'RED' ? 1 : 0)
 			const drawAdjust = (vote === 'DRAW' ? 1 : 0) - (existingVote.vote === 'DRAW' ? 1 : 0)
 
-			await db.batch([
-				db
+			await db.transaction(async (tx) => {
+				await tx
 					.update(guildMatchVotes)
 					.set({ vote })
 					.where(
 						and(eq(guildMatchVotes.matchId, matchId), eq(guildMatchVotes.discordId, discordId)),
-					),
-				db
+					)
+				await tx
 					.update(guildMatches)
 					.set({
 						blueVotes: sql`${guildMatches.blueVotes} + ${blueAdjust}`,
 						redVotes: sql`${guildMatches.redVotes} + ${redAdjust}`,
 						drawVotes: sql`${guildMatches.drawVotes} + ${drawAdjust}`,
 					})
-					.where(eq(guildMatches.id, matchId)),
-			])
+					.where(eq(guildMatches.id, matchId))
+			})
 		}
 	} else {
-		await db.batch([
-			db.insert(guildMatchVotes).values({ matchId, discordId, vote }),
-			db
+		await db.transaction(async (tx) => {
+			await tx.insert(guildMatchVotes).values({ matchId, discordId, vote })
+			await tx
 				.update(guildMatches)
 				.set({
 					blueVotes: sql`${guildMatches.blueVotes} + ${vote === 'BLUE' ? 1 : 0}`,
 					redVotes: sql`${guildMatches.redVotes} + ${vote === 'RED' ? 1 : 0}`,
 					drawVotes: sql`${guildMatches.drawVotes} + ${vote === 'DRAW' ? 1 : 0}`,
 				})
-				.where(eq(guildMatches.id, matchId)),
-		])
+				.where(eq(guildMatches.id, matchId))
+		})
 	}
 
 	// Get updated match and participant count
-	const [updatedMatch, participantCount] = await Promise.all([
-		db.select().from(guildMatches).where(eq(guildMatches.id, matchId)).get(),
+	const [updatedMatchResult, participantCount] = await Promise.all([
+		db.select().from(guildMatches).where(eq(guildMatches.id, matchId)),
 		db
 			.select({ total: count() })
 			.from(guildMatchPlayers)
 			.where(eq(guildMatchPlayers.matchId, matchId)),
 	])
+	const [updatedMatch] = updatedMatchResult
 
 	if (!updatedMatch) {
 		return c.json({ message: 'Match not found' }, 404)
@@ -223,11 +221,7 @@ export const typedApp = app.openapi(route, async (c) => {
 	}
 
 	// Majority reached - confirm match and calculate ratings
-	const settings = await db
-		.select()
-		.from(guildSettings)
-		.where(eq(guildSettings.guildId, guildId))
-		.get()
+	const [settings] = await db.select().from(guildSettings).where(eq(guildSettings.guildId, guildId))
 	const kFactorNormal = settings?.kFactor ?? K_FACTOR_NORMAL
 	const kFactorPlacement = settings?.kFactorPlacement ?? K_FACTOR_PLACEMENT
 	const placementGamesRequired = settings?.placementGamesRequired ?? PLACEMENT_GAMES
@@ -332,17 +326,18 @@ export const typedApp = app.openapi(route, async (c) => {
 	}
 
 	// Execute all updates atomically
-	await db.batch([
-		db
+	await db.transaction(async (tx) => {
+		await tx
 			.update(guildMatches)
 			.set({
 				status: 'confirmed',
 				winningTeam,
 				confirmedAt: now,
 			})
-			.where(eq(guildMatches.id, matchId)),
-		...statsUpdates.map((update) =>
-			db
+			.where(eq(guildMatches.id, matchId))
+
+		for (const update of statsUpdates) {
+			await tx
 				.update(guildUserStats)
 				.set({
 					rating: update.rating,
@@ -355,10 +350,13 @@ export const typedApp = app.openapi(route, async (c) => {
 				})
 				.where(
 					and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, update.discordId)),
-				),
-		),
-		...(historyInserts.length > 0 ? [db.insert(guildUserMatchHistory).values(historyInserts)] : []),
-	])
+				)
+		}
+
+		if (historyInserts.length > 0) {
+			await tx.insert(guildUserMatchHistory).values(historyInserts)
+		}
+	})
 
 	return c.json(
 		{

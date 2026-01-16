@@ -1,10 +1,10 @@
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
 import { and, eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { createDb } from '@/db'
 import { guildMatches, guilds, guildUserMatchHistory, guildUserStats, users } from '@/db/schema'
 
 import { typedApp } from './delete'
@@ -18,7 +18,7 @@ describe('DELETE /v1/guilds/:guildId/users/:discordId/stats', () => {
 	})
 
 	it('deletes user stats', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildUserStats).values({
@@ -36,18 +36,17 @@ describe('DELETE /v1/guilds/:guildId/users/:discordId/stats', () => {
 		expect(res.status).toBe(204)
 
 		// Verify stats were deleted
-		const stats = await db
+		const [stats] = await db
 			.select()
 			.from(guildUserStats)
 			.where(
 				and(eq(guildUserStats.guildId, ctx.guildId), eq(guildUserStats.discordId, ctx.discordId)),
 			)
-			.get()
 		expect(stats).toBeUndefined()
 	})
 
 	it('deletes user stats and match history', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const matchId = ctx.generateMatchId()
 
 		await db.insert(users).values({ discordId: ctx.discordId })
@@ -82,17 +81,16 @@ describe('DELETE /v1/guilds/:guildId/users/:discordId/stats', () => {
 		expect(res.status).toBe(204)
 
 		// Verify stats were deleted
-		const stats = await db
+		const [stats] = await db
 			.select()
 			.from(guildUserStats)
 			.where(
 				and(eq(guildUserStats.guildId, ctx.guildId), eq(guildUserStats.discordId, ctx.discordId)),
 			)
-			.get()
 		expect(stats).toBeUndefined()
 
 		// Verify match history was deleted
-		const history = await db
+		const [history] = await db
 			.select()
 			.from(guildUserMatchHistory)
 			.where(
@@ -101,7 +99,6 @@ describe('DELETE /v1/guilds/:guildId/users/:discordId/stats', () => {
 					eq(guildUserMatchHistory.discordId, ctx.discordId),
 				),
 			)
-			.get()
 		expect(history).toBeUndefined()
 	})
 
@@ -120,7 +117,7 @@ describe('DELETE /v1/guilds/:guildId/users/:discordId/stats', () => {
 	})
 
 	it('returns 404 when stats not found', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 
 		const res = await client.v1.guilds[':guildId'].users[':discordId'].stats.$delete(

@@ -1,11 +1,11 @@
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
 import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
 import { INITIAL_RATING } from '@/constants/rating'
+import { createDb } from '@/db'
 import { guildMatches, guildMatchPlayers, guilds, guildUserStats, users } from '@/db/schema'
 
 import { typedApp } from './post'
@@ -19,7 +19,7 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {
 	})
 
 	it('records vote and returns voting status', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const matchId = ctx.generateMatchId()
 		await db.insert(users).values([{ discordId: ctx.discordId }, { discordId: ctx.discordId2 }])
 		await db.insert(guilds).values({ guildId: ctx.guildId })
@@ -71,7 +71,7 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {
 	})
 
 	it('confirms match when majority is reached', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const matchId = ctx.generateMatchId()
 		await db.insert(users).values([{ discordId: ctx.discordId }, { discordId: ctx.discordId2 }])
 		await db.insert(guilds).values({ guildId: ctx.guildId })
@@ -134,13 +134,13 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {
 		}
 
 		// Verify match was confirmed
-		const match = await db.select().from(guildMatches).where(eq(guildMatches.id, matchId)).get()
+		const [match] = await db.select().from(guildMatches).where(eq(guildMatches.id, matchId))
 		expect(match?.status).toBe('confirmed')
 		expect(match?.winningTeam).toBe('BLUE')
 	})
 
 	it('allows player to change their vote', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const matchId = ctx.generateMatchId()
 		await db.insert(users).values([{ discordId: ctx.discordId }, { discordId: ctx.discordId2 }])
 		await db.insert(guilds).values({ guildId: ctx.guildId })
@@ -198,7 +198,7 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {
 	})
 
 	it('returns 404 when match not found', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 
 		const res = await client.v1.guilds[':guildId'].matches[':matchId'].vote.$post(
@@ -218,7 +218,7 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {
 	})
 
 	it('returns 400 when match already confirmed', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const matchId = ctx.generateMatchId()
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(guilds).values({ guildId: ctx.guildId })
@@ -255,7 +255,7 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {
 	})
 
 	it('returns 404 when player not in match', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const matchId = ctx.generateMatchId()
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(guilds).values({ guildId: ctx.guildId })
@@ -284,7 +284,7 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {
 	})
 
 	it('confirms match with RED winning when majority votes RED', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const matchId = ctx.generateMatchId()
 		await db.insert(users).values([{ discordId: ctx.discordId }, { discordId: ctx.discordId2 }])
 		await db.insert(guilds).values({ guildId: ctx.guildId })
@@ -350,13 +350,13 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {
 			}
 		}
 
-		const match = await db.select().from(guildMatches).where(eq(guildMatches.id, matchId)).get()
+		const [match] = await db.select().from(guildMatches).where(eq(guildMatches.id, matchId))
 		expect(match?.status).toBe('confirmed')
 		expect(match?.winningTeam).toBe('RED')
 	})
 
 	it('confirms match with DRAW when majority votes DRAW', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const matchId = ctx.generateMatchId()
 		await db.insert(users).values([{ discordId: ctx.discordId }, { discordId: ctx.discordId2 }])
 		await db.insert(guilds).values({ guildId: ctx.guildId })
@@ -421,7 +421,7 @@ describe('POST /v1/guilds/:guildId/matches/:matchId/vote', () => {
 			}
 		}
 
-		const match = await db.select().from(guildMatches).where(eq(guildMatches.id, matchId)).get()
+		const [match] = await db.select().from(guildMatches).where(eq(guildMatches.id, matchId))
 		expect(match?.status).toBe('confirmed')
 		expect(match?.winningTeam).toBe('DRAW')
 	})

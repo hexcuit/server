@@ -1,10 +1,10 @@
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
 import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { createDb } from '@/db'
 import { guildMatches, guildQueuePlayers, guildQueues, guilds, users } from '@/db/schema'
 
 import { typedApp } from './post'
@@ -18,7 +18,7 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/join', () => {
 	})
 
 	it('joins queue successfully', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildQueues).values({
@@ -56,12 +56,12 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/join', () => {
 		}
 
 		// Verify user was auto-created
-		const user = await db.select().from(users).where(eq(users.discordId, ctx.discordId)).get()
+		const [user] = await db.select().from(users).where(eq(users.discordId, ctx.discordId))
 		expect(user).toBeDefined()
 	})
 
 	it('joins queue with default roles (FILL)', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildQueues).values({
@@ -95,7 +95,7 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/join', () => {
 	})
 
 	it('starts match when queue is full', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildQueues).values({
@@ -139,7 +139,7 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/join', () => {
 		}
 
 		// Verify queue was deleted
-		const queue = await db.select().from(guildQueues).where(eq(guildQueues.id, queueId)).get()
+		const [queue] = await db.select().from(guildQueues).where(eq(guildQueues.id, queueId))
 		expect(queue).toBeUndefined()
 
 		// Verify match was created
@@ -147,13 +147,12 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/join', () => {
 			.select()
 			.from(guildMatches)
 			.where(eq(guildMatches.guildId, ctx.guildId))
-			.all()
 		expect(matches).toHaveLength(1)
 		expect(matches.at(0)?.status).toBe('voting')
 	})
 
 	it('returns 404 when queue not found', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 
 		const res = await client.v1.guilds[':guildId'].queues[':queueId'].join.$post(
@@ -173,7 +172,7 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/join', () => {
 	})
 
 	it('returns 400 when queue is closed', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildQueues).values({
@@ -204,7 +203,7 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/join', () => {
 	})
 
 	it('returns 409 when already joined', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(guilds).values({ guildId: ctx.guildId })
@@ -242,7 +241,7 @@ describe('POST /v1/guilds/:guildId/queues/:queueId/join', () => {
 	})
 
 	it('returns 400 when queue is full', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(guilds).values({ guildId: ctx.guildId })

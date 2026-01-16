@@ -1,7 +1,7 @@
 {
 	"$schema": "https://unpkg.com/knip@5/schema.json",
-	"entry": ["src/index.ts", "scripts/*.ts"],
-	"project": ["src/**/*.ts", "scripts/**/*.ts"],
+	"entry": ["src/index.ts", "scripts/*.ts", "mocks/setup.ts"],
+	"project": ["src/**/*.ts", "scripts/**/*.ts", "mocks/**/*.ts"],
 	"ignore": ["src/**/*.test.ts"],
 	"ignoreDependencies": ["lefthook"]
 }

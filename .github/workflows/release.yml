@@ -40,16 +40,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate Drizzle kit
+      - name: Run PostgreSQL Migrations
         if: steps.changesets.outputs.published == 'true'
-        run: bun run generate:migration
-
-      - name: D1 Migrations
-        if: steps.changesets.outputs.published == 'true'
-        uses: cloudflare/wrangler-action@da0e0dfe58b7a431659754fdf3f186c529afbe65 # v3.14.1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          command: d1 migrations apply hexcuit --remote
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+          ssh -f -N -L 5432:localhost:5432 $SSH_USER@$SSH_HOST
+          bun drizzle-kit migrate
 
       - name: Deploy to Cloudflare Workers
         if: steps.changesets.outputs.published == 'true'

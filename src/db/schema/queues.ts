@@ -1,12 +1,21 @@
-import { index, integer, primaryKey, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
+import {
+	boolean,
+	index,
+	integer,
+	pgTable,
+	primaryKey,
+	text,
+	timestamp,
+	unique,
+} from 'drizzle-orm/pg-core'
 
 import { QUEUE_STATUSES, QUEUE_TYPES, ROLE_PREFERENCES } from '@/constants'
 
-import { currentTimestamp, timestamp } from './common'
+import { currentTimestamp } from './common'
 import { guilds } from './guilds'
 import { users } from './users'
 
-export const guildQueues = sqliteTable(
+export const guildQueues = pgTable(
 	'guild_queues',
 	{
 		id: text('id')
@@ -25,13 +34,13 @@ export const guildQueues = sqliteTable(
 			onUpdate: 'cascade',
 		}),
 		type: text('type', { enum: QUEUE_TYPES }).notNull(),
-		anonymous: integer('anonymous', { mode: 'boolean' }).notNull(),
+		anonymous: boolean('anonymous').notNull(),
 		capacity: integer('capacity').notNull(),
 		status: text('status', { enum: QUEUE_STATUSES }).notNull(),
-		createdAt: timestamp('created_at').notNull().default(currentTimestamp),
+		createdAt: timestamp('created_at').notNull().defaultNow(),
 		updatedAt: timestamp('updated_at')
 			.notNull()
-			.default(currentTimestamp)
+			.defaultNow()
 			.$onUpdate(() => currentTimestamp),
 	},
 	(table) => [
@@ -40,7 +49,7 @@ export const guildQueues = sqliteTable(
 	],
 )
 
-export const guildQueuePlayers = sqliteTable(
+export const guildQueuePlayers = pgTable(
 	'guild_queue_players',
 	{
 		queueId: text('queue_id')
@@ -57,7 +66,7 @@ export const guildQueuePlayers = sqliteTable(
 			}),
 		mainRole: text('main_role', { enum: ROLE_PREFERENCES }).notNull(),
 		subRole: text('sub_role', { enum: ROLE_PREFERENCES }).notNull(),
-		joinedAt: timestamp('joined_at').notNull().default(currentTimestamp),
+		joinedAt: timestamp('joined_at').notNull().defaultNow(),
 	},
 	(table) => [primaryKey({ columns: [table.queueId, table.discordId] })],
 )

@@ -1,10 +1,10 @@
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
 import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { createDb } from '@/db'
 import { guildQueues, guilds } from '@/db/schema'
 
 import { typedApp } from './delete'
@@ -18,7 +18,7 @@ describe('DELETE /v1/guilds/:guildId/queues/:queueId', () => {
 	})
 
 	it('deletes queue', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildQueues).values({
@@ -40,7 +40,7 @@ describe('DELETE /v1/guilds/:guildId/queues/:queueId', () => {
 		expect(res.status).toBe(204)
 
 		// Verify queue was deleted
-		const queue = await db.select().from(guildQueues).where(eq(guildQueues.id, queueId)).get()
+		const [queue] = await db.select().from(guildQueues).where(eq(guildQueues.id, queueId))
 		expect(queue).toBeUndefined()
 	})
 
@@ -59,7 +59,7 @@ describe('DELETE /v1/guilds/:guildId/queues/:queueId', () => {
 	})
 
 	it('returns 404 when queue not found', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 
 		const res = await client.v1.guilds[':guildId'].queues[':queueId'].$delete(
@@ -76,7 +76,7 @@ describe('DELETE /v1/guilds/:guildId/queues/:queueId', () => {
 	})
 
 	it('returns 404 when queue belongs to different guild', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const queueId = ctx.generateQueueId()
 		const otherGuildId = `other-${ctx.guildId}`
 

@@ -1,8 +1,8 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { createSelectSchema } from 'drizzle-zod'
 
+import { createDb } from '@/db'
 import { ranks, users } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
@@ -42,15 +42,15 @@ const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
 	const { discordId } = c.req.valid('param')
-	const db = drizzle(c.env.DB)
+	const db = createDb(c.env.HYPERDRIVE.connectionString)
 
-	const user = await db.select().from(users).where(eq(users.discordId, discordId)).get()
+	const [user] = await db.select().from(users).where(eq(users.discordId, discordId))
 
 	if (!user) {
 		return c.json({ message: 'User not found' }, 404)
 	}
 
-	const rank = await db.select().from(ranks).where(eq(ranks.discordId, discordId)).get()
+	const [rank] = await db.select().from(ranks).where(eq(ranks.discordId, discordId))
 
 	return c.json(
 		{

@@ -1,11 +1,11 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, count, desc, eq, gt } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
 import type { MatchHistoryItem, RatingHistoryPoint } from '@/utils/stats-card'
 
+import { createDb } from '@/db'
 import { guildSettings, guilds, guildUserMatchHistory, guildUserStats, ranks } from '@/db/schema'
 import { getRankDisplay } from '@/utils/elo'
 import { ErrorResponseSchema } from '@/utils/schemas'
@@ -83,50 +83,43 @@ function formatRankDisplay(rating: number): string {
 export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, discordId } = c.req.valid('param')
 	const { displayName, avatarUrl } = c.req.valid('query')
-	const db = drizzle(c.env.DB)
+	const db = createDb(c.env.HYPERDRIVE.connectionString)
 
 	// Check if guild exists
-	const guild = await db.select().from(guilds).where(eq(guilds.guildId, guildId)).get()
+	const [guild] = await db.select().from(guilds).where(eq(guilds.guildId, guildId))
 
 	if (!guild) {
 		return c.json({ message: 'Guild not found' }, 404)
 	}
 
 	// Get stats
-	const stats = await db
+	const [stats] = await db
 		.select()
 		.from(guildUserStats)
 		.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, discordId)))
-		.get()
 
 	if (!stats) {
 		return c.json({ message: 'Stats not found' }, 404)
 	}
 
 	// Get guild settings for placement games
-	const settings = await db
-		.select()
-		.from(guildSettings)
-		.where(eq(guildSettings.guildId, guildId))
-		.get()
+	const [settings] = await db.select().from(guildSettings).where(eq(guildSettings.guildId, guildId))
 
 	const placementGamesRequired = settings?.placementGamesRequired ?? 5
 
 	// Get ranking position
-	const positionResult = await db
+	const [positionResult] = await db
 		.select({ count: count() })
 		.from(guildUserStats)
 		.where(and(eq(guildUserStats.guildId, guildId), gt(guildUserStats.rating, stats.rating)))
-		.get()
 
 	const position = (positionResult?.count ?? 0) + 1
 
 	// Get total players count
-	const totalResult = await db
+	const [totalResult] = await db
 		.select({ count: count() })
 		.from(guildUserStats)
 		.where(eq(guildUserStats.guildId, guildId))
-		.get()
 
 	const totalPlayers = totalResult?.count ?? 0
 
@@ -182,11 +175,10 @@ export const typedApp = app.openapi(route, async (c) => {
 	const isPlacement = stats.placementGames < placementGamesRequired
 
 	// Try to get LoL rank from ranks table
-	const userRank = await db
+	const [userRank] = await db
 		.select({ tier: ranks.tier, division: ranks.division })
 		.from(ranks)
 		.where(eq(ranks.discordId, discordId))
-		.get()
 
 	const rankString = userRank
 		? userRank.division

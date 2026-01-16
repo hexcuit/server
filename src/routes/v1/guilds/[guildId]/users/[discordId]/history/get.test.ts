@@ -1,9 +1,9 @@
 import { authHeaders, createTestContext, type TestContext } from '@test/context'
 import { env } from '@test/setup'
-import { drizzle } from 'drizzle-orm/d1'
 import { testClient } from 'hono/testing'
 import { beforeEach, describe, expect, it } from 'vitest'
 
+import { createDb } from '@/db'
 import { guildMatches, guilds, guildUserMatchHistory, guildUserStats, users } from '@/db/schema'
 
 import { typedApp } from './get'
@@ -17,7 +17,7 @@ describe('GET /v1/guilds/:guildId/users/:discordId/history', () => {
 	})
 
 	it('returns match history ordered by date descending', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const matchId1 = ctx.generateMatchId()
 		const matchId2 = ctx.generateMatchId()
 
@@ -86,7 +86,7 @@ describe('GET /v1/guilds/:guildId/users/:discordId/history', () => {
 	})
 
 	it('returns paginated history with limit and offset', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		const matchId1 = ctx.generateMatchId()
 		const matchId2 = ctx.generateMatchId()
 		const matchId3 = ctx.generateMatchId()
@@ -167,7 +167,7 @@ describe('GET /v1/guilds/:guildId/users/:discordId/history', () => {
 	})
 
 	it('returns empty history when user has no matches', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(users).values({ discordId: ctx.discordId })
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 		await db.insert(guildUserStats).values({
@@ -206,7 +206,7 @@ describe('GET /v1/guilds/:guildId/users/:discordId/history', () => {
 	})
 
 	it('returns 404 when user stats not found', async () => {
-		const db = drizzle(env.DB)
+		const db = createDb(env.HYPERDRIVE.connectionString)
 		await db.insert(guilds).values({ guildId: ctx.guildId })
 
 		const res = await client.v1.guilds[':guildId'].users[':discordId'].history.$get(

@@ -1,7 +1,7 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
-import { drizzle } from 'drizzle-orm/d1'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 
+import { createDb } from '@/db'
 import { guildQueues, guilds } from '@/db/schema'
 import { ensureGuild, ensureUser } from '@/utils/ensure'
 import { ErrorResponseSchema } from '@/utils/schemas'
@@ -50,7 +50,7 @@ const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 export const typedApp = app.openapi(route, async (c) => {
 	const { guildId } = c.req.valid('param')
 	const body = c.req.valid('json')
-	const db = drizzle(c.env.DB)
+	const db = createDb(c.env.HYPERDRIVE.connectionString)
 
 	// Ensure guild exists (auto-create if not)
 	await ensureGuild(db, guildId)

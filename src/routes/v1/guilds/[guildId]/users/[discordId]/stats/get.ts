@@ -1,8 +1,8 @@
 import { createRoute, OpenAPIHono } from '@hono/zod-openapi'
 import { and, eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/d1'
 import { createSelectSchema } from 'drizzle-zod'
 
+import { createDb } from '@/db'
 import { guilds, guildUserStats } from '@/db/schema'
 import { ErrorResponseSchema } from '@/utils/schemas'
 
@@ -48,17 +48,17 @@ const app = new OpenAPIHono<{ Bindings: Cloudflare.Env }>()
 
 export const typedApp = app.openapi(route, async (c) => {
 	const { guildId, discordId } = c.req.valid('param')
-	const db = drizzle(c.env.DB)
+	const db = createDb(c.env.HYPERDRIVE.connectionString)
 
 	// Check if guild exists
-	const guild = await db.select().from(guilds).where(eq(guilds.guildId, guildId)).get()
+	const [guild] = await db.select().from(guilds).where(eq(guilds.guildId, guildId))
 
 	if (!guild) {
 		return c.json({ message: 'Guild not found' }, 404)
 	}
 
 	// Get stats
-	const stats = await db
+	const [stats] = await db
 		.select({
 			discordId: guildUserStats.discordId,
 			rating: guildUserStats.rating,
@@ -71,7 +71,6 @@ export const typedApp = app.openapi(route, async (c) => {
 		})
 		.from(guildUserStats)
 		.where(and(eq(guildUserStats.guildId, guildId), eq(guildUserStats.discordId, discordId)))
-		.get()
 
 	if (!stats) {
 		return c.json({ message: 'Stats not found' }, 404)

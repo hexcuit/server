@@ -1,5 +1,11 @@
 # @hexcuit/server
 
+## 0.12.1
+
+### Patch Changes
+
+- [#112](https://github.com/hexcuit/server/pull/112) [`4235b20`](https://github.com/hexcuit/server/commit/4235b209c710349f9bc71b6b0cd09287ae3c6e80) Thanks [@11gather11](https://github.com/11gather11)! - Add nodejs_compat flag for postgres package compatibility
+
 ## 0.12.0
 
 ### Minor Changes

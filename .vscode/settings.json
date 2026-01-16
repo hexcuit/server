@@ -1,3 +1,23 @@
 {
-	"cSpell.words": ["unranked"]
+	"cSpell.words": ["unranked"],
+	"editor.defaultFormatter": "oxc.oxc-vscode",
+	"editor.codeActionsOnSave": {
+		"source.fixAll.oxc": "always"
+	},
+	"oxc.typeAware": true,
+	"files.watcherExclude": {
+		"**/worker-configuration.d.ts": true,
+		"**/src/client.ts": true,
+		"**/src/routes/index.ts": true
+	},
+	"search.exclude": {
+		"**/worker-configuration.d.ts": true,
+		"**/src/client.ts": true,
+		"**/src/routes/index.ts": true
+	},
+	"files.readonlyInclude": {
+		"**/worker-configuration.d.ts": true,
+		"**/src/client.ts": true,
+		"**/src/routes/index.ts": true
+	}
 }

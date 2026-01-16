@@ -12,12 +12,12 @@
 		"lib": ["ESNext"],
 		"jsx": "react-jsx",
 		"jsxImportSource": "hono/jsx",
-		"types": ["./worker-configuration.d.ts", "@types/bun"],
+		"types": ["./worker-configuration.d.ts", "@types/node"],
 		"paths": {
 			"@/*": ["./src/*"],
-			"@test/*": ["./test/*"]
+			"@test/*": ["./mocks/*"]
 		}
 	},
-	"include": ["src/**/*", "test/**/*", "scripts/**/*"],
+	"include": ["src/**/*", "mocks/**/*", "scripts/**/*"],
 	"exclude": ["node_modules", "dist"]
 }

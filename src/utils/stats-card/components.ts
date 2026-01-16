@@ -180,7 +180,8 @@ function StatCard({ label, value, subtext }: { label: string; value: string; sub
 // 統計グリッド
 function StatsGrid({ data }: { data: StatsCardData }) {
 	const totalGames = data.wins + data.losses
-	const positionText = data.position && data.totalPlayers ? getPercentile(data.position, data.totalPlayers) : undefined
+	const positionText =
+		data.position && data.totalPlayers ? getPercentile(data.position, data.totalPlayers) : undefined
 
 	return {
 		type: 'div',
@@ -237,7 +238,10 @@ function StatsGrid({ data }: { data: StatsCardData }) {
 								: [
 										StatCard({
 											label: 'W/L RATIO',
-											value: data.losses > 0 ? (data.wins / data.losses).toFixed(2) : data.wins.toString(),
+											value:
+												data.losses > 0
+													? (data.wins / data.losses).toFixed(2)
+													: data.wins.toString(),
 										}),
 									]),
 						],
@@ -359,7 +363,9 @@ function MatchHistorySection({ matches }: { matches: MatchHistoryItem[] }) {
 					type: 'div',
 					props: {
 						style: { display: 'flex', flexDirection: 'column' },
-						children: matches.slice(0, 10).map((match, i) => MatchHistoryItemComponent({ match, index: i })),
+						children: matches
+							.slice(0, 10)
+							.map((match, i) => MatchHistoryItemComponent({ match, index: i })),
 					},
 				},
 			],
@@ -405,8 +411,11 @@ function RatingChart({ history }: { history: RatingHistoryPoint[] }) {
 
 	// ポイントを計算
 	const points = history.map((point, i) => {
-		const x = padding.left + (i / (history.length - 1)) * (chartWidth - padding.left - padding.right)
-		const y = padding.top + (1 - (point.rating - minRating) / range) * (chartHeight - padding.top - padding.bottom)
+		const x =
+			padding.left + (i / (history.length - 1)) * (chartWidth - padding.left - padding.right)
+		const y =
+			padding.top +
+			(1 - (point.rating - minRating) / range) * (chartHeight - padding.top - padding.bottom)
 		return { x, y, ...point }
 	})
 
@@ -588,7 +597,6 @@ function PlacementBanner({ games }: { games: number }) {
 
 // メインコンポーネント
 export function createStatsCard(data: StatsCardData) {
-	// biome-ignore lint/suspicious/noExplicitAny: satori の仮想 DOM 構造のため any を使用
 	const children: any[] = [
 		Header({
 			displayName: data.displayName,

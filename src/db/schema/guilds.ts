@@ -1,22 +1,29 @@
-import { index, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core'
-import { INITIAL_RATING, K_FACTOR_NORMAL, K_FACTOR_PLACEMENT, PLACEMENT_GAMES } from '@/constants/rating'
-import { currentTimestamp, timestamp } from './common'
+import { index, integer, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+
+import {
+	INITIAL_RATING,
+	K_FACTOR_NORMAL,
+	K_FACTOR_PLACEMENT,
+	PLACEMENT_GAMES,
+} from '@/constants/rating'
+
+import { currentTimestamp } from './common'
 import { users } from './users'
 
 const GUILD_PLANS = ['free', 'premium'] as const
 
-export const guilds = sqliteTable('guilds', {
+export const guilds = pgTable('guilds', {
 	guildId: text('guild_id').primaryKey(),
 	plan: text('plan', { enum: GUILD_PLANS }).notNull().default('free'),
 	planExpiresAt: timestamp('plan_expires_at'), // nullable: 無期限/無料はnull
-	createdAt: timestamp('created_at').notNull().default(currentTimestamp),
+	createdAt: timestamp('created_at').notNull().defaultNow(),
 	updatedAt: timestamp('updated_at')
 		.notNull()
-		.default(currentTimestamp)
+		.defaultNow()
 		.$onUpdate(() => currentTimestamp),
 })
 
-export const guildSettings = sqliteTable('guild_settings', {
+export const guildSettings = pgTable('guild_settings', {
 	guildId: text('guild_id')
 		.primaryKey()
 		.references(() => guilds.guildId, {
@@ -29,11 +36,11 @@ export const guildSettings = sqliteTable('guild_settings', {
 	placementGamesRequired: integer('placement_games_required').notNull().default(PLACEMENT_GAMES),
 	updatedAt: timestamp('updated_at')
 		.notNull()
-		.default(currentTimestamp)
+		.defaultNow()
 		.$onUpdate(() => currentTimestamp),
 })
 
-export const guildUserStats = sqliteTable(
+export const guildUserStats = pgTable(
 	'guild_user_stats',
 	{
 		guildId: text('guild_id')
@@ -55,10 +62,10 @@ export const guildUserStats = sqliteTable(
 		peakRating: integer('peak_rating').notNull(), // 最高レート（初期値はratingと同じ）
 		currentStreak: integer('current_streak').notNull().default(0), // +で連勝、-で連敗
 		lastPlayedAt: timestamp('last_played_at'), // nullable: 未プレイ時はnull
-		createdAt: timestamp('created_at').notNull().default(currentTimestamp),
+		createdAt: timestamp('created_at').notNull().defaultNow(),
 		updatedAt: timestamp('updated_at')
 			.notNull()
-			.default(currentTimestamp)
+			.defaultNow()
 			.$onUpdate(() => currentTimestamp),
 	},
 	(table) => [

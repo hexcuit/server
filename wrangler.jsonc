@@ -4,14 +4,12 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2025-11-11",
 	"observability": {
-		"enabled": true
+		"enabled": true,
 	},
-	"d1_databases": [
+	"hyperdrive": [
 		{
-			"binding": "DB",
-			"database_name": "hexcuit",
-			"database_id": "a20ff5ef-8539-444c-8098-e92ffa65d32b",
-			"migrations_dir": "drizzle"
-		}
-	]
+			"binding": "HYPERDRIVE",
+			"id": "f7a78a5754e1463c849907b8bda14fd2",
+		},
+	],
 }

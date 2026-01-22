@@ -1,5 +1,11 @@
 # @hexcuit/server
 
+## 0.13.0
+
+### Minor Changes
+
+- [#121](https://github.com/hexcuit/server/pull/121) [`0732f07`](https://github.com/hexcuit/server/commit/0732f0782c42778312e40dcc8f992a70607fd891) Thanks [@11gather11](https://github.com/11gather11)! - プレイスメント中の敗北でレートが下がらないように変更
+
 ## 0.12.2
 
 ### Patch Changes

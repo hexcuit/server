@@ -58,9 +58,14 @@ describe('Elo Rating Utilities', () => {
 			expect(calculateNewRating(1200, 1200, false, false)).toBe(1184)
 		})
 
-		it('has larger changes during placement (+32/-32)', () => {
+		it('has larger gain during placement (+32)', () => {
 			expect(calculateNewRating(1200, 1200, true, true)).toBe(1232)
-			expect(calculateNewRating(1200, 1200, false, true)).toBe(1168)
+		})
+
+		it('no rating loss during placement (0 change on defeat)', () => {
+			expect(calculateNewRating(1200, 1200, false, true)).toBe(1200)
+			expect(calculateNewRating(800, 1200, false, true)).toBe(800)
+			expect(calculateNewRating(1600, 1200, false, true)).toBe(1600)
 		})
 
 		it('high vs low rating: small gain on win, large loss on defeat', () => {

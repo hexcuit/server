@@ -63,6 +63,11 @@ export function calculateNewRating(
 	won: boolean,
 	isPlacement: boolean,
 ): number {
+	// プレイスメント中の敗北はレート変動なし
+	if (isPlacement && !won) {
+		return currentRating
+	}
+
 	const kFactor = isPlacement ? K_FACTOR_PLACEMENT : K_FACTOR_NORMAL
 	const expectedScore = calculateExpectedScore(currentRating, opponentAverageRating)
 	const actualScore = won ? 1 : 0

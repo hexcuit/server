@@ -50,7 +50,7 @@
 		"@hono/swagger-ui": "0.5.3",
 		"@libsql/client": "0.17.0",
 		"@types/node": "25.0.10",
-		"@vitest/coverage-v8": "4.0.17",
+		"@vitest/coverage-v8": "4.0.18",
 		"drizzle-kit": "1.0.0-beta.9-e89174b",
 		"drizzle-orm": "1.0.0-beta.9-e89174b",
 		"drizzle-zod": "1.0.0-beta.9-e89174b",
@@ -62,7 +62,7 @@
 		"postgres": "3.4.8",
 		"tsup": "8.5.1",
 		"typescript": "5.9.3",
-		"vitest": "4.0.17",
+		"vitest": "4.0.18",
 		"wrangler": "4.59.3",
 		"zod": "4.3.5"
 	}

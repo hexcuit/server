@@ -38,7 +38,7 @@
 		"db:studio": "drizzle-kit studio"
 	},
 	"dependencies": {
-		"@hono/zod-openapi": "1.2.0",
+		"@hono/zod-openapi": "1.6.3",
 		"hono": "4.11.5"
 	},
 	"devDependencies": {

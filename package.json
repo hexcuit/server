@@ -45,7 +45,7 @@
 		"@cf-wasm/resvg": "0.3.3",
 		"@cf-wasm/satori": "0.3.3",
 		"@changesets/changelog-github": "0.5.2",
-		"@changesets/cli": "2.29.8",
+		"@changesets/cli": "2.31.1",
 		"@electric-sql/pglite": "0.3.15",
 		"@hono/swagger-ui": "0.5.3",
 		"@libsql/client": "0.17.0",
